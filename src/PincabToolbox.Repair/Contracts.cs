@@ -1,0 +1,178 @@
+using PincabToolbox.Core.Models;
+
+namespace PincabToolbox.Repair;
+
+/// <summary>Nature of a write. Drives how it is backed up and undone.</summary>
+public enum ChangeKind
+{
+    FileAttribute,
+    FileMove,
+    IniWrite,
+    RegistryWrite,
+    SqliteWrite,
+
+    /// <summary>A running process is terminated. Never reversible by nature — see
+    /// <see cref="PincabToolbox.Repair.Actions.KillZombiePinUpDisplayAction"/>.</summary>
+    ProcessTermination,
+
+    /// <summary>The Windows default playback device is changed. Reversible — the previous
+    /// default is captured as <see cref="PlannedChange.Before"/>.</summary>
+    AudioDeviceDefault,
+}
+
+/// <summary>
+/// Result of crossing the two gates: commercial (licence) then safety (confidence).
+/// The safety gate can only DOWNGRADE the mode, never upgrade it.
+/// </summary>
+public enum RepairMode
+{
+    /// <summary>No rule, or confidence &lt; 70: manual procedure shown, no button.</summary>
+    ManualOnly = 0,
+    /// <summary>
+    /// A rule exists but no licence. The SUMMARY is shown (a fix exists, reversible, backed up,
+    /// roughly this long); the detailed plan is not — that is what Repair sells. ADR-006.
+    /// </summary>
+    Locked = 1,
+    /// <summary>Explicit confirmation required, fix by fix.</summary>
+    ConfirmationRequired = 2,
+    /// <summary>Batchable — still with backup, opt-in and journal.</summary>
+    Automatic = 3,
+}
+
+public enum Completeness { Full, Partial }
+
+/// <summary>
+/// One unit of write, as planned. The SAME object is consumed by the preview and by apply —
+/// otherwise the preview would be a lie, and the preview is what earns the trust.
+/// </summary>
+/// <remarks>
+/// <see cref="Before"/> has the same shape as an evidence item (ADR-003): a preview is
+/// evidence about a future state. Same UI rendering, same anonymisation on export.
+/// </remarks>
+public sealed record PlannedChange
+{
+    public required string ActionId { get; init; }
+    public required ChangeKind Kind { get; init; }
+
+    /// <summary>Absolute path, registry key, or table+row id.</summary>
+    public required string Target { get; init; }
+
+    public required string Before { get; init; }
+    public required string After { get; init; }
+    public required bool Reversible { get; init; }
+}
+
+/// <summary>A repair rule — DATA, from the Knowledge Pack. See ADR-005.</summary>
+public sealed record RepairRule
+{
+    public required string Id { get; init; }
+    public required string TargetCode { get; init; }
+
+    /// <summary>
+    /// Must exist in the compiled registry. An unknown ActionId is NOT an error:
+    /// the rule is ignored and the finding falls back to ManualOnly, so a pack newer
+    /// than the app degrades cleanly.
+    /// </summary>
+    public required string ActionId { get; init; }
+
+    public IReadOnlyDictionary<string, string> Parameters { get; init; } =
+        new Dictionary<string, string>();
+
+    public required int RepairConfidence { get; init; }
+
+    /// <summary>Declared by the pack — but IRepairAction.IsReversibleByNature has the last word.</summary>
+    public required bool Reversible { get; init; }
+
+    public bool BackupRequired { get; init; } = true;
+
+    public string? ManualProcedureFr { get; init; }
+    public string? ManualProcedureEn { get; init; }
+}
+
+public sealed record Blocker
+{
+    public required string Code { get; init; }
+    public required string MessageFr { get; init; }
+    public required string MessageEn { get; init; }
+}
+
+/// <summary>
+/// The unit of TRANSACTION. A scenario playbook is ONE item with several ordered changes —
+/// that is what gives compensation the right granularity.
+/// </summary>
+public sealed record RepairPlanItem
+{
+    public required string ItemId { get; init; }
+    public required string TargetCode { get; init; }
+    public required RepairMode Mode { get; init; }
+
+    /// <summary>
+    /// ORDERED. Order matters for playbooks.
+    /// EMPTY when the plan was produced without a licence — the detail is what Repair sells
+    /// (ADR-006). Use <see cref="Summary"/> to render the free view.
+    /// </summary>
+    public required IReadOnlyList<PlannedChange> Changes { get; init; }
+
+    /// <summary>
+    /// The free-tier view: a fix exists, it is reversible, it is backed up, it takes about this long.
+    /// Always populated when a repair is available, licensed or not. Computed from the real plan.
+    /// </summary>
+    public RepairSummary? Summary { get; init; }
+
+    /// <summary>The originating finding, used to re-verify at preflight time.</summary>
+    public Finding? SourceFinding { get; init; }
+
+    public string? RuleId { get; init; }
+
+    public Completeness Completeness { get; init; } = Completeness.Full;
+
+    /// <summary>What cannot be automated, and why. Shown BEFORE acting.</summary>
+    public IReadOnlyList<string> Missing { get; init; } = Array.Empty<string>();
+
+    public IReadOnlyList<Blocker> Blockers { get; init; } = Array.Empty<Blocker>();
+
+    /// <summary>Opt-in. False by default, always.</summary>
+    public bool Selected { get; init; }
+}
+
+public sealed record RepairPlan
+{
+    public required string PlanId { get; init; }
+    public required DateTimeOffset CreatedAtUtc { get; init; }
+    public required string ScanReportId { get; init; }
+    public required IReadOnlyList<RepairPlanItem> Items { get; init; }
+}
+
+public sealed record ValidationResult(bool IsValid, string? Reason = null)
+{
+    public static ValidationResult Ok { get; } = new(true);
+    public static ValidationResult Fail(string reason) => new(false, reason);
+}
+
+public sealed record ExecutionResult(bool Success, string? Error = null)
+{
+    public static ExecutionResult Ok { get; } = new(true);
+    public static ExecutionResult Fail(string error) => new(false, error);
+}
+
+public sealed record PreflightResult
+{
+    public required bool Passed { get; init; }
+    public required IReadOnlyList<Blocker> Blockers { get; init; }
+    public required IReadOnlyList<RepairPlanItem> RetainedItems { get; init; }
+}
+
+public sealed record ApplyResult
+{
+    public required string PlanId { get; init; }
+    public required IReadOnlyDictionary<string, bool> ItemOutcomes { get; init; }
+
+    /// <summary>
+    /// True when a rollback itself failed. The recovery screen must be shown, with the
+    /// backup path and the exact list of files to restore by hand.
+    /// </summary>
+    public required bool RecoveryRequired { get; init; }
+
+    public string? BackupPath { get; init; }
+    public IReadOnlyList<Blocker> Blockers { get; init; } = Array.Empty<Blocker>();
+}

@@ -1,0 +1,63 @@
+{
+  // Pincab Toolbox ecosystem profile — Visual Pinball X + PinUP Popper.
+  // The scan engine is ecosystem-agnostic: everything VPX-specific lives here.
+  "id": "vpx-popper",
+  "name": "Visual Pinball X + PinUP Popper",
+
+  "locations": {
+    "tables": [ "Tables", "VisualPinball/Tables", "vPinball/VisualPinball/Tables" ],
+    "vpinmame": [ "VPinMAME", "VisualPinball/VPinMAME", "vPinball/VisualPinball/VPinMAME" ],
+    "roms": [ "VPinMAME/roms", "VisualPinball/VPinMAME/roms", "vPinball/VisualPinball/VPinMAME/roms" ],
+    "pupDatabase": [ "PinUPSystem/PUPDatabase.db", "vPinball/PinUPSystem/PUPDatabase.db" ],
+    "popMedia": [ "PinUPSystem/POPMedia", "vPinball/PinUPSystem/POPMedia" ],
+    "pupVideos": [ "PinUPSystem/PUPVideos", "vPinball/PinUPSystem/PUPVideos" ]
+  },
+
+  "binaryRoles": [
+    { "pattern": "VPinballX*.exe", "role": "main-exe", "scope": "anywhere" },
+    { "pattern": "VPinMAME.dll", "role": "vpinmame", "scope": "vpinmame" },
+    { "pattern": "VPinMAME64.dll", "role": "vpinmame64", "scope": "vpinmame" },
+    { "pattern": "dmddevice.dll", "role": "dmddevice", "scope": "anywhere" },
+    { "pattern": "dmddevice64.dll", "role": "dmddevice64", "scope": "anywhere" },
+    { "pattern": "B2SBackglassServer*.dll", "role": "b2s", "scope": "anywhere" },
+    { "pattern": "B2S.Server*.dll", "role": "b2s", "scope": "anywhere" },
+    { "pattern": "FlexDMD.dll", "role": "flexdmd", "scope": "anywhere" }
+  ],
+
+  "scriptSignatures": [
+    {
+      "id": "nfozzy-physics",
+      "regex": "(?i)(FlipperPolarity|nFozzy|RothbauerW|Class\\s+FlipperCorrection)",
+      "meaning": "Modern nFozzy/Roth physics — designed for recent VPX (10.7/10.8+)",
+      "level": "info"
+    },
+    {
+      "id": "requires-vpx-version",
+      "regex": "(?i)requires?\\s+(?:vpx|visual\\s*pinball\\s*x?)\\s*v?(10\\.\\d+)",
+      "meaning": "Script declares a minimum VPX version",
+      "level": "warning"
+    },
+    {
+      "id": "flexdmd",
+      "regex": "(?i)CreateObject\\(\\s*\"FlexDMD",
+      "meaning": "Uses FlexDMD (FlexDMD.dll must be installed and registered)",
+      "level": "info"
+    },
+    {
+      "id": "b2s-server",
+      "regex": "(?i)CreateObject\\(\\s*\"B2S\\.Server\"",
+      "meaning": "Uses B2S backglass server",
+      "level": "info"
+    }
+  ],
+
+  "updateSource": {
+    "urls": [
+      "https://raw.githubusercontent.com/VirtualPinballSpreadsheet/vps-db/main/db/vpsdb.json",
+      "https://raw.githubusercontent.com/VirtualPinballSpreadsheet/vps-db/master/db/vpsdb.json"
+    ],
+    "cacheHours": 24,
+    "siteUrl": "https://virtual-pinball-spreadsheet.web.app",
+    "gameUrlTemplate": ""
+  }
+}

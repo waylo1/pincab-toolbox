@@ -1,0 +1,59 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A0EC6B6A-9D8D-4555-B6E0-DD2315E25E39}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PincabToolbox.Core", "src\PincabToolbox.Core\PincabToolbox.Core.csproj", "{FBE5590C-3BAA-4CBB-B6AF-720EA99D976B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{204F22AB-4610-4F21-817E-8A7CDB1004A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PincabToolbox.Core.Tests", "tests\PincabToolbox.Core.Tests\PincabToolbox.Core.Tests.csproj", "{6797C627-35F6-44D5-8831-2F4398D1EF45}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PincabToolbox.Repair", "src\PincabToolbox.Repair\PincabToolbox.Repair.csproj", "{CBF7AAB0-B47F-4BC3-83CC-1C556EB41181}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PincabToolbox.Repair.Tests", "tests\PincabToolbox.Repair.Tests\PincabToolbox.Repair.Tests.csproj", "{8C9F6BB9-88D5-479B-80F2-6E2B4F27E8E6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{8B05D84E-8B13-4303-9CAC-8A6F148E405A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PincabToolbox.Repair.Demo", "tools\PincabToolbox.Repair.Demo\PincabToolbox.Repair.Demo.csproj", "{785896C2-DD50-4B77-9D8A-6659E0948B80}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FBE5590C-3BAA-4CBB-B6AF-720EA99D976B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBE5590C-3BAA-4CBB-B6AF-720EA99D976B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBE5590C-3BAA-4CBB-B6AF-720EA99D976B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBE5590C-3BAA-4CBB-B6AF-720EA99D976B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6797C627-35F6-44D5-8831-2F4398D1EF45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6797C627-35F6-44D5-8831-2F4398D1EF45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6797C627-35F6-44D5-8831-2F4398D1EF45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6797C627-35F6-44D5-8831-2F4398D1EF45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBF7AAB0-B47F-4BC3-83CC-1C556EB41181}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBF7AAB0-B47F-4BC3-83CC-1C556EB41181}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBF7AAB0-B47F-4BC3-83CC-1C556EB41181}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBF7AAB0-B47F-4BC3-83CC-1C556EB41181}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C9F6BB9-88D5-479B-80F2-6E2B4F27E8E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C9F6BB9-88D5-479B-80F2-6E2B4F27E8E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C9F6BB9-88D5-479B-80F2-6E2B4F27E8E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C9F6BB9-88D5-479B-80F2-6E2B4F27E8E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{785896C2-DD50-4B77-9D8A-6659E0948B80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{785896C2-DD50-4B77-9D8A-6659E0948B80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{785896C2-DD50-4B77-9D8A-6659E0948B80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{785896C2-DD50-4B77-9D8A-6659E0948B80}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FBE5590C-3BAA-4CBB-B6AF-720EA99D976B} = {A0EC6B6A-9D8D-4555-B6E0-DD2315E25E39}
+		{6797C627-35F6-44D5-8831-2F4398D1EF45} = {204F22AB-4610-4F21-817E-8A7CDB1004A5}
+		{CBF7AAB0-B47F-4BC3-83CC-1C556EB41181} = {A0EC6B6A-9D8D-4555-B6E0-DD2315E25E39}
+		{8C9F6BB9-88D5-479B-80F2-6E2B4F27E8E6} = {204F22AB-4610-4F21-817E-8A7CDB1004A5}
+		{785896C2-DD50-4B77-9D8A-6659E0948B80} = {8B05D84E-8B13-4303-9CAC-8A6F148E405A}
+	EndGlobalSection
+EndGlobal

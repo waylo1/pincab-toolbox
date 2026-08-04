@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- Zero external dependency, like the Core: pure C# + in-box BCL only. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PincabToolbox.Core\PincabToolbox.Core.csproj" />
+  </ItemGroup>
+
+</Project>

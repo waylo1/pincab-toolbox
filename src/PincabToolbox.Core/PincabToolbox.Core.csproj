@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>PincabToolbox.Core</AssemblyName>
+    <RootNamespace>PincabToolbox.Core</RootNamespace>
+    <Version>0.1.1</Version>
+    <Company>MC Automation</Company>
+    <Product>Pincab Toolbox</Product>
+    <!-- Zero external dependencies by design: smaller exe, no supply chain, AV-friendly. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PincabToolbox.Core.Tests" />
+  </ItemGroup>
+
+</Project>

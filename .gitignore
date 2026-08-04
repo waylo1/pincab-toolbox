@@ -1,0 +1,6 @@
+bin/
+obj/
+*.user
+tests/fixtures/out/
+publish/
+*.zip

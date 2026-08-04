@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "packVersion": "2026.08",
+  "minAppVersion": "0.2",
+  "entries": [
+    {
+      "code": "BLOCKED_DLL",
+      "category": "security",
+      "severity": "Critical",
+      "titleFr": "DLL bloquée par Windows",
+      "titleEn": "DLL blocked by Windows",
+      "playerFr": "Windows empêche ce fichier de se charger. La table ne démarrera pas.",
+      "playerEn": "Windows is preventing this file from loading. The table will not start.",
+      "explanationFr": "La bibliothèque est présente et intacte : Windows la met simplement en quarantaine tant que la marque de téléchargement n'est pas retirée.",
+      "explanationEn": "The library is present and intact — Windows simply quarantines it until the download marker is removed.",
+      "impactFr": "Windows empêche silencieusement le chargement de la DLL, donc le plugin concerné (VPinMAME, B2S, DMD…) échoue sans erreur claire.",
+      "impactEn": "Windows silently blocks the DLL from loading, so the plugin it belongs to (VPinMAME, B2S, DMD…) fails without a clear error.",
+      "causeFr": "Le fichier a été extrait d'un ZIP téléchargé ; Windows y attache une « Mark of the Web » qui le bloque tant qu'il n'est pas débloqué.",
+      "causeEn": "The file was extracted from a downloaded ZIP; Windows attaches a 'Mark of the Web' that blocks it until unblocked.",
+      "verificationFr": "Présence du flux de données alterné Zone.Identifier sur le fichier.",
+      "verificationEn": "Presence of the Zone.Identifier alternate data stream on the file.",
+      "repairRules": [
+        {
+          "id": "unblock-dll",
+          "actionId": "unblock_file",
+          "repairConfidence": 98,
+          "reversible": true,
+          "backupRequired": true,
+          "manualProcedureFr": "Clic droit sur le fichier → Propriétés → cocher « Débloquer » en bas de l'onglet Général → Appliquer.",
+          "manualProcedureEn": "Right-click the file → Properties → tick \"Unblock\" at the bottom of the General tab → Apply."
+        }
+      ]
+    },
+    {
+      "code": "ROM_UNZIPPED",
+      "category": "rom",
+      "severity": "Critical",
+      "titleFr": "ROM décompressée",
+      "titleEn": "ROM extracted",
+      "playerFr": "Cette ROM a été décompressée alors qu'elle doit rester une archive.",
+      "playerEn": "This ROM was extracted, but it must stay as an archive.",
+      "explanationFr": "Le contenu est là, mais sous une forme que l'émulateur ne sait pas ouvrir : il ne lit que les archives .zip.",
+      "explanationEn": "The content is there, in a shape the emulator cannot open: it only reads .zip archives.",
+      "impactFr": "La table ne démarrera pas alors que la ROM est là : VPinMAME ne charge les ROMs que depuis des archives .zip, pas des dossiers décompressés.",
+      "impactEn": "The table won't boot even though the ROM is there: VPinMAME only loads ROMs from .zip archives, not extracted folders.",
+      "causeFr": "Le zip de la ROM a été décompressé en dossier dans le répertoire roms — une erreur fréquente en dézippant les téléchargements.",
+      "causeEn": "The ROM zip was extracted into a folder in the roms directory — a common mistake when unpacking downloads.",
+      "verificationFr": "Un dossier portant un nom de ROM connu existe là où une archive est attendue.",
+      "verificationEn": "A folder named after a known ROM exists where an archive is expected.",
+      "repairRules": [
+        {
+          "id": "restore-rom-archive",
+          "actionId": "restore_rom_archive",
+          "repairConfidence": 88,
+          "reversible": true,
+          "backupRequired": true,
+          "manualProcedureFr": "Recompresser le contenu du dossier dans une archive .zip portant exactement le nom du dossier, la placer dans le dossier des ROMs, puis mettre le dossier d'origine de côté.",
+          "manualProcedureEn": "Re-zip the folder contents into a .zip named exactly like the folder, place it in the ROMs folder, then move the original folder aside."
+        }
+      ]
+    },
+    {
+      "code": "POPPER_NOT_REGISTERED",
+      "category": "completeness",
+      "severity": "Warning",
+      "titleFr": "Table absente du frontend",
+      "titleEn": "Table missing from the frontend",
+      "playerFr": "Cette table est installée mais n'apparaît pas dans ton menu.",
+      "playerEn": "This table is installed but does not show up in your menu.",
+      "explanationFr": "Le frontend affiche les tables listées dans sa base de données, pas celles présentes sur le disque.",
+      "explanationEn": "The frontend lists tables from its database, not from disk.",
+      "impactFr": "La table est sur le disque mais n'apparaîtra pas dans le menu du frontend PinUP Popper.",
+      "impactEn": "The table is on disk but won't appear in the PinUP Popper frontend menu.",
+      "causeFr": "Elle a été ajoutée au dossier des tables mais jamais importée/enregistrée dans la base Popper.",
+      "causeEn": "It was added to the tables folder but never imported/registered in the Popper database.",
+      "verificationFr": "Le fichier de table existe sur le disque mais aucune ligne correspondante n'existe dans la base du frontend.",
+      "verificationEn": "The table file exists on disk but no matching row exists in the frontend database."
+    },
+    {
+      "code": "BITNESS_MISMATCH_VPM",
+      "category": "bitness",
+      "severity": "Critical",
+      "titleFr": "Émulateur 32-bit avec un moteur 64-bit",
+      "titleEn": "32-bit emulator with a 64-bit engine",
+      "playerFr": "Deux morceaux de ton installation ne sont pas de la même génération.",
+      "playerEn": "Two parts of your installation are not the same generation.",
+      "explanationFr": "Un programme 64-bit ne peut pas charger une bibliothèque 32-bit. Les deux fichiers sont valides séparément, mais ils ne peuvent pas fonctionner ensemble.",
+      "explanationEn": "A 64-bit program cannot load a 32-bit library. Both files are valid on their own, but they cannot work together.",
+      "impactFr": "Toutes les tables à ROM échoueront au démarrage : le VPX 64-bit ne peut pas charger le serveur COM VPinMAME 32-bit.",
+      "impactEn": "Every ROM-based table will fail to start: 64-bit VPX cannot load the 32-bit VPinMAME COM server.",
+      "causeFr": "Visual Pinball est passé en 64-bit mais VPinMAME est resté en 32-bit (ou le VPinMAME 64-bit n'a jamais été enregistré).",
+      "causeEn": "Visual Pinball was updated to 64-bit but VPinMAME was left in its 32-bit version (or the 64-bit VPinMAME was never registered).",
+      "verificationFr": "Comparaison des en-têtes PE de l'exécutable et de la bibliothèque.",
+      "verificationEn": "Comparison of the PE headers of the executable and the library."
+    },
+    {
+      "code": "PINUP_DISPLAY_ZOMBIE",
+      "category": "process",
+      "severity": "Warning",
+      "titleFr": "Processus d'affichage bloqué",
+      "titleEn": "Stuck display process",
+      "playerFr": "PinUpDisplay.exe est resté actif après la dernière table — il peut bloquer la prochaine.",
+      "playerEn": "PinUpDisplay.exe stayed running after the last table — it can block the next one.",
+      "explanationFr": "Le processus d'affichage du backglass ne s'est pas fermé proprement et reste en mémoire sans qu'aucune table ne l'utilise.",
+      "explanationEn": "The backglass display process didn't exit cleanly and stays in memory with nothing using it.",
+      "impactFr": "La prochaine table peut échouer à se lancer, ou sa fenêtre backglass peut mal se comporter, tant que le processus résiduel n'est pas fermé.",
+      "impactEn": "The next table can fail to launch, or its backglass window can misbehave, until the leftover process is closed.",
+      "causeFr": "PinUpDisplay.exe ne se termine pas toujours en même temps que la table — signalé sur le guide de dépannage PinUp Player de VPForums.",
+      "causeEn": "PinUpDisplay.exe doesn't always exit at the same time as the table — reported on VPForums' PinUp Player troubleshooting guide.",
+      "verificationFr": "Le processus PinUpDisplay.exe est actif en mémoire alors qu'aucun processus Visual Pinball (VPinballX/VPinballX64/VPinballX_GL64) ne tourne.",
+      "verificationEn": "The PinUpDisplay.exe process is running in memory while no Visual Pinball process (VPinballX/VPinballX64/VPinballX_GL64) is active.",
+      "repairRules": [
+        {
+          "id": "kill-zombie-pinup-display",
+          "actionId": "kill_zombie_pinup_display",
+          "repairConfidence": 90,
+          "reversible": false,
+          "backupRequired": false,
+          "manualProcedureFr": "Ouvre le Gestionnaire des tâches, trouve PinUpDisplay.exe et clique sur « Terminer la tâche » avant de relancer une table.",
+          "manualProcedureEn": "Open Task Manager, find PinUpDisplay.exe, and click \"End task\" before relaunching a table."
+        }
+      ]
+    },
+    {
+      "code": "ORPHANED_MEDIA_FILE",
+      "category": "media-orphan",
+      "severity": "Info",
+      "titleFr": "Médias orphelins",
+      "titleEn": "Orphaned media",
+      "playerFr": "Des fichiers média ne correspondent plus à aucune table installée.",
+      "playerEn": "Some media files no longer match any installed table.",
+      "explanationFr": "Les dossiers média de PinUP Popper (POPMedia, PUPVideos) accumulent des fichiers au fil des installations/désinstallations de tables.",
+      "explanationEn": "PinUP Popper's media folders (POPMedia, PUPVideos) accumulate files over successive table installs/removals.",
+      "impactFr": "Aucun impact fonctionnel — juste de l'espace disque perdu qui grossit avec le temps.",
+      "impactEn": "No functional impact — just wasted disk space that grows over time.",
+      "causeFr": "Une table a été supprimée ou renommée, mais ses fichiers média (wheel, vidéos, backglass…) sont restés sur le disque.",
+      "causeEn": "A table was removed or renamed, but its media files (wheel, videos, backglass…) stayed on disk.",
+      "verificationFr": "Le nom d'un fichier média (une fois les suffixes « (SCREENx) » et index numériques retirés) ne correspond, même partiellement, à aucune table .vpx installée.",
+      "verificationEn": "A media file's name (after stripping any \"(SCREENx)\" suffix and numeric index) doesn't relate, even partially, to any installed .vpx table.",
+      "repairRules": [
+        {
+          "id": "quarantine-orphaned-media",
+          "actionId": "quarantine_orphaned_media",
+          "repairConfidence": 85,
+          "reversible": true,
+          "backupRequired": true,
+          "manualProcedureFr": "Passe en revue les fichiers listés et supprime-les toi-même si tu confirmes qu'ils ne servent à aucune table — vérifie en particulier les variantes « (SCREENx) », un script communautaire les a déjà supprimées par erreur.",
+          "manualProcedureEn": "Review the listed files and delete them yourself once confirmed unused — check \"(SCREENx)\" variants especially, a community script has mistakenly deleted those before."
+        }
+      ]
+    },
+    {
+      "code": "BITNESS_DMD64_MISSING",
+      "category": "bitness",
+      "severity": "Warning",
+      "titleFr": "Composant d'affichage 64-bit absent",
+      "titleEn": "64-bit display component missing",
+      "playerFr": "Ton afficheur externe ne fonctionnera pas tant que ce fichier manque.",
+      "playerEn": "Your external display will not work while this file is missing.",
+      "explanationFr": "Ce fichier provient d'un projet tiers : nous vérifions qu'il est présent et au bon format, mais nous ne le fournissons jamais.",
+      "explanationEn": "This file comes from a third-party project: we check that it is present and correct, but we never supply it.",
+      "impactFr": "Les DMD externes ne s'afficheront pas depuis le VPX 64-bit — le moteur de rendu 64-bit est absent.",
+      "impactEn": "External DMDs won't display from 64-bit VPX — the 64-bit renderer is missing.",
+      "causeFr": "L'install est passée en 64-bit mais dmddevice64.dll (Freezy dmd-extensions) n'a pas été ajouté à côté du VPinMAME 64-bit.",
+      "causeEn": "The install was migrated to 64-bit but dmddevice64.dll (Freezy dmd-extensions) was not added next to the 64-bit VPinMAME.",
+      "verificationFr": "Absence du fichier 64-bit attendu à côté de sa variante 32-bit.",
+      "verificationEn": "The expected 64-bit file is absent next to its 32-bit counterpart."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "MIGRATION_32_TO_64_INCOMPLETE",
+      "titleFr": "Migration 32→64 incomplète",
+      "titleEn": "Incomplete 32→64 migration",
+      "requires": [
+        "BITNESS_MISMATCH_VPM",
+        "BITNESS_DMD64_MISSING"
+      ],
+      "supports": [
+        "BLOCKED_DLL"
+      ],
+      "baseConfidence": 90,
+      "explanationFr": "Plusieurs signes convergent vers une même cause : le passage en 64-bit a été entamé mais pas terminé. Corriger les fichiers un par un ne suffira pas — c'est la chaîne entière qui doit être cohérente, et l'ordre des étapes compte.",
+      "explanationEn": "Several signs point to a single cause: the move to 64-bit was started but never finished. Fixing files one by one will not be enough — the whole chain must be consistent, and the order of the steps matters.",
+      "repairPlaybook": [
+        {
+          "step": 1,
+          "ruleId": "unblock-dll",
+          "reasonFr": "Débloquer d'abord : un fichier en quarantaine fausse tous les contrôles suivants.",
+          "reasonEn": "Unblock first: a quarantined file distorts every check that follows."
+        },
+        {
+          "step": 2,
+          "ruleId": "manual-vpm64",
+          "manualOnly": true,
+          "reasonFr": "Réinstaller VPinMAME dans la même architecture que Visual Pinball. Nous ne téléchargeons aucun composant (ADR-004).",
+          "reasonEn": "Reinstall VPinMAME in the same architecture as Visual Pinball. We download no components (ADR-004)."
+        },
+        {
+          "step": 3,
+          "ruleId": "manual-dmd64",
+          "manualOnly": true,
+          "reasonFr": "dmddevice64.dll provient d'un projet tiers : voir le lien indiqué dans les références du finding.",
+          "reasonEn": "dmddevice64.dll comes from a third-party project: see the link in the finding's references."
+        }
+      ]
+    }
+  ]
+}
