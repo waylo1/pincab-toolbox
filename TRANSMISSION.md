@@ -204,10 +204,15 @@ Repair étendu (pas refait) : 61 tests + 2 actions existants intacts, + 18 tests
 ---
 
 > **But de la PROCHAINE session (mis à jour 04/08) : (A) build.cmd — FAIT, formellement vérifié via
-> CI (voir encadré MAJ 04/08 ci-dessus). Reste, dans l'ordre : (B)** **répondre à Gregg** — le fix
-> des commentaires VBScript devrait déjà faire disparaître une partie de sa liste, donc lui proposer
-> de **relancer le scan avec le nouveau build avant** d'investiguer plus loin, et lui redemander sa
-> liste exacte (elle a été perdue, cf. l'avertissement en haut) ; **(C)** décider du câblage de l'UI
+> CI (voir encadré MAJ 04/08 ci-dessus). (B) répondre à Gregg — FAIT (03/08, avant même cette
+> session)**, avec une approche différente de ce qui était prévu ici : pas de « relance un scan »,
+> Maxime a directement pointé que les tables nommées ont un nom de ROM précis (donc probablement de
+> vrais hacks ROM, pas le FP des commentaires) et redemandé les précisions manquantes — nom de ROM
+> exact, capture Rocky & Bullwinkle, texte exact du warning sur
+> `Amazing Spider-Man (Gottlieb 1980)_Bigus(MOD)` (potentiel vrai FP B2S, table maintenant
+> identifiée). **En attente de la réponse de Gregg** — rien à faire de plus tant qu'il n'a pas
+> répondu. Détail : FIELD-LOG, entrée Gregg du 03/08, disposition mise à jour le 04/08. Reste, dans
+> l'ordre : **(C)** décider du câblage de l'UI
 > Repair sur `RepairOffer` (HANDOFF du 27/07, redemandé le 04/08 — réponse : pas encore, priorité au
 > build, donc **toujours à trancher**) ; **(D)** tester `kill_zombie_pinup_display`,
 > `set_default_audio_device` et `quarantine_orphaned_media` sur un cab réel —
