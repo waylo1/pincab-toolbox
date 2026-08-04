@@ -28,17 +28,25 @@ Les 3 derniers chantiers de clôture :
 
 ---
 
-## ⏱️ MAJ 04/08 — 1er `build.cmd` réel : App confirmée compilable, Core tests bloqués par Windows
+## ⏱️ MAJ 04/08 — BLOCAGE #1 LEVÉ : premier build entièrement vert depuis le 30/07 (via CI GitHub)
 
-> **Toujours rien de publiable, mais le doute le plus lourd est levé.** `build.cmd` a tourné pour
-> la première fois depuis le 30/07. `PincabToolbox.App` (WPF) **compile et se publie pour de vrai**
-> — les fichiers modifiés le 03/08 et l'ajout du 04/08 dans `Knowledge.cs` ne sont plus une
-> hypothèse Roslyn, c'est un vrai build Release réussi. Repair : **89/89 tests verts**. Mais **Core
-> n'a pas pu tourner** : Windows bloque le chargement de `PincabToolbox.Core.Tests.dll` (« stratégie
-> de contrôle d'application », `0x800711C7`) — pas un bug de code, une politique de sécurité
-> Windows côté machine de Maxime. Détail et piste de dépannage : FIELD-LOG, entrée du 2026-08-04
-> (« Premier build.cmd réel »). Tant que les 128 tests Core n'ont pas tourné une fois sur cette
-> machine, rien ne repart en publication.
+> **App compile, 128 tests Core + 89 tests Repair verts, publish win-x64 réussi — vérifié de bout
+> en bout, pas juste localement.** Chemin emprunté : `build.cmd` local a confirmé que l'App WPF
+> compile pour de vrai (Release) et que Repair est vert (89/89) ; les tests Core, eux, sont bloqués
+> **en local** par Smart App Control (Windows 11, politique `VerifiedAndReputableDesktop`, pas un
+> antivirus — irréversible à désactiver sans réinstallation, donc non traité). Contournement :
+> **le code source n'avait en fait jamais été poussé sur `https://github.com/waylo1/pincab-toolbox`**
+> (seul un README placeholder y existait) — dépôt initialisé, historiques fusionnés, poussé. La CI
+> GitHub (Linux, insensible à Smart App Control) a d'abord révélé deux trous non liés au code :
+> l'étape Repair n'existait pas dans `build.yml` malgré une note du 03/08 affirmant le contraire, et
+> le job Windows de publish n'avait pas le fallback `-p:RestoreSources=...` que `build.cmd` a
+> (NuGet.Config vide les sources par design). Les deux corrigés, repoussés (`68bee0a`) : **run
+> entièrement vert, confirmé par Maxime au niveau de chaque job, pas juste du résumé.**
+>
+> **Conséquence pratique** : le dépôt GitHub fait foi désormais pour la vérification Core+Repair+App
+> à chaque session future — pousser les commits fait partie de la routine, pas seulement écrire sur
+> le disque local. Smart App Control reste un irritant de dev local sans impact sur la publication.
+> Détail complet : FIELD-LOG, entrées du 2026-08-04 (à partir de « Premier build.cmd réel »).
 >
 > **Piste Mark-of-the-Web infirmée** : `Unblock-File -Recurse` sur toute l'arborescence source n'a
 > rien changé, même erreur au mot près. Repair tourne depuis le même dossier sans souci, donc ce
@@ -47,6 +55,15 @@ Les 3 derniers chantiers de clôture :
 > (fonctionnalité Windows 11). Prochaine étape unique avant de deviner plus loin : lire le nom exact
 > de la détection dans Windows Sécurité → Historique de protection. Détail : FIELD-LOG, entrée
 > « Unblock-File récursif testé ».
+>
+> **Dépôt git créé et poussé pour de vrai.** `https://github.com/waylo1/pincab-toolbox` existait
+> déjà mais ne contenait qu'un README placeholder — **le code source n'avait jamais été versionné,
+> aucune des deux releases publiées n'est passée par un commit git.** `git init` local + fusion
+> (`--allow-unrelated-histories`, conflit README résolu) + push : `main` est maintenant à `70fc4e2`
+> avec les 150 fichiers du projet. La CI corrigée (Core + Repair) tourne sous Linux et devrait
+> donner un vrai résultat sans dépendre de Smart App Control — **à confirmer par Maxime dans
+> l'onglet Actions du repo.** Désormais, pousser les commits fait partie de la routine de fin de
+> session, pas seulement écrire sur le disque local.
 >
 > **Cause confirmée par le journal Code Integrity** : c'est le **Contrôle d'application intelligent
 > (Smart App Control)**, politique `VerifiedAndReputableDesktop` — pas un antivirus, une politique de
@@ -186,23 +203,22 @@ Repair étendu (pas refait) : 61 tests + 2 actions existants intacts, + 18 tests
 
 ---
 
-> **But de la PROCHAINE session : validation cab réel + relancer Gregg. PAS de nouveau code Repair
-> sans besoin.** Trois choses à faire dans l'ordre : **(A)** faire tourner `build.cmd` en entier sur
-> Windows (ce sandbox ne compile pas le WPF) ; **(B)** **répondre à Gregg** — le fix des commentaires
-> VBScript devrait déjà faire disparaître une partie de sa liste, donc lui proposer de **relancer le
-> scan avec le nouveau build avant** d'investiguer plus loin, et lui redemander sa liste exacte (elle
-> a été perdue, cf. l'avertissement en haut) ; **(C)** décider du câblage de l'UI Repair sur
-> `RepairOffer` (HANDOFF du 27/07 à reconfirmer). Détail ci-dessous.
->
-> Le backlog §2 est maintenant codé en quasi-totalité (scanner + 5 `IRepairAction` au total,
-> 112+89 tests verts). Ce qui reste avant d'annoncer quoi que ce soit publiquement : (1) faire
-> tourner `build.cmd` en entier sur une vraie machine Windows (ce sandbox ne compile pas
-> `PincabToolbox.App`, WPF), (2) tester `kill_zombie_pinup_display`, `set_default_audio_device`
-> et `quarantine_orphaned_media` sur un cab réel — `RealAudioDeviceControl` en particulier
-> (COM non documenté, jamais exécuté hors sandbox), (3) décider avec Maxime si/comment câbler
-> l'UI Repair (HANDOFF du 27/07 à reconfirmer) et la surface de déclenchement de l'action audio
-> (pas de Finding qui la déclenche aujourd'hui). Reste bloqué sans action : résidus Freezy/zedmd
-> (cause pas confirmée par l'utilisateur). Hors scope assumé : support Future Pinball.
+> **But de la PROCHAINE session (mis à jour 04/08) : (A) build.cmd — FAIT, formellement vérifié via
+> CI (voir encadré MAJ 04/08 ci-dessus). Reste, dans l'ordre : (B)** **répondre à Gregg** — le fix
+> des commentaires VBScript devrait déjà faire disparaître une partie de sa liste, donc lui proposer
+> de **relancer le scan avec le nouveau build avant** d'investiguer plus loin, et lui redemander sa
+> liste exacte (elle a été perdue, cf. l'avertissement en haut) ; **(C)** décider du câblage de l'UI
+> Repair sur `RepairOffer` (HANDOFF du 27/07, redemandé le 04/08 — réponse : pas encore, priorité au
+> build, donc **toujours à trancher**) ; **(D)** tester `kill_zombie_pinup_display`,
+> `set_default_audio_device` et `quarantine_orphaned_media` sur un cab réel —
+> `RealAudioDeviceControl` en particulier (COM non documenté, jamais exécuté hors sandbox, potentiel
+> souci Windows 11) ; **(E)** reboucler avec FD (son cas roms multi-lecteur est corrigé depuis le
+> 30/07, jamais confirmé auprès de lui) ; **(F)** coller le format d'URL VPS dans
+> `profiles/vpx-popper.json` (une ligne JSON, Maxime doit ouvrir une fiche table sur le site).
+> Reste bloqué sans action : résidus Freezy/zedmd (cause pas confirmée par l'utilisateur — **ne pas
+> deviner**, cf. FIELD-LOG 04/08). Hors scope assumé : support Future Pinball. **L'annonce
+> (`marketing/ANNONCE-maj-et-repair.md`) est prête et volontairement en attente — Maxime décide
+> seul quand il la publie, ne pas la relancer.**
 > **Ne relis PAS toute la doc.** Source principale : `knowledge/FIELD-LOG.md` (§1 = retours détaillés
 > avec analyse et recommandation, §2 = backlog priorisé — entrée technique complète du chantier de
 > code datée du 2026-08-03 soir). Au besoin seulement en plus : `HANDOFF.md`, `docs/SUCCESS-METRICS.md`.
