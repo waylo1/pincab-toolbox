@@ -18,6 +18,8 @@ jobs:
         run: python3 tests/fixtures/make_fixtures.py
       - name: Run Core tests
         run: dotnet run --project tests/PincabToolbox.Core.Tests -c Release
+      - name: Run Repair tests
+        run: dotnet run --project tests/PincabToolbox.Repair.Tests -c Release
 
   build-windows:
     runs-on: windows-latest
@@ -31,6 +33,7 @@ jobs:
         run: >
           dotnet publish src/PincabToolbox.App -c Release -r win-x64 --self-contained
           -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:RestoreSources=https://api.nuget.org/v3/index.json
           -o publish
       - uses: actions/upload-artifact@v4
         with:
