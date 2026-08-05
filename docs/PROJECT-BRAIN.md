@@ -2,7 +2,7 @@
 
 **Source de vérité unique du projet.** En cas de contradiction avec n'importe quel autre document, **ce fichier gagne.**
 
-MC Automation — Maxime Chauvin · Dernière mise à jour : **25/07/2026** (soir — Repair v1 implémenté)
+MC Automation — Maxime Chauvin · Dernière mise à jour : **04/08/2026** (nuit — licence + revue qualité pré-v1.0)
 
 > **Règle de maintenance** : toute décision susceptible d'être relue dans six mois entre ici ou dans un ADR, le jour où elle est prise. Un document qui n'est plus vrai est plus dangereux qu'un document qui n'existe pas — on l'archive immédiatement.
 
@@ -105,10 +105,11 @@ Deux choses à retenir sans y revenir :
 
 | Bloc | État | Compilable dans le cloud ? |
 |---|---|---|
-| `PincabToolbox.Core` (net8.0, zéro dépendance) | ✅ Stable — **56 tests verts** | ✅ Oui — TDD réel |
-| `PincabToolbox.Repair` (net8.0, zéro dépendance) | ✅ Moteur v1 — **61 tests verts** | ✅ Oui — TDD réel |
-| `tools/PincabToolbox.Repair.Demo` | ✅ Bac à sable — 5 scénarios sur une fausse install | ✅ Oui, et sur ton PC |
-| `PincabToolbox.App` (net8.0-windows, WPF) | ✅ Compile chez Maxime | ❌ Non — édition + vérification structurelle, Maxime recompile |
+| `PincabToolbox.Core` (net8.0, zéro dépendance) | ✅ Stable — **128 tests verts** | ✅ Oui — TDD réel |
+| `PincabToolbox.Repair` (net8.0, zéro dépendance) | ✅ Moteur v1 — **101 tests verts**, 5 actions (`unblock_file`, `restore_rom_archive`, `kill_zombie_pinup_display`, `quarantine_orphaned_media`, `set_default_audio_device` — cette dernière pas encore utilisable pour de vrai, voir §7) + module `Licensing/` (ECDSA local, ADR-002/009) | ✅ Oui — TDD réel |
+| `tools/PincabToolbox.Repair.Demo` | ✅ Bac à sable — 7 scénarios sur une fausse install | ✅ Oui, et sur ton PC |
+| `tools/PincabToolbox.LicenseTool` | ✅ Génère/signe/vérifie des licences, OFFLINE uniquement | ✅ Oui (pas de WPF) |
+| `PincabToolbox.App` (net8.0-windows, WPF) | ✅ Compile chez Maxime — Écran 1 de Repair câblé (offre gratuite), Écran 2 (bouton Apply) volontairement PAS câblé | ❌ Non — édition + vérification structurelle, Maxime recompile |
 | Landing (`flipsync-site/landing/index.html`) | ✅ Corrigée, validée | Non déployée — **feu vert explicite requis** |
 | Documents légaux (CGU / CGV / Terms) | 🟡 Brouillons | Voir §8 |
 
@@ -157,17 +158,35 @@ Le set de checks actuel est cohérent et testé. **Ne pas ajouter de nouveaux ch
 
 ### Repair — fait en v1
 Moteur complet (plan pur, préflight 5 contrôles, sauvegarde, apply avec compensation, undo, verify,
-journal anonymisé), registre d'actions fermé, chargeur de Knowledge Pack JSON, et **deux actions** :
-`unblock_file` et `restore_rom_archive`. Le playbook Migration 32→64 se déclenche et s'annonce
-honnêtement comme partiel.
+journal anonymisé), registre d'actions fermé, chargeur de Knowledge Pack JSON, et **cinq actions** :
+`unblock_file`, `restore_rom_archive`, `kill_zombie_pinup_display`, `quarantine_orphaned_media`,
+`set_default_audio_device` (bug connu, voir ci-dessous). Le playbook Migration 32→64 se déclenche et
+s'annonce honnêtement comme partiel. **Écran 1** (offre gratuite, `RepairOfferBuilder`) câblé dans
+l'App le 04/08. **Module de licence** (`Licensing/`, ECDSA P-256, 100 % local, ADR-002/009) et
+`tools/PincabToolbox.LicenseTool` (génération/signature/vérification de clé, offline) codés et
+testés le 04/08 — reste à Maxime de lancer `license-tool init` pour générer sa vraie paire de clés
+(actuellement un placeholder qui refuse volontairement toute licence, ne peut pas planter l'App).
 
 ### Repair — reste à faire
 1. **Lancer le bac à sable sur ton PC Windows** — `dotnet run --project tools/PincabToolbox.Repair.Demo`.
-   C'est le seul moyen d'exercer le vrai « Mark of the Web », que les tests ne couvrent pas sous Linux.
-2. **Brancher l'UI WPF** sur `IRepairEngine` (les 4 écrans sont écrits dans `docs/UX-COPY-Repair.md`).
+   C'est le seul moyen d'exercer pour de vrai le « Mark of the Web » (scénario 1) et l'appel COM audio
+   (scénario 7, lecture seule), que les tests ne couvrent pas sous Linux.
+2. **Brancher l'UI WPF sur le chemin d'écriture** (Écran 2, le bouton Apply) — Écran 1 fait, le reste
+   volontairement pas câblé sans reconfirmation explicite de Maxime (HANDOFF). Bloqué en pratique
+   tant que (a) `license-tool init` n'a pas été lancé pour de vrai et (b) le bug `set_default_audio_device`
+   ci-dessous n'est pas réglé pour cette action précise.
 3. **Trancher ADR-007** — écriture SQLite Popper, à décider quand le terrain le demandera.
 4. **Calibrer les confiances** (98 / 88) sur cab réel après le lancement du Scanner.
-4. **Génération de licence** — le format local est spécifié (ADR-002) ; le choix de plateforme est parqué (§5) et ne bloque rien.
+5. ⚠️ **Bug trouvé par la revue qualité du 04/08, pas encore corrigé** : `SetDefaultAudioDeviceAction`
+   produit un `Target` qui est un identifiant de périphérique (GUID), pas un chemin de fichier — le
+   filet de sécurité `IsContained` le rejettera donc TOUJOURS. Cette action ne pourra jamais
+   s'exécuter pour de vrai tant que ce n'est pas réglé (exempter `ChangeKind.AudioDeviceDefault` du
+   contrôle de chemin, ou changer la forme de `Target`). Détail : FIELD-LOG, entrée « Revue qualité
+   pré-v1.0 » du 04/08.
+6. ⚠️ **Autre trouvaille de la même revue, décision produit à trancher avec Maxime avant de toucher
+   à l'UI** : un scénario multi-étapes partiellement automatisable compte comme « réparable » dans le
+   résumé gratuit sans jamais afficher les étapes manuelles obligatoires — touche directement la
+   promesse anti-survente d'ADR-006. Détail : même entrée FIELD-LOG.
 
 ---
 
@@ -186,6 +205,27 @@ honnêtement comme partiel.
 
 ## 9. Comment travailler sur ce projet
 
+- **Regard Product Manager sur Repair, à chaque session (consigne de Maxime, 04/08/2026).** Sans
+  dériver du périmètre défini ici et dans les ADR, vérifier à chaque session si Repair répond
+  toujours au besoin principal : simplifier la vie des propriétaires de pincab pour qu'ils passent
+  leur temps à jouer, pas à configurer Windows. Analyser régulièrement le FIELD-LOG, les discussions
+  communautaires et les concurrents. Si une amélioration augmente significativement la valeur
+  commerciale de Repair, **vérifier d'abord qu'elle ne contredit aucune décision existante** (ce
+  fichier, les ADR), puis la proposer avec une justification explicite : problème observé,
+  fréquence, valeur utilisateur, effort, impact commercial. **Ne jamais créer une fonctionnalité
+  uniquement parce qu'elle est techniquement intéressante.** Ne remplace pas la règle « deux signaux
+  terrain indépendants » du FIELD-LOG §1 — chercher activement de la valeur commerciale n'excuse pas
+  de coder sur un seul signal. Garde-fou tiré d'une vraie erreur (04/08, nuit) : une action Repair
+  (`POPPER_NOT_REGISTERED`) a été proposée sans vérifier d'abord qu'ADR-007 l'avait déjà écartée —
+  « vérifie d'abord » n'est pas une formule polie, c'est ce qui évite de recoder un risque déjà
+  refusé sciemment. Copie de travail dans `TRANSMISSION.md` (lu à chaque session), ce fichier-ci
+  fait foi en cas de divergence entre les deux.
+- **Revue qualité pré-v1.0 (04/08/2026)** — première passe faite : 5 angles indépendants
+  (architecture/ADR, code, sécurité, tests, produit/UX), 5 corrections sûres appliquées (voir §6 et
+  §7 pour ce qui reste), 2 trouvailles volontairement laissées pour décision produit. Détail complet :
+  FIELD-LOG, entrée « Revue qualité pré-v1.0 » du 04/08 (nuit, quater). À refaire avant la sortie
+  réelle de v1.0 (Écran 2 câblé, Lemon Squeezy branché) — une seule passe ne suffit probablement pas
+  pour un logiciel qui manipule les fichiers de l'utilisateur contre paiement.
 - **WPF non compilable dans le cloud** → éditer prudemment, puis **vérifier structurellement** : XAML = XML valide, accolades équilibrées, chaque `Click`/`TextChanged` a sa méthode, chaque `x:Name` utilisé existe, clés Loc présentes en EN **et** FR. Maxime recompile. **Le Core, lui, se compile et se teste dans le cloud → TDD réel.**
 - **Ne jamais publier ni déployer** sans feu vert explicite de Maxime.
 - **Résumés en français.** Ton concis, pas de leçon de morale.

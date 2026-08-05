@@ -279,6 +279,80 @@ public static class RepairTests
         A.True(fs.HasZoneIdentifier(@"C:\Windows\System32\evil.dll"), "system file untouched");
     }
 
+    /// <summary>
+    /// Audit 2026-08-04: the containment check used to be a bare string StartsWith, so a SIBLING
+    /// folder that merely shares the install root as a text prefix (no path-separator boundary)
+    /// passed as "contained" — e.g. root "C:\vpx" would accept "C:\vpxtra\evil.dll". Locks the fix
+    /// (segment-based comparison) in place.
+    /// </summary>
+    public static void Test_Preflight_RejectsSiblingFolderThatOnlySharesATextPrefix()
+    {
+        var fs = new FakeFs();
+        fs.AddFile(@"C:\vpxtra\evil.dll");
+        fs.Blocked.Add(@"C:\vpxtra\evil.dll");
+        var pack = new KnowledgePack("2026.08", new[] { Build.Rule("r", "BLOCKED_DLL", "unblock_file") });
+        var eng = Engine(fs, pack, new RepairActionRegistry(new UnblockFileAction(fs)), out var journal, out _);
+
+        var plan = Build.Select(eng.Plan("scan-1",
+            new[] { Build.Finding("BLOCKED_DLL", @"C:\vpxtra\evil.dll") }, true));
+        var pre = eng.Preflight(plan);
+
+        A.Equal(0, pre.RetainedItems.Count, "a sibling folder must not pass containment just because it shares a text prefix");
+        A.True(journal.Has(JournalEvent.RuleRejected), "journalled RuleRejected");
+    }
+
+    /// <summary>
+    /// Audit 2026-08-04: ".." segments were never collapsed before the containment check, so a
+    /// traversal-shaped path could pass the string comparison even though the OS would resolve it
+    /// outside the install root.
+    /// </summary>
+    public static void Test_Preflight_RejectsPathTraversalOutOfTheInstallRoot()
+    {
+        var fs = new FakeFs();
+        fs.AddFile(@"C:\vpx\..\Windows\evil.dll");
+        fs.Blocked.Add(@"C:\vpx\..\Windows\evil.dll");
+        var pack = new KnowledgePack("2026.08", new[] { Build.Rule("r", "BLOCKED_DLL", "unblock_file") });
+        var eng = Engine(fs, pack, new RepairActionRegistry(new UnblockFileAction(fs)), out var journal, out _);
+
+        var plan = Build.Select(eng.Plan("scan-1",
+            new[] { Build.Finding("BLOCKED_DLL", @"C:\vpx\..\Windows\evil.dll") }, true));
+        var pre = eng.Preflight(plan);
+
+        A.Equal(0, pre.RetainedItems.Count, "a '..' that resolves outside the root must not pass containment");
+        A.True(journal.Has(JournalEvent.RuleRejected), "journalled RuleRejected");
+    }
+
+    /// <summary>
+    /// Revue qualité pré-v1.0 (2026-08-04, décision Maxime 2026-08-05) : set_default_audio_device
+    /// produces a Target that is a Windows audio endpoint GUID, not a filesystem path. Containment
+    /// (IsContained) compares path segments — before this fix, that Target was rejected on every
+    /// single run, no matter what install root was configured, so the action could never actually
+    /// apply even once wired to a Finding. Locks the fix: ChangeKind.AudioDeviceDefault is exempt
+    /// from the path check, same pattern as the ProcessTermination exemption above.
+    /// </summary>
+    public static void Test_Preflight_AudioDeviceTarget_IsExemptFromPathContainment()
+    {
+        var fs = new FakeFs();
+        var audio = new FakeAudioDeviceControl { DefaultId = "hdmi-1" };
+        audio.DevicesByName["Speakers (Realtek)"] = "spk-1";
+        var rule = new RepairRule
+        {
+            Id = "r", TargetCode = "AUDIO_RESET", ActionId = "set_default_audio_device",
+            RepairConfidence = 98, Reversible = true,
+            Parameters = new Dictionary<string, string> { ["deviceNameContains"] = "Speakers" },
+        };
+        var pack = new KnowledgePack("2026.08", new[] { rule });
+        var eng = Engine(fs, pack, new RepairActionRegistry(new SetDefaultAudioDeviceAction(audio)),
+            out var journal, out _);
+
+        var plan = Build.Select(eng.Plan("scan-1",
+            new[] { Build.Finding("AUDIO_RESET", @"C:\vpx\irrelevant") }, true));
+        var pre = eng.Preflight(plan);
+
+        A.Equal(1, pre.RetainedItems.Count, "a device-id target must not be rejected as 'outside the install'");
+        A.False(journal.Has(JournalEvent.RuleRejected), "no containment rejection for this ChangeKind");
+    }
+
     /// <summary>A scan is a snapshot: the world may have moved since.</summary>
     public static void Test_Preflight_DropsStaleFindings()
     {

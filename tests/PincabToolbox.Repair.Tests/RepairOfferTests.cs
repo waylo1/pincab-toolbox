@@ -143,6 +143,52 @@ public static class RepairOfferTests
             "limitations are surfaced before purchase, not discovered after");
     }
 
+    /// <summary>
+    /// Décision Maxime, 2026-08-05 (revue qualité pré-v1.0, 2026-08-04) : un scénario partiellement
+    /// automatisable (ex. migration 32→64, 1 étape automatique + 2 manuelles) doit continuer de
+    /// compter dans FixableCount — il y a une vraie valeur à vendre — MAIS ses étapes manuelles
+    /// doivent apparaître dans NotAutomatable, jamais cachées. Verrouille les deux à la fois : avant
+    /// le câblage App (MainWindow.xaml.cs), rien ne garantissait que ces deux faits tiennent
+    /// ensemble pour le MÊME item.
+    /// </summary>
+    public static void Test_Offer_PartialScenario_CountsAsFixable_AndListsItsManualSteps()
+    {
+        var fs = new FakeFs();
+        fs.AddFile(@"C:\vpx\a.dll"); fs.Blocked.Add(@"C:\vpx\a.dll");
+
+        var pack = new KnowledgePack("2026.08",
+            new[] { Build.Rule("auto-step", "CODE_A", "unblock_file") },
+            new[]
+            {
+                new PackScenario
+                {
+                    Id = "MIGRATION_32_TO_64_INCOMPLETE", TitleFr = "Migration", TitleEn = "Migration",
+                    Requires = new[] { "CODE_A" }, BaseConfidence = 90,
+                    Playbook = new[]
+                    {
+                        new PackStep { Step = 1, RuleId = "auto-step" },
+                        new PackStep { Step = 2, RuleId = "manual-vpm64", ManualOnly = true,
+                            ReasonFr = "Réinstaller VPinMAME en 64-bit.", ReasonEn = "Reinstall VPinMAME as 64-bit." },
+                        new PackStep { Step = 3, RuleId = "manual-dmd64", ManualOnly = true,
+                            ReasonFr = "Remplacer dmddevice64.dll (tiers).", ReasonEn = "Replace dmddevice64.dll (third party)." },
+                    },
+                },
+            });
+
+        var eng = new RepairEngine(
+            new RepairActionRegistry(new UnblockFileAction(fs)),
+            pack, new InMemoryRepairJournal(), new FakeBackup(), new FakeProbe(),
+            new FakeClock(), Build.Roots);
+
+        var findings = new[] { Build.Finding("CODE_A", @"C:\vpx\a.dll") };
+        var offer = RepairOffer.From(eng.Plan("scan-1", findings, licensed: false), findings.Length);
+
+        A.Equal(1, offer.FixableCount,
+            "a real automated step exists — the item earns its place in FixableCount");
+        A.True(offer.NotAutomatable.Count >= 2,
+            "both manual steps must be visible before purchase — that is the whole point of ADR-006 here");
+    }
+
     // ───────────────────────────── fixtures ─────────────────────────────
 
     private static (IRepairEngine, IReadOnlyList<Finding>) TwoFixableOneManual(bool secondReversible = true)

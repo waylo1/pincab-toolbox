@@ -4,3 +4,9 @@ obj/
 tests/fixtures/out/
 publish/
 *.zip
+
+# License signing private key (audit 2026-08-04: tools/PincabToolbox.LicenseTool defaults to
+# writing it as a relative file, which would land inside the repo working directory unless
+# caught here). Anyone with this file can mint valid Repair licenses — it must never be committed.
+*.pem
+license-private-key*

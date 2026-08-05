@@ -37,6 +37,8 @@ public static class Program
             Scenario3_FreeVersusLicensed(sandbox);
             Scenario4_PreflightRefusal(sandbox);
             Scenario5_Undo(sandbox);
+            Scenario6_QuarantineOrphanedMedia(sandbox);
+            Scenario7_AudioDeviceComSmokeTest();
         }
         finally
         {
@@ -233,6 +235,88 @@ public static class Program
             if (line.Length > 0) Console.WriteLine($"     {line}");
     }
 
+    // ─────────────────────── 6. Médias orphelins mis en quarantaine ───────────────────────
+
+    private static void Scenario6_QuarantineOrphanedMedia(string root)
+    {
+        Title("6. Médias orphelins mis en quarantaine (quarantine_orphaned_media)");
+
+        var (fs, dir) = NewInstall(root, "orphaned-media");
+        var tablesDir = Path.Combine(dir, "Tables");
+        var popMediaRoot = Path.Combine(dir, "PinUPSystem", "POPMedia");
+        var wheelDir = Path.Combine(popMediaRoot, "Wheel");
+
+        var keptTable = Path.Combine(tablesDir, "Medieval Madness (Williams 1997).vpx");
+        Write(fs, keptTable, "table toujours installée");
+        Write(fs, Path.Combine(wheelDir, "Medieval Madness (Williams 1997).png"), "wheel — table présente");
+        var orphanMedia = Path.Combine(wheelDir, "Twilight Zone (Bally 1993).png");
+        Write(fs, orphanMedia, "wheel — table supprimée depuis");
+
+        var layout = new InstallLayout
+        {
+            RootPath = dir,
+            TablesDir = tablesDir,
+            PopMediaDir = popMediaRoot,
+            PupVideosDir = Path.Combine(dir, "PinUPSystem", "PUPVideos"),
+        };
+        layout.VpxTables.Add(keptTable);
+
+        var (engine, journal) = NewEngine(fs, dir, layout);
+        var finding = Finding("ORPHANED_MEDIA_FILE", popMediaRoot, "media-orphan");
+        var plan = engine.Plan("demo", new[] { finding }, licensed: true);
+        var item = plan.Items[0];
+
+        Step($"Mode calculé      : {item.Mode}   (confiance 85, réversible)");
+        Check("exactement le fichier orphelin est planifié, pas le fichier légitime",
+              item.Changes.Count == 1 && item.Changes[0].Before == orphanMedia);
+
+        engine.Apply(Select(plan));
+
+        Check("le fichier orphelin a été déplacé en quarantaine, pas supprimé",
+              !fs.FileExists(orphanMedia)
+              && fs.FileExists(Path.Combine(wheelDir, QuarantineOrphanedMediaAction.QuarantineFolderName,
+                                             "Twilight Zone (Bally 1993).png")));
+        Check("le fichier de la table toujours installée n'a pas bougé",
+              fs.FileExists(Path.Combine(wheelDir, "Medieval Madness (Williams 1997).png")));
+
+        engine.Undo(plan.PlanId);
+        Check("l'annulation restaure le fichier orphelin à sa place d'origine", fs.FileExists(orphanMedia));
+
+        Journal(journal, plan.PlanId);
+    }
+
+    // ─────────────────────── 7. Smoke-test COM audio (lecture seule) ───────────────────────
+
+    private static void Scenario7_AudioDeviceComSmokeTest()
+    {
+        Title("7. Périphérique audio par défaut — smoke-test COM (set_default_audio_device)");
+
+        if (!OperatingSystem.IsWindows())
+        {
+            Skip("Windows uniquement — l'interface COM IPolicyConfig n'existe pas ailleurs.");
+            return;
+        }
+
+        Console.WriteLine("     Lecture seule volontaire : ce scénario ne CHANGE jamais ton");
+        Console.WriteLine("     périphérique audio par défaut, il vérifie seulement que l'appel COM");
+        Console.WriteLine("     ne plante pas sur ta machine. Tester le vrai SetDefaultPlaybackDevice()");
+        Console.WriteLine("     changerait ton son pour de vrai — décision à prendre à la main, pas");
+        Console.WriteLine("     automatiquement dans une démo.");
+
+        try
+        {
+            var audio = new RealAudioDeviceControl();
+            var current = audio.GetDefaultPlaybackDeviceId();
+            Check("l'appel COM répond sans exception", true);
+            Check("un périphérique par défaut a été trouvé", current is not null);
+            Console.WriteLine($"     périphérique par défaut actuel : {(current is null ? "<aucun trouvé>" : current)}");
+        }
+        catch (Exception e)
+        {
+            Check($"l'appel COM répond sans exception (a levé : {e.GetType().Name}: {e.Message})", false);
+        }
+    }
+
     // ─────────────────────── plomberie ───────────────────────
 
     private static (RealFileSystem, string) NewInstall(string root, string name)
@@ -243,21 +327,24 @@ public static class Program
         return (new RealFileSystem(), dir);
     }
 
-    private static (IRepairEngine, InMemoryRepairJournal) NewEngine(RealFileSystem fs, string dir)
+    private static (IRepairEngine, InMemoryRepairJournal) NewEngine(RealFileSystem fs, string dir, InstallLayout? layout = null)
     {
-        var e = Engine(fs, dir, new StubProbe(), out var j);
+        var e = Engine(fs, dir, new StubProbe(), out var j, layout);
         return (e, j);
     }
 
     private static IRepairEngine Engine(RealFileSystem fs, string dir, StubProbe probe,
-                                        out InMemoryRepairJournal journal)
+                                        out InMemoryRepairJournal journal, InstallLayout? layout = null)
     {
         journal = new InMemoryRepairJournal();
-        var registry = new RepairActionRegistry(new UnblockFileAction(fs), new RestoreRomArchiveAction(fs));
+        var registry = new RepairActionRegistry(
+            new UnblockFileAction(fs),
+            new RestoreRomArchiveAction(fs),
+            new QuarantineOrphanedMediaAction(fs));
         var pack = LoadPack();
         var backupRoot = Path.Combine(Path.GetDirectoryName(dir)!, "_backups");
         return new RepairEngine(registry, pack, journal, new FileBackupService(fs, backupRoot),
-                                probe, new SystemClock(), new[] { dir });
+                                probe, new SystemClock(), new[] { dir }, layout);
     }
 
     /// <summary>Charge le vrai pack livré. Ce n'est pas une maquette : c'est ce qui tournera chez l'utilisateur.</summary>

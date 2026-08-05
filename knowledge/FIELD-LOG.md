@@ -26,6 +26,320 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-05 (solo, carte blanche après l'heure) · Durcissement licence codé, limites tenues sur Scanner/nouvelles actions
+- code:        transverse (sécurité) — pas un finding
+- bac:         FIX (infra)
+- contexte:    Maxime, en réponse au récap de l'heure solo : « pas le temps de discuter, si tu as
+  trouvé c'est que ça vaut le coup, réalise tes hypothèses, corrige ce qui doit être corrigé, code
+  ce qui doit être codé, carte blanche. »
+- analyse:
+  1. **Codé et livré** — les 2 durcissements mineurs de la revue sécurité (non urgents, mais sûrs
+     et sans conflit ADR) : (a) borne de taille (`MaxLicenseKeyLength = 4096`) avant tout décodage
+     dans `LicenseVerifier.Verify` — rejette vite un copier-coller massivement erroné au lieu de le
+     décoder en mémoire pour rien ; (b) `key?.Dispose()` dans le `catch` du constructeur
+     `LicenseVerifier(string)` — avant le fix, si `ImportSubjectPublicKeyInfo` levait après que
+     `ECDsa.Create()` ait déjà pris un handle crypto natif, ce handle n'était jamais libéré ; ce
+     chemin est emprunté à **chaque démarrage de l'app aujourd'hui** (la clé publique embarquée est
+     encore le placeholder). 2 nouveaux tests de régression
+     (`Test_OversizedLicenseKey_RejectedBeforeDecoding`,
+     `Test_RepeatedFailedKeyImport_DoesNotThrowOrLeaveInconsistentState`). **128/128 Core, 105/105
+     Repair (103 + 2 nouveaux), Debug ET Release, tout vert.**
+  2. **Sciemment NON fait, malgré la carte blanche** — et pourquoi, pour que ce soit tranché plutôt
+     que silencieux :
+     - **Scanner (Black Knight / Rocky & Bullwinkle)** : mes deux hypothèses restent des hypothèses,
+       pas des faits confirmés par Gregg. Coder une "correction" sur `ScriptAnalyzer.cs`/
+       `RomValidatorScanner.cs` sans savoir laquelle des pistes (ou aucune) est la vraie cause,
+       reviendrait à modifier le Scanner — gelé, jamais rouvert, règle non négociable rappelée en
+       tout début de cette session — à l'aveugle. Le risque n'est pas symétrique : le Scanner
+       gratuit est ce qui construit la confiance de tout le reste ; une régression introduite pour
+       "peut-être" corriger 2 cas isolés serait pire que le statu quo. Les questions de diagnostic
+       exactes sont prêtes (entrée précédente) — carte blanche utilisée pour les préparer
+       immédiatement, pas pour deviner du code dessus.
+     - **6 idées de fonctionnalités produit** : aucune n'a été codée. Deux raisons structurelles,
+       pas juste de la prudence : (i) `PROJECT-BRAIN` §7 point 4 dit explicitement que les
+       confiances (98/88) doivent être **calibrées sur du terrain réel** — aucune des 6 idées n'a
+       encore ce terrain, coder une confiance devinée serait le même genre d'erreur que le gating
+       licence qu'on a déjà dû corriger le 03/08 (survente) ; (ii) l'idée n°1 (scanner base Popper)
+       touche de front ADR-007, qui est une décision produit explicitement réservée à Maxime, pas
+       un feu vert technique. Carte blanche interprétée comme « agis sans me demander sur ce qui
+       est vraiment prêt », pas comme « lève les garde-fous qu'on a posés justement pour les
+       moments de rush ».
+- disposition: durcissement licence livré sur le disque de Maxime, testé vert. Le reste reste en
+  attente de : (a) réponse de Gregg aux 2 questions de diagnostic, (b) arbitrage de Maxime sur les
+  6 idées produit (en particulier la conversation à ouvrir sur ADR-007).
+
+## 2026-08-05 (solo, 1h) · Réponse Gregg (3 cas) + revue sécurité licence + recherche produit
+- code:        ROM_MISSING (Black Knight SOR, Rocky & Bullwinkle) + transverse (sécurité) + FEATURE (x6)
+- bac:         FN (à confirmer) · FN (à confirmer) · FIX (confirmé) · sécurité RAS · FEATURE x6
+- contexte:    Maxime m'a laissé 1h en autonomie avec 3 mandats : traiter la réponse de Gregg sur
+  les 3 cas ouverts (rapport HTML + 3 captures jointes), vérifier que la protection licence tient,
+  chercher de nouvelles fonctionnalités vendables même sans signal direct de Maxime. Consigne
+  rappelée et respectée : ne pas coder sur un signal isolé, vérifier PROJECT-BRAIN/ADR avant toute
+  proposition, ne rien télécharger (ADR-004), ne pas toucher à l'Écran 2 Repair.
+
+### a) Black Knight: Sword of Rage — toujours CRITICAL après l'ajout de la ROM par Gregg
+- verbatim:    « Black Knight Sword of Rage - added the rom (bksor.zip) and run the PinCabToolbox
+  again. Result: see screenshot & new PinCabToolbox report. »
+- analyse:     Le rapport HTML rejoué (2026-08-04 15:20) confirme `bksor.zip` toujours signalé
+  manquant (ligne 24, + variante PUP ligne 25), cohérent avec sa capture d'écran. **Code
+  relu en entier** (`RomValidatorScanner.cs`, `ScanEngine.cs` lignes 1-60) : la logique de
+  présence (HashSet insensible à la casse, peuplé depuis les `.zip` de premier niveau du dossier
+  roms) est correcte, pas de bug trouvé côté scanner. Hypothèse la plus probable — **non
+  confirmée, je ne code rien dessus** : piège classique Windows "extensions de fichiers masquées"
+  (le fichier réellement enregistré serait `bksor.zip.zip`, invisible dans l'explorateur avec les
+  extensions masquées). Autre possibilité : le zip a été déposé dans un sous-dossier plutôt qu'à
+  la racine du dossier roms (le scan est `TopDirectoryOnly` par design, ADR à vérifier avant de
+  changer ce comportement — pas fait ici).
+- disposition: à répondre à Gregg via Maxime — question de diagnostic précise à poser : « Peux-tu
+  faire un clic droit → Propriétés sur le fichier dans le dossier roms et coller le nom exact
+  affiché, extensions comprises ? Et confirmer qu'il est directement dans le dossier roms, pas
+  dans un sous-dossier ? » Pas de fix codé tant que la cause n'est pas confirmée.
+
+### b) The Adventures of Rocky & Bullwinkle — mauvais nom de ROM attendu par le scan
+- verbatim:    « Rocky & Bullwinkle: added screenshots. Seems that the scan is looking for another
+  rom name than the actual rom used by the table. »
+- analyse:     Capture d'écran de l'éditeur de script montre `Const cGameName = "rab_320"` actif
+  ligne 126, `"rab_130"` commenté ligne 127 (table "...Bigus(MOD)1.0"). Mais le rapport HTML,
+  pour une entrée "...0.96" (nom/version différents — table distincte ou version antérieure dans
+  sa collection), attend `Rab.zip` : ne correspond ni à `rab_320` ni à `rab_130`. **Code relu en
+  entier** (`ScriptAnalyzer.cs`) : `RomRequirement.Primary => Candidates[0]`, c'est-à-dire le
+  **premier** nom trouvé dans l'ordre du fichier (Const, puis assignations non-const, puis
+  `.GameName` en dernier recours) — jamais résolu sémantiquement comme "la déclaration
+  effectivement active". Si un script a 3+ déclarations `cGameName` (modules inclus, code mort
+  commenté ailleurs que ce qu'on voit sur la capture), `Primary` peut pointer sur la mauvaise.
+  **Hypothèse plausible mais non confirmée** — je n'ai vu que les lignes 125-128 du script, pas le
+  fichier complet. Point important : ceci n'affecte que le nom de fichier suggéré dans le
+  fix-hint, PAS le verdict pass/fail lui-même (qui teste TOUS les candidats en OR) — donc si
+  `rab_320.zip` est bien présent, le finding ne devrait normalement pas apparaître du tout ; le
+  fait qu'il apparaisse renforce l'hypothèse d'une 3e déclaration non vue.
+- disposition: à répondre à Gregg via Maxime — demander la liste complète de toute occurrence de
+  `cGameName` dans le script complet de la table (recherche "cGameName" dans l'éditeur, toutes
+  occurrences, pas seulement autour de la ligne 126). Pas de fix codé sans cette confirmation —
+  toucher `ScriptAnalyzer.cs` sur un seul signal partiel serait exactement l'erreur déjà commise
+  une fois sur `POPPER_NOT_REGISTERED` (ADR-007).
+
+### c) Amazing Spiderman — résolu, pas un bug
+- verbatim:    « Amaz. Spiderman - Solved: B2S had a different name as the actual table. »
+- analyse:     Auto-résolu par Gregg (renommage du fichier B2S). Pas un faux positif : le scan
+  avait raison de signaler le mismatch.
+- disposition: classé résolu, rien à changer côté outil.
+
+### d) Contexte persona (relayé par Maxime, thread public) — utile pour la recherche produit ci-dessous
+- verbatim itchigo : « My setup isn't typical... I have a setup about the same size as Flying
+  Dutchman, but usually I know what the issue is when something doesn't work. So this tool may not
+  be for me, but I know others that haven't been around can definitely use it. »
+- verbatim Gregg : « I agree .. but sometimes having so much (well quality) pinball tables in my
+  setup, I am not able to oversee it all. A tool like this helps me in pinpointing to tables I
+  don't touch that frequently. »
+- analyse:     Confirme un persona déjà pressenti : pas le débutant total, mais le curateur de
+  grosse collection qui ne peut plus tout superviser manuellement. Utile pour prioriser les idées
+  de fonctionnalités ci-dessous (le pain point n°1 y correspond directement).
+
+### e) Revue sécurité — module Licensing + gating Repair (`RepairModeResolver`)
+- contexte:    Mandat Maxime : vérifier que la protection licence tient, corriger si problème réel.
+  Agent `code-reviewer` indisponible dans cet environnement (type inexistant) → relancé en
+  `general-purpose`, puis complété par une lecture directe de `RepairModeResolver.cs` (absent de
+  l'extrait initialement donné à l'agent) pour trancher le seul point resté incertain.
+- analyse:     **RAS globalement.** Signature ECDSA P-256 : pas de confusion d'algorithme possible
+  (algo fixé en dur des deux côtés, pas de champ `alg` piloté par l'attaquant), jamais de fallback
+  permissif (`signatureOk` doit être vrai avant tout retour valide), jamais d'exception non gérée
+  (`Test_Garbage_NeverThrows` couvre déjà ça). Parsing base64url + JSON entièrement défensif, pas
+  de désérialisation polymorphe dangereuse. Clé publique embarquée = placeholder non-base64
+  valide, dégrade proprement en "tout refuser" (mode d'échec sûr), aucun risque avant le vrai
+  `license-tool init`. **Gating** : `RepairModeResolver.Resolve` est une fonction pure lue en
+  entier — `licensed=false` ne peut structurellement produire que `ManualOnly` ou `Locked`, jamais
+  `Automatic`/`ConfirmationRequired` (gate sécurité avant gate commerciale, ADR déjà en place
+  03/08). Aucun appel à `Apply`/`Preflight`/`Undo` nulle part dans l'App (grep confirmé) ; le seul
+  appel à `Plan()` dans l'App (`RepairOfferBuilder.cs`) force `licensed: false` en dur. Aucun
+  bypass identifié.
+- disposition: 2 pistes de durcissement mineures notées, non codées (pas de bug réel, juste de la
+  défense en profondeur, à ne faire que si Maxime le souhaite) : (1) borne de taille sur
+  `licenseKey` avant décodage dans `LicenseVerifier.Verify` (DoS mémoire théorique, impact
+  négligeable en usage local mono-utilisateur) ; (2) `ECDsa` non explicitement disposé si
+  `ImportSubjectPublicKeyInfo` échoue au constructeur (fuite ressource native négligeable, un seul
+  objet au démarrage). Rien d'urgent, rien codé.
+
+### f) Recherche produit — 6 idées de fonctionnalités vendables (aucun chiffre de marché inventé)
+- contexte:    Mandat Maxime : trouver ce que veulent les gens même sans signal direct de sa part.
+  Recherche via agent dédié (WebSearch), sources réelles uniquement (VPForums, VPUniverse,
+  GitHub vpinball/vpinball, Reddit r/virtualpinball), respect strict de la consigne
+  PROJECT-BRAIN §7 contre les statistiques inventées.
+  1. **Scanner d'intégrité base Popper** (doublons, entrées orphelines, liens cassés) — citation :
+     « I added over 500 games... they are all so inter dependent that i cant erase them »
+     ([VPUniverse](https://vpuniverse.com/forums/topic/13380-oops-i-added-500-games-and-need-to-erase-them/)).
+     Correspond directement au persona Gregg/itchigo ci-dessus (curateur qui ne peut plus tout
+     superviser). **⚠️ Touche directement ADR-007** ("écriture SQLite Popper hors v1, à décider
+     quand le terrain le demandera" — PROJECT-BRAIN §7 point 3). Ce signal terrain + le persona
+     confirmé sont exactement le déclencheur qu'ADR-007 attendait explicitement pour être
+     rouverte — **mais rouvrir une ADR est une décision produit qui revient à Maxime, pas un feu
+     vert pour coder**. À présenter comme "conversation ADR-007 à rouvrir", pas comme un chantier
+     prêt à lancer.
+  2. **Validateur de mapping ROM/VPinMAME** (nom de fichier/registre incohérent alors que la ROM
+     est possédée) — plusieurs threads convergents (VPForums #33699, #39779, VPUniverse #3675).
+     100% local, aucun conflit ADR identifié.
+  3. **Vérificateur de compatibilité de version du moteur VPX** — preuve indirecte forte : un
+     outil tiers gratuit existe déjà pour un sous-problème ([JockeJarre/VPinballX.starter](https://github.com/JockeJarre/VPinballX.starter)),
+     signe d'une douleur réelle. Détection locale seulement, jamais de téléchargement de binaire
+     tiers (ADR-004).
+  4. **Correcteur de liens backglass B2S** (mismatch nom de fichier/résolution) — VPUniverse
+     #13772, #9368, GitHub vpinball/vpinball #1476.
+  5. **Coffre-fort de sauvegarde NVRAM/high-scores** — valeur "assurance" plus que "urgence",
+     techniquement trivial (backup/restore local versionné).
+  6. **Audit des références médias/wheel** — une seule source (VPUniverse #5559), pas de
+     corroboration croisée ; à traiter comme module complémentaire de l'idée #1, pas en
+     autonome.
+- disposition: à présenter à Maxime pour arbitrage produit (aucune n'est codée). Idée #1 nécessite
+  explicitement de rouvrir la discussion ADR-007 avant tout, pas juste un feu vert Repair normal.
+
+## 2026-08-05 · Reprise session — sync GitHub (push bloqué, action Maxime), décisions (a)/(b) en cours de clarification
+- code:        transverse (process/infra, pas un finding)
+- bac:         FIX (infra) + décision produit en cours
+- contexte:    Reprise du dossier local (`Desktop/Pincab suite/...`), reconnecté en début de session.
+  TRANSMISSION/PROJECT-BRAIN/FIELD-LOG lus depuis le disque (plus à jour que GitHub). Objectif de
+  session : présenter à Maxime les 2 décisions ouvertes de la revue qualité du 04/08 avant tout code,
+  proposer `license-tool init`, ne pas câbler l'Écran 2 sans confirmation explicite du jour.
+- analyse:
+  1. **Vérifié plutôt que supposé** : la note de clôture du 04/08 disait les 5 corrections + la
+     consigne PM « pas encore réécrites sur le disque de Maxime » (pont déconnecté en session). En
+     rouvrant les fichiers réels (mtimes, contenu — `IsContained` par segments, `.gitignore` *.pem,
+     `LicenseVerifier` dégradé, consigne PM dans `PROJECT-BRAIN` §9), **tout y était déjà** — le pont
+     a dû se reconnecter juste avant la fin de cette session-là, après l'écriture de la note. Rien à
+     refaire.
+  2. **Sync GitHub** : le dépôt distant (`waylo1/pincab-toolbox`, HEAD `24e7e0f`) n'avait aucun des
+     chantiers du 04/08 nuit. 24 fichiers rapatriés individuellement depuis le disque de Maxime
+     (fichier par fichier, pas une archive complète — une première tentative par tar a introduit du
+     bruit de fin de ligne Windows/Linux sur tout le dépôt, abandonnée et recommencée proprement).
+     Diff vérifié identique au `git status` du disque local. **SDK .NET installé dans ce sandbox
+     cloud** (`apt-get install dotnet-sdk-8.0`, après un `apt-get update` pour rafraîchir les
+     paquets). **128/128 tests Core et 101/101 tests Repair verts, Debug ET Release**, re-vérifiés
+     sur l'exact jeu de fichiers avant tout commit. Commit fait (`bb6076a`). **Push refusé** par le
+     proxy git du sandbox (« waylo1/pincab-toolbox n'est pas dans l'ensemble de dépôts autorisés de
+     cette session ») — restriction d'environnement, pas un problème de code ou de droits GitHub.
+     Commande exacte laissée à Maxime dans TRANSMISSION.md pour pousser depuis sa machine (son
+     disque local a déjà les mêmes fichiers en working tree non commité).
+  3. **Décisions (a)/(b) présentées à Maxime, pas encore tranchées.** (b) [`set_default_audio_device`
+     rejeté à vie par `IsContained` car son Target est un GUID, pas un chemin] a été jugée pas claire
+     par Maxime — reformulation en langage simple nécessaire avant de pouvoir trancher. (a) [scénario
+     partiellement automatisable compté "réparable" sans montrer les étapes manuelles obligatoires,
+     ADR-006] — Maxime a répondu par un principe produit plutôt qu'un choix parmi les 3 options
+     proposées : « il faut un produit que les gens achèteraient sans survendre, mais il faut qu'ils
+     en aient besoin ». Juste, mais pas encore une décision codable — à retraduire en option concrète
+     et reconfirmer avant tout câblage (catégorie UI Repair, jamais touchée sans accord explicite).
+  4. **`license-tool init` proposé à Maxime** (commande exacte dans `tools/PincabToolbox.LicenseTool/README.md`)
+     pour générer sa vraie paire de clés — pas encore lancé, décision qui lui revient entièrement (la
+     clé privée ne doit jamais transiter par une session cloud).
+  5. **(b) reformulée en langage simple** (première réponse : « je ne comprends pas ») — comparaison
+     au vigile qui ne vérifie que les gens restés dans le bâtiment. Maxime tranche : créer une
+     exemption ciblée pour ce type d'action, même patron que l'exemption déjà faite pour
+     `kill_zombie_pinup_display`.
+  6. **(a) reformulée en application concrète de son principe** (« vendre sans survendre, mais qu'ils
+     en aient vraiment besoin ») : garder l'item dans "réparable" (vraie valeur) + afficher les étapes
+     manuelles en plus (rien de caché). Maxime confirme : « Oui, montrer les étapes manuelles ».
+  7. **Les deux codées et vertes dans la foulée**, catégorie UI Repair/archi mais avec accord explicite
+     obtenu juste avant, conforme à la règle. (a) : `RepairOffer.NotAutomatable` (déjà calculé côté
+     moteur depuis le 03/08, jamais affiché) câblé sous l'agrégat "Repair pourrait corriger X/Y" dans
+     `MainWindow.xaml`/`.xaml.cs` + clé `Loc.cs` FR/EN. (b) : exemption `ChangeKind.AudioDeviceDefault`
+     dans `RepairEngine.IsContained`. 2 nouveaux tests de régression
+     (`Test_Offer_PartialScenario_CountsAsFixable_AndListsItsManualSteps`,
+     `Test_Preflight_AudioDeviceTarget_IsExemptFromPathContainment`) — **128/128 Core, 103/103 Repair,
+     Debug ET Release.** `MainWindow.xaml` revérifié XML bien formé après édition ; le reste de l'App
+     (WPF) relu manuellement ligne à ligne, non compilable dans ce sandbox — `build.cmd` de Maxime
+     reste la seule vérification qui compte pour cette partie. `set_default_audio_device` reste
+     volontairement hors du registre App (toujours "pas reliée à un Finding") : cette session la rend
+     exécutable le jour où elle sera câblée, ne l'active pas.
+  8. **2 commits faits dans ce sandbox cloud** (`bb6076a`, `685ada8`) mais **push refusé aux deux**
+     par le proxy git de session (même cause qu'au point 2 ci-dessus). Commande consolidée (un seul
+     commit, tout le travail de la session) laissée à Maxime dans TRANSMISSION.md.
+- disposition: **décisions (a)/(b) tranchées, codées, vertes.** Reste à Maxime : `git push` depuis sa
+  machine (commande donnée), `license-tool init` quand il le souhaite, et — seulement après ça et sur
+  nouvelle confirmation explicite — le câblage de l'Écran 2 (bouton Apply réel), non entamé cette
+  session.
+
+## 2026-08-04 (nuit, quater) · Revue qualité pré-v1.0 — 5 angles, 5 agents indépendants, 5 corrections appliquées
+- code:        transverse (audit qualité, pas un finding)
+- bac:         FEATURE (process)
+- contexte:    Suite de la consigne PM. Cinq agents indépendants (lecture seule, aucune coordination entre eux) ont audité en parallèle : (1) cohérence architecture/ADR, (2) qualité de code, (3) sécurité/frontières de confiance, (4) couverture de tests, (5) cohérence produit/UX vs. les promesses (ADR-006 notamment). Cible : tout le dépôt, avec une attention particulière au code de cette session (Licensing/, LicenseTool, extension du harnais démo) jamais revu par personne d'autre.
+- analyse:     **Trouvailles réelles, pas du remplissage :**
+  1. **[CRITIQUE, corrigé]** `LicenseVerifier.EmbeddedPublicKeyBase64` était un placeholder invalide (mauvaise longueur DER) — `new LicenseVerifier()`, exactement ce que l'App appellera, plantait à la construction au lieu de renvoyer poliment "Invalid". Trouvé indépendamment par 3 des 5 agents. **Corrigé** : la clé cassée dégrade maintenant vers "vérification non configurée" (jamais de licence valide, mais plus jamais de crash) ; 2 tests ajoutés qui verrouillent ce comportement de dégradation, y compris pour le futur (une fois la vraie clé collée, ces tests testent toujours la dégradation, pas la valeur placeholder).
+  2. **[HAUT, corrigé]** `IsContained` (le filet ADR-005 contre une écriture qui sortirait du pincab) faisait un simple `StartsWith` texte : un dossier voisin (`C:\vpx` acceptait `C:\vpxtra\...`) ou un chemin avec `..` pouvait passer le contrôle. Trouvé indépendamment par 2 agents. **Corrigé** : comparaison par segments de chemin normalisés, `..` recollé avant comparaison. 2 tests de régression ajoutés. Reste non traité, volontairement (hors scope d'une correction "sûre") : la résolution de lien symbolique/jonction, qui demanderait de toucher l'abstraction `IFileSystem` elle-même — signalé, pas deviné.
+  3. **[HAUT, corrigé]** `tools/PincabToolbox.LicenseTool` écrit la clé privée par défaut dans un chemin relatif (`license-private-key.pem`), donc potentiellement DANS le dépôt de travail — et `.gitignore` ne l'excluait pas malgré ce que dit le README de l'outil. **Corrigé** : `.gitignore` couvre maintenant `*.pem` et `license-private-key*`.
+  4. **[MOYEN, corrigé]** Le message de correctif de `ROM_MISSING` (le Critical le plus fréquent — 8 occurrences sur le scan réel de Maxime lui-même) n'avait pas d'entrée dans `FrFixHints` de `Loc.cs` et retombait silencieusement en anglais pour un utilisateur FR. **Corrigé**, une ligne ajoutée, cohérente avec le style des entrées voisines (générique, sans re-décliner le nom de fichier déjà donné par le texte du finding).
+  5. **[BAS, corrigé]** `about.roadmap` (FR+EN) appelait encore le futur payant "Repair (Pro)" alors que toute autre source de vérité (ADR-002, DESIGN-Repair-v1.md, UX-COPY-Repair.md, le tag `repair.tag`) dit juste "Repair". **Corrigé**, "(Pro)" retiré des deux langues.
+  6. **[HAUT, NON corrigé — décision produit, pas une correction sûre]** Un scénario de réparation multi-étapes partiellement automatisable (ex. `MIGRATION_32_TO_64_INCOMPLETE` : 1 étape sur 3 automatique, 2 `manualOnly`) est compté comme "réparable" dans le résumé gratuit (`FixableCount`) exactement comme un item 100 % automatique — les deux étapes manuelles obligatoires ne sont affichées NULLE PART dans l'App alors que `RepairOffer.NotAutomatable`/`RepairPlanItem.Missing` existent précisément pour ça (ADR-006). C'est le finding le plus sérieux de toute la revue : ça touche directement la promesse anti-survente et l'affichage Écran 1 déjà câblé. **Volontairement pas touché** — c'est de l'UI Repair, exactement la catégorie qu'on ne modifie jamais sans redemander à Maxime.
+  7. **[HAUT, NON corrigé — bug latent, dormant tant qu'Écran 2 n'existe pas]** `SetDefaultAudioDeviceAction` produit un `Target` qui est un GUID de périphérique, pas un chemin de fichier — `IsContained` (même corrigé) le rejettera TOUJOURS puisqu'il compare des segments de chemin. Concrètement : cette action ne pourra jamais s'appliquer pour de vrai tant que ce n'est pas réglé, même une fois Écran 2 câblé et licence en place. Signalé, pas corrigé : implique une vraie décision d'archi (exempter `ChangeKind.AudioDeviceDefault` du contrôle de chemin, ou changer la forme de `Target`), pas une correction mécanique.
+  8. **[MOYEN, non corrigé, nuance importante]** `VpsDatabase.cs` fait un vrai appel réseau (`raw.githubusercontent.com`) à chaque scan pour la Virtual Pinball Spreadsheet — un agent l'a d'abord lu comme une violation du discours "zéro télémétrie", mais **ADR-004 §3 nomme explicitement VPS comme source de données autorisée**, donc ce n'est PAS un bug caché. Le vrai point ouvert : est-ce assez visible pour l'utilisateur (aucun toggle de confirmation trouvé) ? Question produit à trancher avec Maxime, pas une anomalie.
+  9. **Backlog, pas corrigé** : duplication de la logique "dernier segment de chemin" dans 5 fichiers différents (déjà documentée en commentaire comme "3ᵉ occurrence du piège" — c'est en fait la 5ᵉ) ; incohérence de gestion d'erreur try/catch entre les 5 `IRepairAction` ; 8 trous de couverture de tests identifiés (le plus notable : `LicenseVerifier`'s crypto-exception catch jamais réellement déclenché par un test, `ScanReport.Rolled()` jamais testé exactement à `count == 5`, `SCANNER_ERROR` jamais testé).
+  10. **Non vérifiable dans ce sandbox** : ADR-001, ADR-003, ADR-008 absentes du mirror local (jamais mises en scène cette session — le pont machine s'est déconnecté avant d'avoir pu les charger).
+- disposition: **Build+tests vérifiés verts après CHAQUE correction** : Debug ET Release, 101/101 Repair (97 + 4 nouveaux tests de régression), 128/128 Core (inchangé), harnais démo toujours vert. Fichiers livrés à Maxime via SendUserFile (voir liste dans TRANSMISSION) — **pas encore réécrits sur son disque**, le pont `mcp__remote-devices__*` s'est déconnecté en cours de session (`get_device_info` → "not connected to the bridge"), toujours down à la fin de cette entrée. Prochaine étape : dès reconnexion, `device_stage_files` frais puis `device_commit_files` de tous les fichiers listés, ET reporter la consigne PM dans `PROJECT-BRAIN` (toujours pas fait, cf. entrée précédente).
+
+## 2026-08-04 (nuit, ter) · Consigne PM permanente ajoutée · revue qualité pré-v1.0 démarrée
+- code:        transverse (process/gouvernance, pas un finding)
+- bac:         FEATURE (process)
+- contexte:    Maxime a discuté avec GPT de plusieurs consignes permanentes (revue CTO en fin de tâche, revue qualité pré-v1.0, casquette Product Manager sur Repair, vision « Mode Appliance »). Retour donné avant d'agir : d'accord sur l'esprit, réserves concrètes sur « corriger sans demander » (contredit la règle UI Repair/HANDOFF) et sur les notes /10 (peu de signal, on note son propre travail). Maxime tranche : adopte la consigne PM (texte donné mot pour mot) et lance la revue qualité pré-v1.0 avant d'aller plus loin.
+- analyse:     Consigne PM ajoutée en tête de `TRANSMISSION.md` (section dédiée, lue à chaque session). **Pas encore reportée dans `PROJECT-BRAIN`** — le pont vers la machine de Maxime (`mcp__remote-devices__*`) s'est déconnecté en cours de session (`get_device_info` renvoie « not connected to the bridge »). `PROJECT-BRAIN.md` lui-même n'a jamais été chargé dans ce sandbox (pas trouvé dans les fichiers déjà mis en scène) — recherche à refaire une fois reconnecté.
+- disposition: **revue qualité pré-v1.0 démarrée dans cette même session**, sur la copie locale déjà en mémoire (Core, Repair, App, tests, ADR, docs) — n'a pas besoin du pont machine, seule la restitution finale sur disque de Maxime en aura besoin. Prochaine étape après reconnexion : reporter la consigne PM dans `PROJECT-BRAIN` (canonique), pas seulement TRANSMISSION.
+
+## 2026-08-04 (nuit, suite) · Phase 1 (licence) + Phase 2 (harnais démo) codées et vertes
+- code:        transverse (infrastructure de vente)
+- bac:         FEATURE
+- contexte:    Maxime délègue le choix cryptographique (« je ne suis pas competent... à toi de voir ») et valide de démarrer les deux phases tout de suite.
+- analyse:
+  1. **Choix fait : ECDSA P-256**, pas HMAC. Raison : la clé embarquée dans l'exe (donnée à TOUT le monde) est la clé PUBLIQUE — elle peut vérifier une signature mais pas en fabriquer une. Quelqu'un qui extrait le binaire n'obtient rien qui lui permette de générer ses propres licences valides, contrairement à un secret HMAC partagé. Coût de complexité quasi nul : `System.Security.Cryptography.ECDsa` est dans le BCL .NET, zéro dépendance ajoutée.
+  2. **Découverte en cours de route : le harnais de test démo (`tools/PincabToolbox.Repair.Demo`) existe DÉJÀ**, avec 5 scénarios contre le vrai moteur Repair (vrai `RealFileSystem`, vrai pack). C'est exactement la Phase 2 demandée par Maxime le 04/08 soir (« 2 tu le fais avec le mode demo deja présent ») — pas à recréer, juste à étendre. Il manquait `quarantine_orphaned_media` (ajouté, scénario 6, filesystem réel) et un test de fumée pour `set_default_audio_device` (ajouté, scénario 7, **lecture seule volontairement** — ne change jamais le périphérique audio réel de la machine qui l'exécute, seul un test manuel explicite testera le vrai `SetDefaultPlaybackDevice`). `kill_zombie_pinup_display` pas ajouté au harnais : ses risques réels (bug de séparateur de chemin) sont déjà couverts par les tests unitaires avec fake, contrairement à l'audio (COM non documenté) ou au Zone.Identifier (spécificité NTFS) qui ne peuvent être vérifiés que hors sandbox Linux.
+  3. **Nouveau module `src/PincabToolbox.Repair/Licensing/`** : `LicensePayload` (email, émission, fin de fenêtre MAJ — **la licence elle-même ne périme jamais**, ADR-002), `LicenseCodec` (JSON + base64url, `System.Text.Json` déjà utilisé ailleurs dans Repair), `LicenseSigner` (offline uniquement), `LicenseVerifier` (clé publique embarquée en constante, zéro appel réseau). Format de clé façon JWT à un point (`base64url(payload).base64url(signature)`), pas une bibliothèque JWT — fait main, cohérent avec la règle zéro dépendance.
+  4. **Nouvel outil `tools/PincabToolbox.LicenseTool`** (console, buildable dans CE sandbox car pas WPF) : `init` (génère la paire de clés, UNE SEULE FOIS, clé privée jamais dans le dépôt), `issue` (signe une licence pour un client après achat), `verify` (contrôle une clé sans lancer l'App). Testé de bout en bout dans le sandbox avec une paire de clés JETABLE (générée puis supprimée après test — **la vraie paire de production reste à générer par Maxime lui-même sur sa machine**, cette session n'en a jamais eu et n'en garde aucune trace).
+  5. **9 nouveaux tests** (`LicenseTests.cs`) : aller-retour valide, tolérance aux espaces de copier-coller, payload trafiqué → invalide, signature trafiquée → invalide, mauvaise clé publique → invalide, chaînes n'importe quoi → jamais d'exception, null/vide → invalide, fenêtre de MAJ expirée → licence quand même valide (ADR-002 : ne pas confondre expiration des MAJ et expiration de la licence).
+  6. **Tout vert, Debug ET Release, vérifié dans ce sandbox** : 128/128 Core (inchangé), 97/97 Repair (89 existants + 8 nouveaux `LicenseTests`, confirmé par la sortie du test runner), harnais démo (`repair-demo`) exécuté avec succès dans les deux configurations — scénario 1 (DLL) et 7 (audio) s'annoncent correctement non reproductibles hors Windows, scénario 6 (nouveau, quarantaine) passe en entier sur vrai système de fichiers Linux.
+- disposition: **Écran 2 (bouton Apply réel dans l'App) reste NON câblé**, conforme HANDOFF — reconfirmation explicite à demander à Maxime avant de le faire, ce n'est pas fait cette entrée. Prochaine étape côté Maxime : lancer `license-tool init` sur sa machine pour générer sa vraie paire de clés, remplacer `EmbeddedPublicKeyBase64` (encore un `PLACEHOLDER` volontairement invalide dans le code livré) puis rebuilder ; lancer `dotnet run --project tools/PincabToolbox.Repair.Demo` sur son PC Windows pour valider pour de vrai les scénarios 1 et 7.
+
+## 2026-08-04 (nuit) · Maxime demande un vrai bouton « Apply » — vérif ADR avant de coder, POPPER_NOT_REGISTERED tué net
+- code:        transverse (monétisation Repair, pas un finding)
+- bac:         FEATURE, décision produit
+- contexte:    Suite directe de l'entrée précédente. Maxime : « le logiciel a un bouton qui deplace ou fait l'action, on a assez de choses gratuites faut vendre maintenant. » Avant de proposer quoi que ce soit, vérification des 4 ADR liées (002, 004, 007, 009) plutôt que de partir sur ma propre proposition non vérifiée de la session précédente (`POPPER_NOT_REGISTERED`).
+- analyse:
+  1. **`POPPER_NOT_REGISTERED` est mort, et c'était déjà tranché avant même que je le propose.** ADR-007 (25/07) : écrire dans `PUPDatabase.db` (SQLite) à la main sans bibliothèque = risque de corrompre toute la bibliothèque Popper de l'utilisateur (pages B-tree, journal, compteur de changement). Reste `ManualOnly` en v1, **verrouillé par un test** (`Test_ShippedPack_PopperRegistrationIsManualInV1`) qui casse la suite si quelqu'un ajoute une règle Popper sans re-trancher l'ADR. Bien fait de vérifier avant de coder : ça m'aurait fait perdre du temps et recréer un risque déjà écarté sciemment.
+  2. **Le modèle de vente est déjà entièrement décidé sur le papier (ADR-002/009), rien n'est codé.** Licence perpétuelle qui débloque la colonne « Réparer » dans un seul exe (le Scanner reste gratuit et complet à côté) ; vérification 100 % locale (signature hors ligne liée à l'email, **aucun appel réseau obligatoire**) ; encaissement via Lemon Squeezy en Merchant of Record (gère la TVA mondiale, ne bloque pas le lancement du Scanner gratuit, Phase 3 assumée). Donc : le plan existe, **le code de vérification de licence n'existe pas encore** — c'est le vrai bloquant avant tout bouton Apply, pas un manque d'action Repair.
+  3. **ADR-004 confirme que la règle « on vérifie, on ne fournit jamais » n'est PAS scopée au Scanner** — c'est un filtre projet entier, opposable à toute proposition quelle que soit sa valeur commerciale. Ça clôt définitivement l'idée du 04/08 (soir) de « jouer avec les limites du légal » côté Repair.
+  4. **Relecture des 4 rapports HTML de Maxime avec un œil correctif plutôt que diagnostic** : le rapport 16:30 (191 médias orphelins, PinUP Popper réel) est un vrai match pour `quarantine_orphaned_media`, déjà codée et testée (89/89). Le rapport 16:33 contient bien un DLL bloqué (`version.dll`) mais dans un dossier de crack logiciel piraté sans rapport avec le pincab — **ne PAS s'en servir comme démo/preuve pour `unblock_file`**, mauvais exemple à montrer publiquement même si le mécanisme marcherait techniquement dessus.
+- disposition: **répondu à Maxime avec un plan en 3 phases** : (1) module de vérification de licence locale (signature, .NET natif, zéro dépendance — conforme à la règle du projet), (2) harnais de test console contre `DemoData` pour valider les actions à effet d'écriture existantes hors UI (déjà autorisé le 04/08 soir : « 2 tu le fais avec le mode demo deja présent »), (3) câblage réel de l'Écran 2 (bouton Apply) une fois (1) et (2) faits — **reconfirmation explicite requise avant (3)**, conforme à la règle HANDOFF. Question posée à Maxime : choix de l'algorithme de signature pour (1) (ECDSA clé publique embarquée vs. secret partagé HMAC), décision structurante pour tous les futurs clients donc pas prise seule.
+
+## 2026-08-04 (soir, suite) · Angle mort trouvé par Maxime lui-même : aucune des 5 actions Repair ne couvre son propre scan
+- code:        transverse (stratégie produit Repair, pas un finding)
+- bac:         FEATURE / question de fond, soulevée par Maxime
+- contexte:    En recevant les instructions manuelles pour ses 8 ROM manquantes, Maxime pousse sur le fond : « je vais pas réparer les critical justement le but de repair c'est de réparer à la place de l'utilisateurs, sinon le scan fait le travail et je gagne pas d'argent ». Question légitime sur le modèle économique, pas une simple demande de fix.
+- analyse:     **Vérifié plutôt que rassuré à vide.** Deux faits distincts, à ne pas mélanger :
+  1. **`ROM_MISSING` (ses 8 criticals) ne sera JAMAIS traité par Repair, licence ou pas — décision déjà actée (ADR-004, interdiction permanente de fournir/télécharger des ROMs).** Ce n'est pas un manque à combler, c'est une limite volontaire et légale (ROMs protégées). Donc pour cette catégorie précise, il n'y a rien à « attendre » de Repair, ni maintenant ni plus tard.
+  2. **`B2S_MISSING` (ses 100 warnings) n'a AUCUNE règle dans `knowledge/pack-2026.08.json` non plus** — vérifié : les 4 règles du pack couvrent `BLOCKED_DLL`, `ROM_UNZIPPED`, `PINUP_DISPLAY_ZOMBIE`, `ORPHANED_MEDIA_FILE`. Même famille de raison probable (fichiers backglass protégés par leurs créateurs) même si jamais tranché explicitement — à confirmer avec Maxime si le sujet revient, pas à décider seul ici.
+  3. **Conséquence factuelle plus large, à dire clairement plutôt qu'à cacher** : sur SON scan réel, **aucun des 5 codes remontés (`ROM_MISSING`, `B2S_MISSING`, `B2S_ORPHAN`, `BITNESS_INVENTORY`, `COMPAT_*`) ne correspond à une des 5 actions Repair existantes** (`unblock_file`, `restore_rom_archive`, `kill_zombie_pinup_display`, `quarantine_orphaned_media`, `set_default_audio_device` — non relié). Sa cab, telle quelle, n'a par hasard aucun cas que Repair sait traiter aujourd'hui — pas un bug, juste une coïncidence de ce qui est cassé chez lui vs. ce que Repair couvre.
+  4. **Le modèle n'est pas contredit, mais il ne se prouve pas sur ce scan-là.** ADR-006 dit déjà que Repair doit annoncer honnêtement ce qu'il NE fera jamais (`NotAutomatable`, jamais caché) — c'est exactement le cas ici : sur cette install, `RepairOffer` afficherait `FixableCount = 0`. Le produit se comporte comme prévu (rien à vendre s'il n'y a rien de vendable), mais ça veut dire que la propre cab de Maxime n'est pas un bon terrain de démo pour Repair en l'état.
+- disposition: **répondu à Maxime avec les faits ci-dessus, sans habiller.** Deux pistes proposées, décision pas prise ici : (a) élargir le catalogue d'actions Repair vers des problèmes plus fréquents mais toujours sans redistribuer de fichier protégé (dans l'esprit d'`unblock_file`/`restore_rom_archive`, qui ne fournissent jamais de contenu, juste réparent une manipulation locale) ; (b) tester le mécanisme Repair avec un cas synthétique (ex. décompresser exprès un dossier ROM déjà présent pour déclencher `ROM_UNZIPPED`, ou bloquer volontairement un DLL) puisque sa cab actuelle n'a aucun des 5 cas. **À trancher avec Maxime, pas à deviner.**
+
+## 2026-08-04 (soir) · Maxime a testé le scanner fraîchement buildé sur sa vraie cab — 4 rapports HTML
+- code:        `ROM_MISSING` (8×, confirmé) · `B2S_MISSING` (100×, nouveau volume observé) · `B2S_ORPHAN` (105×) · `BLOCKED_DLL` (1×, hors périmètre pincab)
+- bac:         FIX (vérification cab réel — le test demandé après le build du 04/08)
+- contexte:    Maxime a copié `publish/` sur clé USB, lancé le scanner sur sa cab réelle, et ramené 4 exports HTML (16:29 à 16:33).
+- analyse:     **Un seul des 4 rapports est le vrai scan de la cab** (16:29 — 225 tables, score 0/100·F, 8 critical · 100 warning · 276 info · 225 ok). Les 3 autres (16:30 score 92, 16:31 score 100, 16:33 score 87) ont chacun l'avertissement « aucun dossier de tables trouvé sous la racine choisie » — signe qu'un mauvais dossier a été sélectionné (test du bouton Parcourir, probablement), sans rapport avec le vrai résultat. Le rapport 16:33 a même remonté un `BLOCKED_DLL` sur un `version.dll` dans un dossier `[ Torrent911.com ] IObit Driver Booster Pro ... Crack` — clairement hors du périmètre pincab (pas un problème du scanner, juste un mauvais dossier scanné par erreur).
+  **Sur le vrai scan (16:29) :**
+  - **8 `ROM_MISSING` critical, tous avec un nom de ROM précis** (bloodmach.zip, hpgof.zip, jurassic.zip, leprechaun.zip, mmunsters.zip, STLE.zip, goonies.zip, willywonka.zip). **Recoupe exactement la liste que Maxime avait lui-même identifiée dans sa réponse à Gregg le 03/08** (Blood Machines, Jurassic Park, Leprechaun, hpgf…) — confirme sur le terrain que ce sont de vrais hacks ROM nécessitant une ROM spécifique, pas le mécanisme de FP des commentaires VBScript corrigé le 03/08. Cohérence croisée entre deux sessions, bon signal.
+  - **100 `B2S_MISSING` (Avertissement)** — regroupés par `Rolled()` dans le HTML, liste complète non visible sans export texte/JSON. Premier volume aussi élevé observé sur ce code, sur SA PROPRE collection — pas encore vu remonté par un tiers avec ce volume. À garder à l'œil si ça revient dans un futur retour terrain (pourrait justifier un candidat §2 futur : suggestion de tri/filtre B2S manquant, mais **un seul signal pour l'instant, pas deux** — ne pas coder).
+  - **105 `B2S_ORPHAN` (Info)** — fichiers backglass sans table correspondante, probablement des restes de tables supprimées/renommées (même famille que `ORPHANED_MEDIA_FILE`, dont l'action `quarantine_orphaned_media` existe déjà côté Repair mais ne couvre que POPMedia/PUPVideos, pas `.directb2s` — hors périmètre de cette action, noté pour référence future seulement).
+  - Aucune DLL bloquée dans l'install pincab elle-même — `BlockedFileScanner`/`UnblockFileAction` n'ont rien à faire ici sur ce cab.
+- disposition: instructions étape par étape données à Maxime (placer les 8 ROMs dans `VPinMAME\roms`, zippées, nom exact ; relancer un scan sur la vraie racine pour confirmer ; export texte/JSON si besoin de la liste complète des 100 B2S_MISSING — optionnel, pas bloquant). **Confirme que le build du 04/08 (avec le fix Knowledge.cs) tourne correctement sur une vraie cab, de bout en bout.** Aucune ROM fournie ni cherchée (ADR-004).
+
+## 2026-08-04 (suite) · UI Repair câblée — Écran 1 seulement (offre gratuite), sur autorisation explicite
+- code:        transverse (App WPF + moteur Repair, aucun nouveau finding)
+- bac:         FIX (chantier de code)
+- contexte:    Maxime : « 1 ok et 2 on attend, fais 3 et 4 » — le point 3 de la liste ordonnée proposée était « décider/câbler l'UI Repair ». C'est la reconfirmation explicite exigée par la règle de session (« ne jamais câbler Repair sans redemander ») et par la décision HANDOFF du 27/07 elle-même.
+- analyse:     **Périmètre volontairement réduit à l'Écran 1** (UX-COPY-Repair.md : « Réparation disponible, avant achat »), pas les Écrans 2–4 (confirmation/préflight/récupération = le chemin d'ÉCRITURE). Deux raisons : (a) aucune infrastructure de licence n'existe encore dans l'App (ADR-009/Lemon Squeezy non câblé) — un bouton « Réparer » cliquable qui ne ferait rien violerait la règle de copie du produit lui-même (« jamais rassurer/promettre à vide ») ; (b) le Blocage #2 (valider les 3 actions à effet d'écriture sur une vraie cab) n'a pas encore eu lieu — Maxime part justement tester le scanner et ramènera Repair après.
+  **Ce qui a été câblé, concrètement :**
+  - `RepairOfferBuilder.cs` (nouveau, App) — point de composition qui construit un `RepairOffer` depuis un `ScanReport` en appelant `IRepairEngine.Plan(..., licensed:false)` **uniquement**. `Preflight`/`Apply`/`Undo` (le chemin d'écriture) ne sont appelés nulle part dans l'App — seul le côté pur/lecture-seule du moteur est branché. Toute exception (pack corrompu, sonde COM, etc.) est avalée et renvoie `null` : Repair est un bonus, une panne dedans ne doit jamais casser le scan gratuit.
+  - Registre d'actions réelles construit avec 4 des 5 actions existantes (`UnblockFileAction`, `RestoreRomArchiveAction`, `QuarantineOrphanedMediaAction`, `KillZombiePinUpDisplayAction`) — `SetDefaultAudioDeviceAction` volontairement exclue, cohérent avec son propre commentaire d'en-tête (« pas encore relié à un Finding ») et confirmé : aucune règle du pack ne référence `set_default_audio_device`.
+  - `PincabToolbox.App.csproj` — ajout de la référence de projet vers `PincabToolbox.Repair` (elle n'existait pas du tout avant : l'App ne connaissait même pas l'assembly Repair) + inclusion de `knowledge/pack-2026.08.json` en contenu copié (comme `profiles/vpx-popper.json`).
+  - `MainWindow.xaml` / `.xaml.cs` — une ligne d'agrégat sous les puces de sévérité (« Repair pourrait corriger X problème(s) sur Y — bientôt disponible »), et le tag `DetailRepairTag` qui existait déjà dans le panneau de détail mais était **purement cosmétique** (`Knowledge.IsAutoFixable(code)`, une liste statique, jamais reliée au moteur réel) est maintenant piloté par le plan calculé : coche « réparable », coche « sauvegarde » et coche « réversible » seulement si c'est vrai pour CE code (une action non-réversible comme le kill de process ne revendique jamais la coche réversible), durée en bucket. Toutes les coches viennent de `RepairPlanItem.Summary`, jamais écrites en dur — même principe ADR-006 que le moteur applique déjà en interne.
+  - `Loc.cs` — nouvelles clés FR/EN pour les coches et le libellé verrou, repris mot pour mot de UX-COPY-Repair.md (Écran 1, section « sans licence »).
+  - **Limite connue, non bloquante** : `ScanReport.Rolled()` collapse les findings répétitifs (≥5 même code) en une ligne de groupe au code `GROUPED` — cette ligne collapsée ne matchera jamais une entrée de `RepairOffer.ByCode` (qui indexe par vrai code de finding), donc le tag détail ne s'affiche pas sur une ligne groupée même si le code sous-jacent est réparable. Dégrade proprement (n'affiche rien de faux, juste moins) — cohérent avec la règle ADR-005 « un pack plus récent annonce moins, jamais plus ».
+- disposition: **livré, vérifié différemment de d'habitude.** Ce sandbox cloud n'avait jamais eu de SDK .NET jusqu'ici (mentionné comme absent dans l'entrée du 04/08 plus bas) — installé cette fois (`apt-get install dotnet-sdk-8.0`, réseau nuget.org bloqué mais `NuGet.Config` du dépôt clarifie déjà les sources donc la restauration locale marche). Résultat : **`PincabToolbox.Core` et `PincabToolbox.Repair` compilent réellement ici (0 erreur, 0 warning)**, **128/128 tests Core et 89/89 tests Repair verts en Debug ET Release** (aucune régression — ni l'un ni l'autre projet n'a été modifié, seule l'App les référence maintenant), et le fichier le plus risqué du changement (`RepairOfferBuilder.cs`, LINQ générique dont `GroupBy`/`Max` sur `DurationBucket`) a été compilé isolément dans un mini-projet jetable contre les deux mêmes DLL — 0 erreur. **Seule chose non vérifiable ici, comme d'habitude** : `PincabToolbox.App` (WPF, `net8.0-windows`) exige le pack `Microsoft.WindowsDesktop.App.Ref`, disponible seulement via NuGet — bloqué par le même pare-feu réseau que d'habitude dans ce sandbox. Relecture manuelle ligne à ligne faite (signatures d'API, nullabilité, XML bien formé du XAML vérifié par un parseur) mais **le build Windows réel (CI `build-windows` ou `build.cmd` de Maxime) reste la seule vérification qui compte pour cette partie**, cohérent avec §10 de DESIGN-Repair-v1.md.
+
 ## 2026-08-04 · Premier `build.cmd` réel sur la machine Windows de Maxime — App confirmée compilable, Core tests bloqués par Windows (pas par le code)
 - code:        aucun (résultat de build, pas un finding)
 - bac:         FIX (vérification cab réel / build)

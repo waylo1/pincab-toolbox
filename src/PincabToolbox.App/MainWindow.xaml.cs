@@ -12,6 +12,7 @@ using PincabToolbox.Core.Models;
 using PincabToolbox.Core.Profiles;
 using PincabToolbox.Core.Scanning;
 using PincabToolbox.Core.Services;
+using PincabToolbox.Repair;
 
 namespace PincabToolbox.App;
 
@@ -45,6 +46,9 @@ public sealed class DiffRow
 public partial class MainWindow : Window
 {
     private ScanReport? _report;
+    // Écran 1 only (free "Repair available" offer) — see RepairOfferBuilder. Always recomputed
+    // together with _report so the two never point at different scans.
+    private RepairOfferBuilder.Result? _repairResult;
     private CancellationTokenSource? _cts;
     private readonly Settings _settings = Settings.Load();
 
@@ -335,6 +339,9 @@ public partial class MainWindow : Window
             }, ct);
 
             _report = report;
+            // Bonus surface on top of the free scan — RepairOfferBuilder.Build never throws
+            // (returns null on any failure), so it can never take the scan report down with it.
+            _repairResult = await Task.Run(() => RepairOfferBuilder.Build(report));
             RefreshList();
             LblStatus.Text = string.Format(Loc.Get("status.done"), report.Findings.Count,
                 report.Count(Severity.Critical), report.Count(Severity.Warning), report.Count(Severity.Info));
@@ -494,6 +501,36 @@ public partial class MainWindow : Window
             else PriorityBanner.Visibility = Visibility.Collapsed;
         }
 
+        // Écran 1 — aggregate free offer, computed from the real plan (RepairOfferBuilder).
+        if (_repairResult is { } rr && !rr.Offer.IsEmpty)
+        {
+            RepairSummaryLine.Text = string.Format(Loc.Get("repair.summary"), rr.Offer.FixableCount, rr.Offer.FindingsConsidered);
+            RepairSummaryLine.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            RepairSummaryLine.Visibility = Visibility.Collapsed;
+        }
+
+        // ADR-006 (décision Maxime, revue qualité 04/08) : un scénario partiellement automatisable
+        // (ex. migration 32→64) compte quand même dans FixableCount ci-dessus — c'est mérité, il y a
+        // une vraie valeur à vendre. Mais les étapes qui resteront TOUJOURS manuelles doivent être
+        // visibles ici, avant l'achat, pas découvertes après (RepairOffer.NotAutomatable).
+        if (_repairResult is { } rrNa && rrNa.Offer.NotAutomatable.Count > 0)
+        {
+            const int maxShown = 4;
+            var items = rrNa.Offer.NotAutomatable;
+            var shown = items.Take(maxShown).ToList();
+            var suffix = items.Count > maxShown ? $" (+{items.Count - maxShown})" : "";
+            RepairNotAutomatableLine.Text = Loc.Get("repair.notautomatable") + " " +
+                string.Join(" · ", shown) + suffix;
+            RepairNotAutomatableLine.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            RepairNotAutomatableLine.Visibility = Visibility.Collapsed;
+        }
+
         bool Show(Severity s) => s switch
         {
             Severity.Critical => _showCritical,
@@ -629,8 +666,26 @@ public partial class MainWindow : Window
         DetailFixLabel.Text = Loc.Get("detail.fix");
         SetSection(DetailFixLabel, DetailFix, row.FixHint);
 
-        DetailRepairTagText.Text = Loc.Get("repair.tag");
-        DetailRepairTag.Visibility = Knowledge.IsAutoFixable(row.Code) ? Visibility.Visible : Visibility.Collapsed;
+        // Écran 1 — real per-code facts from the computed plan, not the static Knowledge.cs
+        // approximation: only a code the engine actually resolved to Locked+fixable shows the tag.
+        if (row.Code is not null && _repairResult is not null && _repairResult.ByCode.TryGetValue(row.Code, out var cs))
+        {
+            var checks = new List<string> { Loc.Get("repair.checks.fixable") };
+            if (cs.BackupPlanned) checks.Add(Loc.Get("repair.checks.backup"));
+            if (cs.FullyReversible) checks.Add(Loc.Get("repair.checks.reversible"));
+            checks.Add(Loc.Get(cs.EstimatedDuration switch
+            {
+                DurationBucket.Seconds => "repair.checks.duration.seconds",
+                DurationBucket.UnderAMinute => "repair.checks.duration.underminute",
+                _ => "repair.checks.duration.minutes",
+            }));
+            DetailRepairTagText.Text = string.Join(" · ", checks) + "\n" + Loc.Get("repair.tag");
+            DetailRepairTag.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            DetailRepairTag.Visibility = Visibility.Collapsed;
+        }
 
         DetailActionBtn.Content = row.ActionLabel;   // same action as the grid row, reachable without closing the panel
 

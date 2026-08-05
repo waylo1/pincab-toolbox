@@ -270,7 +270,17 @@ public sealed class RepairEngine : IRepairEngine
         foreach (var item in plan.Items)
         {
             // 3. Containment — the net under the closed registry (ADR-005).
-            var outside = item.Changes.FirstOrDefault(c => !IsContained(c.Target));
+            //
+            // Exception: ChangeKind.AudioDeviceDefault (e.g. SetDefaultAudioDeviceAction). Its
+            // Target is a Windows audio endpoint GUID, not a filesystem path — IsContained compares
+            // normalized path SEGMENTS, so a device id would be rejected on every single run, no
+            // matter what install root is passed in (revue qualité pré-v1.0, 2026-08-04 : ce n'est
+            // pas un bug de path traversal, c'est que ce contrôle ne s'applique tout simplement pas
+            // à ce type de changement). Same reasoning as the ProcessTermination exemption above —
+            // narrow to the one ChangeKind that structurally cannot be a path, everything else
+            // (file writes, registry, sqlite) still goes through the full segment check.
+            var outside = item.Changes.FirstOrDefault(c =>
+                c.Kind != ChangeKind.AudioDeviceDefault && !IsContained(c.Target));
             if (outside is not null)
             {
                 _journal.Write(Entry(JournalEvent.RuleRejected, plan.PlanId, item.ItemId,
@@ -511,13 +521,45 @@ public sealed class RepairEngine : IRepairEngine
         Layout = _layout,
     };
 
+    /// <summary>
+    /// The ADR-005 "containment net" — the last line of defence stopping a write from landing
+    /// outside a detected install root, even if a Knowledge Pack rule or a bug upstream produced
+    /// a bad target. Audit 2026-08-04: the previous implementation was a bare string
+    /// <c>StartsWith</c>, which had two real gaps — (1) no path-separator boundary after the
+    /// matched prefix, so a sibling folder like <c>C:/Games/VPXtra</c> passed as "contained" under
+    /// root <c>C:/Games/VPX</c>, and (2) no collapsing of <c>..</c> segments, so a traversal-shaped
+    /// path could pass the string check even though the OS would resolve it outside the root.
+    /// Fixed by comparing normalized PATH SEGMENTS instead of raw characters. Still does not
+    /// resolve symlinks/junctions (would need real disk I/O, platform-specific, and cannot be done
+    /// against the <see cref="IFileSystem"/> abstraction used by tests — left as a known residual
+    /// risk, see FIELD-LOG 2026-08-04 audit entry, not silently expanded in scope here).
+    /// </summary>
     private bool IsContained(string target)
     {
-        var t = Normalize(target);
-        return _installRoots.Any(r => t.StartsWith(Normalize(r), StringComparison.OrdinalIgnoreCase));
+        var t = SegmentsOf(target);
+        return _installRoots.Any(r => IsPrefixOf(SegmentsOf(r), t));
     }
 
-    private static string Normalize(string p) => p.Replace('\\', '/').TrimEnd('/');
+    private static bool IsPrefixOf(IReadOnlyList<string> root, IReadOnlyList<string> target)
+    {
+        if (target.Count < root.Count) return false;
+        for (var i = 0; i < root.Count; i++)
+            if (!string.Equals(root[i], target[i], StringComparison.OrdinalIgnoreCase)) return false;
+        return true;
+    }
+
+    /// <summary>Splits into normalized segments and collapses "." / ".." — see <see cref="IsContained"/>.</summary>
+    private static List<string> SegmentsOf(string path)
+    {
+        var segments = new List<string>();
+        foreach (var seg in path.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (seg == ".") continue;
+            if (seg == "..") { if (segments.Count > 0) segments.RemoveAt(segments.Count - 1); continue; }
+            segments.Add(seg);
+        }
+        return segments;
+    }
 
     /// <summary>
     /// Bare process name (no directory, no extension) from a path. Deliberately splits on both

@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{8B05D84E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PincabToolbox.Repair.Demo", "tools\PincabToolbox.Repair.Demo\PincabToolbox.Repair.Demo.csproj", "{785896C2-DD50-4B77-9D8A-6659E0948B80}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PincabToolbox.LicenseTool", "tools\PincabToolbox.LicenseTool\PincabToolbox.LicenseTool.csproj", "{ADD73620-C2AB-4A40-832B-851E6C67F055}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +50,10 @@ Global
 		{785896C2-DD50-4B77-9D8A-6659E0948B80}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{785896C2-DD50-4B77-9D8A-6659E0948B80}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{785896C2-DD50-4B77-9D8A-6659E0948B80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ADD73620-C2AB-4A40-832B-851E6C67F055}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADD73620-C2AB-4A40-832B-851E6C67F055}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADD73620-C2AB-4A40-832B-851E6C67F055}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADD73620-C2AB-4A40-832B-851E6C67F055}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{FBE5590C-3BAA-4CBB-B6AF-720EA99D976B} = {A0EC6B6A-9D8D-4555-B6E0-DD2315E25E39}
@@ -55,5 +61,6 @@ Global
 		{CBF7AAB0-B47F-4BC3-83CC-1C556EB41181} = {A0EC6B6A-9D8D-4555-B6E0-DD2315E25E39}
 		{8C9F6BB9-88D5-479B-80F2-6E2B4F27E8E6} = {204F22AB-4610-4F21-817E-8A7CDB1004A5}
 		{785896C2-DD50-4B77-9D8A-6659E0948B80} = {8B05D84E-8B13-4303-9CAC-8A6F148E405A}
+		{ADD73620-C2AB-4A40-832B-851E6C67F055} = {8B05D84E-8B13-4303-9CAC-8A6F148E405A}
 	EndGlobalSection
 EndGlobal

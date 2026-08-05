@@ -20,10 +20,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PincabToolbox.Core\PincabToolbox.Core.csproj" />
+    <!-- Écran 1 (offre Repair gratuite) only — see RepairOfferBuilder.cs. Preflight/Apply/Undo
+         are never called from the App; wiring them is a separate, explicitly re-asked decision. -->
+    <ProjectReference Include="..\PincabToolbox.Repair\PincabToolbox.Repair.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="..\..\profiles\vpx-popper.json" Link="profiles\vpx-popper.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\knowledge\pack-2026.08.json" Link="knowledge\pack-2026.08.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="DemoData\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

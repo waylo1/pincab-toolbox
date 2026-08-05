@@ -27,6 +27,12 @@ en fin d'exécution sauf avec `--keep`.
 3. **Gratuit vs sous licence** — affiche côte à côte ce que voit le Scanner et ce qu'ajoute Repair (ADR-006).
 4. **Refus au préflight** — VPX qui tourne, puis espace disque insuffisant. Vérifie que rien n'est écrit.
 5. **Tout annuler** — deux réparations, une seule annulation, et l'annulation en double qui ne casse rien.
+6. **Médias orphelins mis en quarantaine** — un fichier média d'une table supprimée est déplacé, un
+   fichier d'une table toujours installée ne bouge pas, l'annulation restaure l'orphelin en place.
+7. **Périphérique audio par défaut — lecture seule** — vérifie juste que l'appel COM
+   `IPolicyConfig` (interface non documentée, voir `RealServices.cs`) répond sans planter sur ta
+   machine. Ne change **jamais** ton périphérique par défaut : tester le vrai changement
+   (`SetDefaultPlaybackDevice`) reste une décision à prendre à la main, pas dans cette démo.
 
 Chaque scénario vérifie son propre résultat. **Code de sortie non nul si un seul contrôle échoue** :
 la démo est aussi un test de fumée, utilisable en CI.
