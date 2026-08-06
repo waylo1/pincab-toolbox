@@ -1,4 +1,76 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 06/08/2026 (bis)
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 06/08/2026 (ter)
+
+## ⏱️ MAJ 06/08 (ter) — build Windows réel cassé puis réparé + Tier B livrée (5/5)
+
+> **Deux captures d'écran de `build.cmd` sur ta machine, sans texte.** La première montrait un
+> **BUILD FAILED** : `CS0103` sur `Path`/`File` dans `RepairOfferBuilder.cs` (lignes 29-30 et 69),
+> plus un warning cosmétique `CA1416` dans `MonitorTopologyProbe.cs` (sans impact, inchangé).
+>
+> **Diagnostic** : `RepairOfferBuilder.cs` utilise `Path`/`File` (`System.IO`) sans avoir déclaré
+> `using System.IO;` — un bug **préexistant du 04/08** (date de création du fichier), pas introduit
+> cette session. Jamais vu avant parce que la seule vérification possible sur les fichiers App dans
+> ce sandbox est un **parse Roslyn syntaxe-seule** (`/tmp/roslyn-check`, mêmes DLL que le SDK) — ça ne
+> détecte QUE les erreurs de syntaxe (`CSxxxx` de parsing), jamais une erreur de résolution de symbole
+> comme un using manquant, qui n'existe qu'à la compilation réelle. Autrement dit : ce sandbox ne
+> pouvait structurellement pas voir ce bug avant que tu lances un vrai `build.cmd` sur Windows.
+>
+> **Corrigé, puis balayage préventif de tout le projet App** plutôt que de patcher seulement le
+> fichier signalé : `RepairOfferBuilder.cs` (le bug réel) + `Loc.cs` et `Scenarios.cs` (même motif
+> exact trouvé par un script de recoupement usages-LINQ/IO vs `using` déclarés — 2 bugs **identiques,
+> pas encore remontés dans un rapport de build**) + `MainWindow.xaml.cs` (durci par précaution, motif
+> similaire mais pas confirmé cassé). Logique : ajouter un `using` en trop coûte zéro, l'omettre s'il
+> est réellement nécessaire peut casser un autre build. **Core 279/279 + Repair 105/105 (Debug ET
+> Release) revérifiés inchangés** (fichiers App, aucun test n'y touche). Livré sur ton disque, commit
+> local `83f9799`. **Ta deuxième capture confirme : build complet, `publish\PincabToolbox.exe`
+> produit.** ✅
+>
+> **Repris Tier B ensuite** (tu avais dit vouloir tester une fois fini) — **5/5 livrables livrés** :
+> - **D1 `AUDIO_DEFAULT_SUSPECT`** (Note) — périphérique de lecture par défaut au nom évocateur d'une
+>   sortie écran/HDMI. Nouveau lecteur COM read-only côté Core (`AudioEndpointReader`), structurellement
+>   incapable d'écrire le périphérique (`IPolicyConfig` absent du fichier). Détection seule — PAS
+>   branché sur l'action Repair `set_default_audio_device` déjà codée, il manque un nom de
+>   périphérique cible que je ne peux pas deviner pour un cab arbitraire.
+> - **C2 `DPI_SCALING_NONSTANDARD`** (Note) — lecture registre `AppliedDPI`, Note si ≠ 96 (100 %).
+> - **B3 `DMD_COM_PORT_NOT_FOUND`** (Note) — dmddevice.ini (parseur INI maison) déclare un port COM
+>   absent de `HKLM\...\SERIALCOMM` (nouvelle énumération `RegEnumValue`). ⚠️ Nom de clé INI du port
+>   supposé (`port`/`comport`/`com_port`/`serialport`), faute de fichier réel pour vérifier — voir
+>   DÉCISIONS EN ATTENTE #9.
+> - **G1 `LOCALE_DECIMAL_SEPARATOR`** (Note) — séparateur décimal ≠ "." via `CultureInfo` (déviation
+>   loggée : plus sûr/simple qu'une lecture registre directe, même fait constaté).
+> - **E2 `VPINMAME_CONFIG_PHANTOM`** (Note) — clé registre VPinMAME ET `.ini` présents en même temps
+>   (nouveau lecteur étroit, `VpinmameRegistry.cs` existant non touché).
+>
+> **A1 (Script Doctor) reste reporté — décision motivée** : la fiche demande un plancher de version
+> par script en donnée de profil, qui n'existe pas dans `Profile.cs` aujourd'hui — deviner cette
+> valeur serait exactement le genre de supposition que ce projet évite. Détection sans comparaison
+> produirait un Note creux (« core.vbs présent, v4.5 ») sans valeur utilisateur réelle. A2/A3
+> restent reportés aussi (sous-spécifiés). Voir DÉCISIONS EN ATTENTE #10.
+>
+> **Core 279→321/321 (+42 tests), Repair 105/105, Debug ET Release, tout vert dès le premier run.**
+> Roslyn 0 erreur sur les 3 fichiers App touchés. Un seul commit consolidé (`14894ed`, pas 5 séparés
+> comme Tier A — les 3 fichiers App touchent les 5 codes à la fois, les séparer aurait été artificiel).
+> Détail complet par code : `knowledge/FIELD-LOG.md`, entrée du 06/08, « Item 12 ».
+>
+> **Revue CTO + Product faite avant clôture** (consigne permanente) : code propre (même gabarit tenu
+> à l'identique sur 5 items de plus, aucune régression), architecture cohérente (composition toujours
+> unique, aucun scanner existant modifié, premiers checks `Note` du projet en dehors du prérequis de
+> rendu), tests suffisants pour la logique pure et le câblage I/O (la sûreté COM/registre réelle reste
+> non vérifiable en sandbox Linux — inhérent, pas un trou de cette session), vraie valeur utilisateur
+> réelle mais plus modeste que Tier A (5 Notes informatifs, pas des Warnings qui bougent le score —
+> c'est voulu, c'est la doctrine), risque commercial faible (Note ne peut pas remettre un F, ne peut
+> pas déclencher « FIX THIS FIRST », donc aucun risque de répéter le cas FD), aucun risque technique
+> neuf identifié. **Amélioration à coût faible repérée, non codée** : confirmer le nom de clé INI de
+> B3 sur un vrai `dmddevice.ini` (5 minutes si tu en as un sous la main) fiabiliserait ce check sans
+> toucher au code lui-même si le nom devine juste.
+>
+> **Git (action Maxime)** :
+> ```
+> git add src/PincabToolbox.App/RepairOfferBuilder.cs src/PincabToolbox.App/Localization/Loc.cs src/PincabToolbox.App/Scenarios.cs src/PincabToolbox.App/MainWindow.xaml.cs src/PincabToolbox.App/Knowledge.cs src/PincabToolbox.Core/Scanning/AudioStateScanner.cs src/PincabToolbox.Core/Scanning/ConfigPhantomScanner.cs src/PincabToolbox.Core/Scanning/DmdComPortScanner.cs src/PincabToolbox.Core/Scanning/DpiScalingScanner.cs src/PincabToolbox.Core/Scanning/LocaleSeparatorScanner.cs src/PincabToolbox.Core/Services/AudioEndpointReader.cs src/PincabToolbox.Core/Services/AudioStateEvaluator.cs src/PincabToolbox.Core/Services/DmdDeviceIniParser.cs src/PincabToolbox.Core/Services/DpiRegistry.cs src/PincabToolbox.Core/Services/DpiScalingEvaluator.cs src/PincabToolbox.Core/Services/LocaleSeparatorCheck.cs src/PincabToolbox.Core/Services/SerialPortRegistry.cs src/PincabToolbox.Core/Services/VpinmameKeyProbe.cs tests/PincabToolbox.Core.Tests/AudioStateScannerTests.cs tests/PincabToolbox.Core.Tests/ConfigPhantomScannerTests.cs tests/PincabToolbox.Core.Tests/DmdComPortScannerTests.cs tests/PincabToolbox.Core.Tests/DpiScalingScannerTests.cs tests/PincabToolbox.Core.Tests/LocaleSeparatorScannerTests.cs docs/PROJECT-BRAIN.md knowledge/FIELD-LOG.md TRANSMISSION.md
+> git commit -m "fix(app): using manquants (build casse) + feat(scanner): Tier B (5/5), tous Severity.Note"
+> git push origin main
+> ```
+
+---
 
 ## ⏱️ MAJ 06/08 (bis) — push GitHub confirmé + les 3 améliorations à coût faible faites
 
@@ -110,7 +182,9 @@ Détail complet par point : `knowledge/FIELD-LOG.md`, entrée du 06/08, section 
 5. Position DMD (C1) — deux lectures possibles de la doc officielle, jamais recoupées ; non vérifiée (seul le backglass l'est).
 6. `.directb2s` compressé (H2) — silence, jamais décodé (aucune preuve qu'une telle variante existe réellement).
 7. Sémantique `isFav=2` et nom de colonne « titre » sur `Playlists` (F1) — non confirmés, exclus par prudence.
-8. **File Tier B entièrement reportée** (D1/C2/A1-détection/B3/G1/E2/A2/A3) sur consigne « termine » — prérequis déjà livré, zéro dette technique laissée par ce choix.
+8. ✅ **FAIT (MAJ 06/08 ter)** — ~~File Tier B entièrement reportée~~ — D1/C2/B3/G1/E2 livrés (5/5, commit `14894ed`). A1/A2/A3 restent reportés, voir #9-10.
+9. **B3 — nom de clé INI du port COM non confirmé** sur un vrai `dmddevice.ini` (`port`/`comport`/`com_port`/`serialport` tous acceptés, par prudence). Sans risque (silence si aucun ne matche), mais peut sous-détecter. Action à coût quasi nul : coller un `dmddevice.ini` réel dans le chat, ou juste confirmer le nom de clé.
+10. **A1 Script Doctor bloqué par l'absence d'un plancher de version en donnée de profil** — débloquable en ajoutant un champ à `profiles/vpx-popper.json` (ex. `sharedScriptFloors`) avec, par script partagé (`core.vbs`, `controller.vbs`, `VPMKeys.vbs`, `nudge.vbs`), la version en-dessous de laquelle le déclarer périmé. Jugement métier que je ne peux pas deviner — une fois les valeurs données, c'est une session courte.
 
 ---
 

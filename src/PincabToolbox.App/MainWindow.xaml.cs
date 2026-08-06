@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -349,7 +352,13 @@ public partial class MainWindow : Window
                     .Add(new ScreenTopologyScanner())
                     .Add(new JunctionScanner())
                     .Add(new DirectB2sScanner())
-                    .Add(new PopperPlaylistScanner());
+                    .Add(new PopperPlaylistScanner())
+                    // Tier B (handoff Sonnet 5, 06/08) — tous Severity.Note (ADR-010 Doctrine).
+                    .Add(new AudioStateScanner())
+                    .Add(new DpiScalingScanner())
+                    .Add(new DmdComPortScanner())
+                    .Add(new LocaleSeparatorScanner())
+                    .Add(new ConfigPhantomScanner());
                 return engine.Run(root, profile, progress, ct);
             }, ct);
 

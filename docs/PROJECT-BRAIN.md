@@ -2,7 +2,7 @@
 
 **Source de vérité unique du projet.** En cas de contradiction avec n'importe quel autre document, **ce fichier gagne.**
 
-MC Automation — Maxime Chauvin · Dernière mise à jour : **06/08/2026** (session autonome Sonnet 5 — dégel Scanner formalisé en ADR-010, file Tier A livrée, 21 scanners)
+MC Automation — Maxime Chauvin · Dernière mise à jour : **06/08/2026** (session autonome Sonnet 5 — dégel Scanner formalisé en ADR-010, files Tier A **et** Tier B livrées, 26 scanners)
 
 > **Règle de maintenance** : toute décision susceptible d'être relue dans six mois entre ici ou dans un ADR, le jour où elle est prise. Un document qui n'est plus vrai est plus dangereux qu'un document qui n'existe pas — on l'archive immédiatement.
 
@@ -105,7 +105,7 @@ Deux choses à retenir sans y revenir :
 
 | Bloc | État | Compilable dans le cloud ? |
 |---|---|---|
-| `PincabToolbox.Core` (net8.0, zéro dépendance) | ✅ Stable — **279 tests verts** | ✅ Oui — TDD réel |
+| `PincabToolbox.Core` (net8.0, zéro dépendance) | ✅ Stable — **321 tests verts** | ✅ Oui — TDD réel |
 | `PincabToolbox.Repair` (net8.0, zéro dépendance) | ✅ Moteur v1 — **105 tests verts**, 5 actions (`unblock_file`, `restore_rom_archive`, `kill_zombie_pinup_display`, `quarantine_orphaned_media`, `set_default_audio_device` — cette dernière pas encore utilisable pour de vrai, voir §7) + module `Licensing/` (ECDSA local, ADR-002/009) | ✅ Oui — TDD réel |
 | `tools/PincabToolbox.Repair.Demo` | ✅ Bac à sable — 7 scénarios sur une fausse install | ✅ Oui, et sur ton PC |
 | `tools/PincabToolbox.LicenseTool` | ✅ Génère/signe/vérifie des licences, OFFLINE uniquement | ✅ Oui (pas de WPF) |
@@ -113,7 +113,7 @@ Deux choses à retenir sans y revenir :
 | Landing (`flipsync-site/landing/index.html`) | ✅ Corrigée, validée | Non déployée — **feu vert explicite requis** |
 | Documents légaux (CGU / CGV / Terms) | 🟡 Brouillons | Voir §8 |
 
-**21 scanners** enregistrés dans `ScanEngine` (composition unique : `MainWindow.xaml.cs`) : `rom` · `bitness` · `completeness` · `compat` · `vpxversion` · `security` (blocked-file) · `dependencies` · `disk` · `legacy` · `process` (zombie PinUP Display) · `display` (setup) · `media-orphan` · `updates` · `aliasloop` · `nvram` · `altcolor` · `altsound` · `screentopology` · `junctions` · `directb2s` · `popperplaylist`, + onglet Script Diff. Historique du décompte : 7 (avant 30/07) → 12 (clôture 03/08) → 13 (comparateur VPX, 05/08) → **21 (file Tier A du dégel, 06/08 — voir §7 et ADR-010)**.
+**26 scanners** enregistrés dans `ScanEngine` (composition unique : `MainWindow.xaml.cs`) : `rom` · `bitness` · `completeness` · `compat` · `vpxversion` · `security` (blocked-file) · `dependencies` · `disk` · `legacy` · `process` (zombie PinUP Display) · `display` (setup) · `media-orphan` · `updates` · `aliasloop` · `nvram` · `altcolor` · `altsound` · `screentopology` · `junctions` · `directb2s` · `popperplaylist` · `audio-state` · `dpi-scaling` · `dmd-com-port` · `locale-separator` · `config-phantom`, + onglet Script Diff. Historique du décompte : 7 (avant 30/07) → 12 (clôture 03/08) → 13 (comparateur VPX, 05/08) → 21 (file Tier A du dégel, 06/08) → **26 (file Tier B, 06/08 — voir §7 et ADR-010)**. Les 5 derniers sont **tous `Severity.Note`** — premiers checks heuristiques du projet, jamais de `Warning`/`Critical` avant eux.
 
 **Score de santé** : `max(0, 100 − 15×Critical − 5×Warning)` · Grades `A+ ≥100 / A ≥90 / B ≥70 / C ≥40 / F`.
 
@@ -125,7 +125,7 @@ build.cmd                                    # → publish\PincabToolbox.exe (se
 
 # tests (fonctionnent aussi dans le cloud)
 python3 tests/fixtures/make_fixtures.py
-dotnet run --project tests/PincabToolbox.Core.Tests   -c Release   # 279 passed
+dotnet run --project tests/PincabToolbox.Core.Tests   -c Release   # 321 passed
 dotnet run --project tests/PincabToolbox.Repair.Tests -c Release   # 105 passed
 
 # voir Repair travailler pour de vrai, sans risque (équivalent du mode démo du Scanner)
@@ -163,11 +163,22 @@ scanners existants modifié** (gabarit du comparateur VPX cloné à l'identique 
 recherches primaire-source par item et réductions de périmètre : `knowledge/FIELD-LOG.md`, entrée
 « 2026-08-06 (session Sonnet 5, autonome, effort max) ».
 
-**File Tier B (🟡 heuristique, doctrine Note) : pas attaquée cette session**, sur consigne explicite
-de Maxime reçue en cours de route (« termine ») — reportée, pas abandonnée. Reste entièrement
-disponible pour une prochaine session : D1 audio · C2 DPI · A1 core.vbs (détection seule, le *fix*
-reste hors périmètre) · B3 COM-probe · G1 séparateur FR · puis E2/A2/A3. Même gabarit, même discipline
-anti-FP, prérequis (rendu `Note`) déjà en place.
+**File Tier B (🟡 heuristique, doctrine Note) : 5/5 livrés**, même session, reprise après confirmation
+implicite de Maxime (« ok je vais tester le scaner si tu la finis ») — `AUDIO_DEFAULT_SUSPECT` (D1) ·
+`DPI_SCALING_NONSTANDARD` (C2) · `DMD_COM_PORT_NOT_FOUND` (B3) · `LOCALE_DECIMAL_SEPARATOR` (G1) ·
+`VPINMAME_CONFIG_PHANTOM` (E2). Tous `Severity.Note`, tous détection seule, aucun scanner existant
+modifié. **Core 279→321/321, Repair 105/105 stable, Debug ET Release.** Commit `14894ed`. Détail par
+code, déviations loggées (G1 : `CultureInfo` plutôt que lecture registre directe) et incertitude
+résiduelle (B3 : nom de clé INI du port COM non confirmé sur un vrai fichier) :
+`knowledge/FIELD-LOG.md`, entrée « Item 12 ».
+
+**A1 (Script Doctor) et A2/A3 (Font/Hardcoded-path) restent reportés — décision motivée, pas un
+oubli.** A1 a besoin d'un plancher de version par script en donnée de profil
+(`profiles/vpx-popper.json`) qui n'existe pas encore et que je ne peux pas deviner (jugement métier :
+quelle version de `core.vbs`/`controller.vbs`/etc. compte comme périmée) ; sans lui, détecter la seule
+présence produirait un Note sans delta actionnable — ne passe pas la barre valeur utilisateur. A2/A3
+restent sous-spécifiés (quelle regex de police, quel seuil « chemin suspect »). Débloquables
+rapidement une fois ces décisions prises par Maxime (voir FIELD-LOG, DÉCISIONS EN ATTENTE #9-10).
 
 ### Avant le lancement forum — et rien d'autre *(gel de calendrier historique, voir ci-dessus)*
 Le set de checks actuel est cohérent et testé. ~~**Ne pas ajouter de nouveaux checks avant le
@@ -196,25 +207,28 @@ testés le 04/08 — reste à Maxime de lancer `license-tool init` pour génére
 (actuellement un placeholder qui refuse volontairement toute licence, ne peut pas planter l'App).
 
 ### Repair — reste à faire
+*(§ corrigée le 06/08 — les points 5 et 6 ci-dessous, décrits comme ouverts depuis le 04/08, étaient
+en fait déjà réglés et codés par les décisions (a)/(b) de Maxime le 05/08 soir ; ce fichier n'avait
+jamais été remis à jour après coup. Vérifié directement dans le code, pas supposé, avant de corriger.)*
 1. **Lancer le bac à sable sur ton PC Windows** — `dotnet run --project tools/PincabToolbox.Repair.Demo`.
    C'est le seul moyen d'exercer pour de vrai le « Mark of the Web » (scénario 1) et l'appel COM audio
    (scénario 7, lecture seule), que les tests ne couvrent pas sous Linux.
 2. **Brancher l'UI WPF sur le chemin d'écriture** (Écran 2, le bouton Apply) — Écran 1 fait, le reste
-   volontairement pas câblé sans reconfirmation explicite de Maxime (HANDOFF). Bloqué en pratique
-   tant que (a) `license-tool init` n'a pas été lancé pour de vrai et (b) le bug `set_default_audio_device`
-   ci-dessous n'est pas réglé pour cette action précise.
+   volontairement pas câblé sans reconfirmation explicite de Maxime (HANDOFF/ADR-010, R3 stop net).
+   Le blocage technique (b) ci-dessous est levé depuis le 05/08 ; il ne reste que (a)
+   `license-tool init` pas encore lancé pour de vrai **et** la reconfirmation explicite elle-même —
+   deux conditions distinctes, aucune des deux réglée par du code.
 3. **Trancher ADR-007** — écriture SQLite Popper, à décider quand le terrain le demandera.
 4. **Calibrer les confiances** (98 / 88) sur cab réel après le lancement du Scanner.
-5. ⚠️ **Bug trouvé par la revue qualité du 04/08, pas encore corrigé** : `SetDefaultAudioDeviceAction`
-   produit un `Target` qui est un identifiant de périphérique (GUID), pas un chemin de fichier — le
-   filet de sécurité `IsContained` le rejettera donc TOUJOURS. Cette action ne pourra jamais
-   s'exécuter pour de vrai tant que ce n'est pas réglé (exempter `ChangeKind.AudioDeviceDefault` du
-   contrôle de chemin, ou changer la forme de `Target`). Détail : FIELD-LOG, entrée « Revue qualité
-   pré-v1.0 » du 04/08.
-6. ⚠️ **Autre trouvaille de la même revue, décision produit à trancher avec Maxime avant de toucher
-   à l'UI** : un scénario multi-étapes partiellement automatisable compte comme « réparable » dans le
-   résumé gratuit sans jamais afficher les étapes manuelles obligatoires — touche directement la
-   promesse anti-survente d'ADR-006. Détail : même entrée FIELD-LOG.
+5. ✅ **Fait le 05/08** (décision (b), TRANSMISSION) — ~~bug `SetDefaultAudioDeviceAction` /
+   `IsContained`~~. Vérifié dans le code le 06/08 : `RepairEngine.IsContained` exempte bien
+   `ChangeKind.AudioDeviceDefault` (`RepairEngine.cs` l.274-283, même patron que l'exemption
+   `ProcessTermination`). L'action est maintenant exécutable techniquement — reste bloquée par le
+   point 2 (licence + reconfirmation UI), pas par ce bug.
+6. ✅ **Fait le 05/08** (décision (a), TRANSMISSION) — ~~étapes manuelles obligatoires jamais
+   affichées~~. Vérifié dans le code le 06/08 : `RepairOffer.NotAutomatable` est bien câblé
+   (`MainWindow.xaml.cs` l.542-551, `RepairNotAutomatableLine` dans `MainWindow.xaml`) — affiché
+   avant achat, conforme ADR-006.
 
 ---
 
@@ -283,7 +297,7 @@ testés le 04/08 — reste à Maxime de lancer `license-tool init` pour génére
 | `docs/PARKING-plateformes-paiement.md` | Veille paiement/TVA — **décision reportée** | 🅿️ Parqué |
 | `docs/PARKING-pincab-hors-windows.md` | Pincab Linux/macOS — **décision reportée** | 🅿️ Parqué |
 | `docs/AUDIT-Scanner-2026-08.md` | Audit fonctionnel Scanner (12→21) + vision produit | 🔵 Référence (05/08) |
-| `docs/HANDOFF-Sonnet5-scanners-2026-08.md` | Gabarit + file de travail Tier A/B (base d'ADR-010) | 🟢 Vivant — Tier B ouverte |
+| `docs/HANDOFF-Sonnet5-scanners-2026-08.md` | Gabarit + file de travail Tier A/B (base d'ADR-010) | 🟢 Vivant — A1/A2/A3 en attente (voir §7) |
 | `docs/DESIGN-Repair-v1.md` | Design du moteur Repair | 🟢 Vivant |
 | `docs/UX-COPY-Repair.md` | Copie UX des 4 écrans critiques (FR/EN) | 🟢 Vivant |
 | `knowledge/` | Format du Knowledge Pack, pack 2026.08, validateur CI | 🟢 Vivant |

@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Linq;
 using PincabToolbox.Core.Models;
 using PincabToolbox.Repair;
 using PincabToolbox.Repair.Actions;

@@ -1,4 +1,6 @@
+using System;
 using System.Globalization;
+using System.Linq;
 using PincabToolbox.Core.Models;
 
 namespace PincabToolbox.App.Localization;
@@ -329,6 +331,17 @@ public static class Loc
         ["PINUP_DISPLAY_ZOMBIE"] = "PinUpDisplay.exe est toujours actif alors qu'aucune table n'est en cours — un reste d'une session précédente. Peut bloquer le lancement de la prochaine table tant qu'il n'est pas fermé.",
         ["DISPLAY_SETUP_INCOMPLETE"] = "Cette installation attend une configuration multi-écrans (un composant backglass ou DMD est présent) mais seul {0} écran est actuellement connecté. Si ton cab tourne normalement avec plus d'écrans, ils sont peut-être en veille, débranchés, ou reconnectés dans le mauvais ordre.",
         ["ORPHANED_MEDIA_FILE"] = "{0} fichier(s) média dans les dossiers de PinUP Popper ne correspondent à aucune table installée — probablement des restes de tables supprimées ou renommées.",
+        // ── Tier B (handoff Sonnet 5, 06/08) — tous Severity.Note (ADR-010 Doctrine).
+        // {0} = nom du périphérique de lecture par défaut.
+        ["AUDIO_DEFAULT_SUSPECT"] = "Le périphérique de lecture Windows par défaut est actuellement « {0} » — son nom suggère une sortie audio écran/HDMI plutôt que des enceintes dédiées. C'est un point connu où Windows réinitialise silencieusement le défaut au démarrage ; vérifie que c'est bien voulu.",
+        // {0} = pourcentage d'échelle (ex. "125", sans le signe %, déjà ajouté dans le gabarit).
+        ["DPI_SCALING_NONSTANDARD"] = "La mise à l'échelle d'affichage Windows pour cet utilisateur est réglée à {0} % au lieu de 100 %. C'est une cause connue de fenêtre backglass ou table qui s'affiche tronquée ou décalée sur certains cabs — vérifie ton affichage si tu remarques ça.",
+        // {0} = section du pilote (pin2dmd/zedmd/pindmd3), {1} = port COM configuré.
+        ["DMD_COM_PORT_NOT_FOUND"] = "dmddevice.ini active « {0} » sur {1}, mais Windows ne liste pas {1} comme actif actuellement. Si ce DMD est connecté et sous tension, ce cas est connu pour causer un gel de plusieurs secondes au lancement, le temps que le pilote l'attende.",
+        // {0} = séparateur décimal détecté (ex. ",").
+        ["LOCALE_DECIMAL_SEPARATOR"] = "Le séparateur décimal de cet utilisateur Windows est « {0} » au lieu de « . ». Certains scripts de table VPX et analyses de physique/configuration supposent un point, et peuvent mal se comporter avec un séparateur virgule — un point de friction connu pour les installations Windows en français.",
+        // Pas d'argument — le constat ne dépend d'aucune valeur variable.
+        ["VPINMAME_CONFIG_PHANTOM"] = "Une configuration VPinMAME dans le registre (HKCU\\Software\\Freeware\\Visual PinMame) ET un fichier VPinMAME.ini ont été trouvés. VPinMAME peut être configuré via l'un ou l'autre — si tu modifies l'un sans voir les changements s'appliquer, tu modifies peut-être celui qui n'est pas actuellement utilisé.",
     };
 
     /// <summary>French fix hints per finding code (English fallback is in the Core Finding.FixHint).</summary>
@@ -364,5 +377,11 @@ public static class Loc
         // Rétroactif (comparateur VPX du 05/08, complété 06/08 — R1). Pas de {n} : les deux numéros de
         // version sont déjà dans le message ci-dessus, inutile de les répéter ici.
         ["VPX_VERSION_OUTDATED"] = "Mets à jour Visual Pinball X vers la version requise par la table (indiquée dans le message ci-dessus). Tu peux garder ta version actuelle en parallèle — les builds VPX coexistent, les autres tables ne sont pas affectées.",
+        // Tier B (handoff Sonnet 5, 06/08).
+        ["AUDIO_DEFAULT_SUSPECT"] = "Si ce n'est pas la sortie audio que tu veux, redéfinis le périphérique de lecture par défaut sur tes enceintes dans les paramètres Son de Windows.",
+        ["DPI_SCALING_NONSTANDARD"] = "Dans les paramètres d'affichage Windows, remets « Échelle » à 100 % pour les écrans du cab, ou vérifie que Visual Pinball / B2S tournent en mode compatible DPI si tu gardes une échelle supérieure à 100 %.",
+        ["DMD_COM_PORT_NOT_FOUND"] = "Vérifie que le DMD est sous tension et que sa connexion USB/série est branchée, ou mets à jour dmddevice.ini si le port COM a changé.",
+        ["LOCALE_DECIMAL_SEPARATOR"] = "Dans les paramètres régionaux Windows, tu peux régler le « symbole décimal » sur « . » dans le format de nombre avancé — certains propriétaires de pincab font tourner leur compte cab en format numérique anglais (États-Unis) spécifiquement pour éviter ce genre de souci.",
+        ["VPINMAME_CONFIG_PHANTOM"] = "Si tu t'appuies sur VPinMAME.ini, vérifie que ses réglages s'appliquent réellement ; sinon, envisage de le supprimer pour éviter l'ambiguïté et garder le registre comme source unique.",
     };
 }

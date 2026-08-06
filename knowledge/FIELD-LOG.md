@@ -358,6 +358,65 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
     forum depuis cette session).
   - **Core 279/279, Repair 105/105, Debug ET Release, revérifiés après les 2 changements de code.**
 
+  **Item 12 — Tier B (5/5 livrables livrés), sur confirmation implicite de Maxime (« ok je vais
+  tester le scaner si tu la finis »).** Repris après un aller-retour hors-mandat : un vrai build
+  Windows (`build.cmd`) a échoué (CS0103 sur `Path`/`File` dans `RepairOfferBuilder.cs`, using
+  manquants — bug préexistant du 04/08, jamais vu par le Roslyn syntax-only de ce sandbox), corrigé
+  et confirmé vert par Maxime (2 captures d'écran) avant de reprendre Tier B (commit `83f9799`).
+  - **D1 Audio Current-State (`AUDIO_DEFAULT_SUSPECT`, Note)** — nouveau lecteur COM read-only côté
+    Core (`AudioEndpointReader`) : mirror volontairement appauvri de `RealAudioDeviceControl`
+    (Repair) — seulement `GetDefaultAudioEndpoint`+`OpenPropertyStore`+`GetValue`, `IPolicyConfig`
+    absent du fichier donc **structurellement incapable d'écrire** le périphérique, pas juste par
+    convention. Périmètre volontairement réduit vs la fiche originale (audit §4-D1) : seul le nom du
+    device par défaut est comparé à des marqueurs HDMI/écran — PAS "aucun endpoint activé" ni
+    "volume à zéro" (surface COM plus large, hors scope de cette passe). Détection seule : PAS
+    branché sur l'action Repair `set_default_audio_device` déjà codée — il manque un nom de
+    périphérique CIBLE (ex. "Speakers") que je ne peux pas deviner pour un cab arbitraire ; c'est
+    une décision Knowledge Pack `repairRules` pour Maxime.
+  - **C2 DPI Scaling (`DPI_SCALING_NONSTANDARD`, Note)** — lecture registre `AppliedDPI`
+    (`WindowMetrics`), même patron P/Invoke que `VpinmameRegistry`. 96 = 100 % (constante Windows
+    connue) ; le pourcentage est un fait déterministe, la CONSÉQUENCE (fenêtre tronquée) ne l'est
+    pas → Note, pas Warning.
+  - **B3 dmddevice.ini COM-Probe (`DMD_COM_PORT_NOT_FOUND`, Note)** — parseur INI maison
+    (`DmdDeviceIniParser`, zéro dépendance, même esprit que le parseur CSV d'AltSound) + nouveau
+    lecteur registre `SerialPortRegistry` (énumération `RegEnumValue` sur
+    `HKLM\HARDWARE\DEVICEMAP\SERIALCOMM` — première utilisation de `RegEnumValue` dans ce projet,
+    plus complexe que les lectures à valeur unique déjà faites). ⚠️ **Incertitude non résolue** : le
+    nom exact de la clé INI pour le port COM (`port`/`comport`/`com_port`/`serialport` tous
+    acceptés, faute de fichier réel `dmddevice.ini` disponible pour vérifier) — voir DÉCISIONS EN
+    ATTENTE #9. Biais silence total si l'énumération SERIALCOMM renvoie un ensemble vide (ne peut
+    pas distinguer "échec de lecture" de "aucun port existant").
+  - **G1 Séparateur décimal FR (`LOCALE_DECIMAL_SEPARATOR`, Note)** — déviation actée et formalisée
+    ici : `CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator` plutôt que la lecture
+    registre directe `HKCU\Control Panel\International\sDecimal` suggérée par la fiche — même fait
+    effectif, BCL pur, zéro P/Invoke, plus simple et plus sûr. Rien ne change côté détection,
+    seulement le mécanisme de lecture.
+  - **E2 Registry/INI Phantom Conflict (`VPINMAME_CONFIG_PHANTOM`, Note)** — nouveau lecteur étroit
+    `VpinmameKeyProbe` (existence de la clé `HKCU\...\Visual PinMame` seulement, casse alignée sur
+    celle déjà validée empiriquement par `VpinmameRegistry` plutôt que celle — probablement fautive
+    — de la prose de l'audit) ; `VpinmameRegistry.cs` existant **non modifié**. Ne tranche pas
+    lequel (registre ou .ini) a effectivement la main — énoncé comme fait de coexistence, pas
+    verdict de précédence (Doctrine Note règle 2).
+  - **A1 Script Doctor — reporté, décision motivée (PAS codé)** : la fiche demande de comparer la
+    version détectée à « un plancher connu (donnée de profil, PAS en dur) » — ce champ n'existe pas
+    dans `Profile.cs`/`profiles/vpx-popper.json` aujourd'hui, et la valeur (quelle version compte
+    comme « périmée » pour `core.vbs`/`controller.vbs`/`VPMKeys.vbs`/`nudge.vbs`) est un jugement
+    métier que je ne peux pas deviner. Détection de présence seule, sans comparaison, produirait un
+    Note sans delta actionnable ("core.vbs présent, version 4.5") — ne passe pas la barre "vraie
+    valeur utilisateur" de la revue CTO+Product. Reporté plutôt que bâclé ; débloquable rapidement
+    si Maxime fournit les planchers par script (nouveau champ profil) — voir DÉCISIONS EN ATTENTE #10.
+  - **A2 (polices) / A3 (chemins en dur) — reportés** : sous-spécifiés dans la fiche et l'audit
+    (quelle regex de police ? quel seuil "chemin suspect" ?), même discipline anti-supposition.
+  - **Core 279→321/321, Repair 105/105, Debug ET Release, tout vert.** Roslyn 0 erreur sur les 3
+    fichiers App touchés (`MainWindow.xaml.cs`, `Knowledge.cs`, `Loc.cs`) — outil `/tmp/roslyn-check`
+    déjà utilisé pour le fix `RepairOfferBuilder.cs` de cette session ; `using
+    PincabToolbox.Core.Scanning;`/`.Services;` déjà présents dans `MainWindow.xaml.cs` (même
+    namespace que les scanners Tier A existants) → risque "using manquant" nul pour la ligne `.Add`
+    elle-même (contrairement au bug qui a cassé le build ce matin).
+  - Un seul commit consolidé (`14894ed`, pas 5 séparés comme Tier A) : les 3 fichiers App
+    (Knowledge/Loc/MainWindow) touchent les 5 codes à la fois dans le même diff, les séparer après
+    coup aurait été artificiel — message de commit détaillé par code en compensation.
+
 ## DÉCISIONS EN ATTENTE (pour Maxime)
 Rien n'a bloqué la file cette session au sens R3 du handoff (aucune décision qui n'était pas déjà
 prise n'a empêché un item d'être livré). Les points ci-dessous sont des améliorations à faible coût
@@ -380,9 +439,22 @@ revue de clôture plutôt que dispersées, cf. détail complet par item plus hau
 7. **Sémantique `isFav=2` sur `PlayListDetails` et nom de colonne « titre » sur `Playlists` non
    confirmés** (F1) — les favoris globaux sont exclus du check par prudence plutôt que par certitude ;
    le nom de la playlist elle-même n'est donc jamais affiché, seuls les jeux affectés le sont.
-8. **File Tier B entièrement reportée** (D1 audio, C2 DPI, A1 core.vbs détection, B3 COM-probe, G1
-   séparateur FR, puis E2/A2/A3) — sur consigne explicite de Maxime en cours de session (« termine »),
-   pas un blocage. Prérequis (rendu App `Note`) déjà livré, aucune dette technique laissée par ce choix.
+8. ✅ **FAIT (Item 12)** — ~~File Tier B entièrement reportée~~ — D1/C2/B3/G1/E2 livrés (5/5, tous
+   Note, commit `14894ed`). A1 reste reporté (voir #10 ci-dessous) ; A2/A3 aussi (sous-spécifiés,
+   inchangé depuis la clôture Tier A).
+9. **B3 — nom de clé INI du port COM non confirmé sur un vrai `dmddevice.ini`** — `DmdDeviceIniParser`
+   accepte `port`/`comport`/`com_port`/`serialport` faute de fichier réel disponible pour vérifier
+   lequel Freezy dmd-extensions utilise réellement. Sans impact sur la sûreté (biais silence si aucun
+   ne matche), mais peut sous-détecter si le vrai nom est différent. **Action à faible coût pour
+   Maxime** : coller le contenu d'un `dmddevice.ini` réel (le sien, ou un exemple communautaire) dans
+   le chat, ou confirmer directement le nom de clé — une ligne de code à ajuster si besoin.
+10. **A1 Script Doctor bloqué par l'absence d'un plancher de version en donnée de profil** — pour
+    debloquer, il faudrait un nouveau champ dans `profiles/vpx-popper.json` (ex. un objet
+    `sharedScriptFloors: { "core.vbs": "x.y", "controller.vbs": "x.y", ... }`) avec, pour chaque
+    script partagé, la version en-dessous de laquelle le déclarer périmé. C'est un jugement métier
+    (quelle version fait référence aujourd'hui dans la communauté vpinball) que je n'ai pas la
+    légitimité de deviner — **décision Maxime**, débloquable en une session courte une fois les
+    valeurs connues.
 
 ## 2026-08-05 (session Opus, 2 missions + dégel + palier Note) · Comparateur VPX livré + audit Scanner + handoff autonome Sonnet 5
 - code:        VPX_VERSION_OUTDATED (nouveau, Warning) · Severity.Note (nouveau palier) · transverse (audit/produit)

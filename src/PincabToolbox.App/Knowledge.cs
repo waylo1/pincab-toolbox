@@ -328,5 +328,43 @@ public static class Knowledge
             CauseEn = "PinUP Popper matches a table to an emulator by file extension. '.vpt' (VP9) isn't listed among the VPX emulator's extensions, and NailBuster advises against adding it there — it breaks '.vpt' launching for that emulator instead of fixing visibility.",
             CauseFr = "PinUP Popper associe une table à un émulateur par extension de fichier. « .vpt » (VP9) ne fait pas partie des extensions de l'émulateur VPX, et NailBuster déconseille de l'y ajouter — ça casse le lancement des .vpt pour cet émulateur au lieu de régler la visibilité.",
         },
+        // ── Tier B (handoff Sonnet 5, 06/08) — tous Severity.Note (ADR-010 Doctrine : on
+        // constate un fait, on n'affirme pas un verdict ; jamais AutoFixable=true sur un Note,
+        // il n'y a rien à réparer automatiquement pour un simple constat). ──
+        ["AUDIO_DEFAULT_SUSPECT"] = new()
+        {
+            ImpactEn = "No functional impact by itself — but if this wasn't your intent, your cab's sound is currently coming out of a screen/HDMI output instead of your speakers.",
+            ImpactFr = "Aucun impact fonctionnel en soi — mais si ce n'était pas voulu, le son de ton cab sort actuellement d'une sortie écran/HDMI au lieu de tes enceintes.",
+            CauseEn = "Windows is known to occasionally reset the default playback device to a display's HDMI audio output on boot — a state, not a one-time event, so it can recur after any reboot or GPU/monitor change (FIELD-LOG 2026-07-29).",
+            CauseFr = "Windows est connu pour parfois réinitialiser le périphérique de lecture par défaut vers la sortie audio HDMI d'un écran au démarrage — un état, pas un évènement isolé, donc ça peut revenir après tout redémarrage ou changement de carte graphique/écran (FIELD-LOG 2026-07-29).",
+        },
+        ["DPI_SCALING_NONSTANDARD"] = new()
+        {
+            ImpactEn = "Possibly nothing — but non-100% display scaling is a known cause of a backglass or table window rendering truncated or offset on some cabs.",
+            ImpactFr = "Peut-être rien — mais une mise à l'échelle d'affichage différente de 100 % est une cause connue de fenêtre backglass ou table qui s'affiche tronquée ou décalée sur certains cabs.",
+            CauseEn = "Windows applies display scaling per user profile — often inherited from whichever monitor was primary during setup, or changed by a Windows update.",
+            CauseFr = "Windows applique une mise à l'échelle d'affichage par profil utilisateur — souvent héritée de l'écran qui était principal au moment de l'installation, ou modifiée par une mise à jour Windows.",
+        },
+        ["DMD_COM_PORT_NOT_FOUND"] = new()
+        {
+            ImpactEn = "If this DMD is actually connected, this pattern is known to cause a several-second freeze at launch while the driver waits for a port that isn't there.",
+            ImpactFr = "Si ce DMD est réellement connecté, ce cas de figure est connu pour causer un gel de plusieurs secondes au lancement, le temps que le pilote attende un port absent.",
+            CauseEn = "dmddevice.ini still has this driver enabled on a COM port from a previous setup, or the DMD is currently powered off / unplugged.",
+            CauseFr = "dmddevice.ini a encore ce pilote activé sur un port COM d'une configuration précédente, ou le DMD est actuellement éteint / débranché.",
+        },
+        ["LOCALE_DECIMAL_SEPARATOR"] = new()
+        {
+            ImpactEn = "Some VPX table scripts and physics/config parsing assume a dot as the decimal separator, and can misbehave under a comma-decimal locale.",
+            ImpactFr = "Certains scripts de table VPX et analyses de physique/configuration supposent un point comme séparateur décimal, et peuvent mal se comporter avec un séparateur virgule.",
+            CauseEn = "Windows' French regional format uses ',' as the decimal separator by default — a documented pain point for francophone pincab owners.",
+            CauseFr = "Le format régional français de Windows utilise « , » comme séparateur décimal par défaut — un point de friction documenté pour les propriétaires de pincab francophones.",
+        },
+        ["VPINMAME_CONFIG_PHANTOM"] = new()
+        {
+            ImpactEn = "You may be editing settings in one place (the .ini) while VPinMAME is actually reading its configuration from the other (the registry), or vice-versa — changes that silently don't seem to take effect.",
+            ImpactFr = "Tu modifies peut-être des réglages à un endroit (le .ini) alors que VPinMAME lit en réalité sa configuration depuis l'autre (le registre), ou l'inverse — des changements qui semblent silencieusement ne pas s'appliquer.",
+            CauseEn = "VPinMAME can be configured through either the registry or an .ini file depending on version/build; both being present at once is usually a leftover from a reinstall or a manual config attempt.",
+            CauseFr = "VPinMAME peut être configuré via le registre ou un fichier .ini selon la version/build ; la présence des deux à la fois vient généralement d'une réinstallation ou d'une tentative de configuration manuelle antérieure.",
+        },
     };
 }
