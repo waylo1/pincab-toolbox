@@ -328,15 +328,45 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
     premier — beaucoup moins cher que deviner davantage, et exactement la discipline FIELD-LOG déjà en
     place pour tout le reste du projet.
 
+  **Item 11 — les 3 améliorations à coût faible, faites sur demande explicite de Maxime (post-clôture,
+  même journée).** Maxime revenu actif : « fais les 3 amélioration a cout faible et c'est poussé sur
+  git tu peux verifier ».
+  - **Vérification git faite avant tout code** (sa deuxième demande) : `git fetch origin main` depuis
+    le sandbox — la lecture réseau vers GitHub n'est **pas** bloquée par le proxy, seul le push
+    l'était. `origin/main` est à `403f3d5`, auteur Maxime Chauvin, message identique à la commande
+    fournie à la clôture précédente. `git diff --stat a57d414 origin/main` confirme les **34 fichiers
+    exacts** de la session (mêmes noms, tailles cohérentes) déjà présents sur GitHub. **Push confirmé
+    réussi**, rien à refaire côté Maxime pour la partie précédente.
+  - **#1 fait** : 6 entrées `cat.*` ajoutées dans `Loc.cs` (En+Fr) — `cat.legacy`, `cat.disk`,
+    `cat.process`, `cat.display`, `cat.media-orphan`, `cat.vpxversion`. Patron identique aux 8 entrées
+    déjà ajoutées cette session. Roslyn 0 erreur, Core 279/279 + Repair 105/105 inchangés (fichier App,
+    aucun test n'y touche, revérifié quand même).
+  - **#2 fait, en choisissant délibérément « documenter » plutôt que « câbler »** (les deux options
+    avaient été laissées ouvertes à la clôture précédente) : câbler `AutoFixable` sur un vrai signal
+    aurait été **architecturalement faux**, pas juste plus cher — la fixabilité réelle dépend de l'état
+    runtime (licence, préflight, bugs spécifiques à une action comme le mismatch GUID/chemin de
+    `set_default_audio_device`) qu'un bool statique par code ne peut structurellement pas représenter
+    correctement ; c'est précisément pour ça que `RepairOfferBuilder` a été construit en dehors de ce
+    flag. Câbler aurait réintroduit l'imprécision que le moteur actuel évite déjà. Doc-comment XML
+    clair ajouté sur `KnowledgeEntry.AutoFixable` et `Knowledge.IsAutoFixable` (vestigial, zéro lecteur
+    vérifié par grep .cs **et** .xaml, pointeur vers `RepairOfferBuilder` comme vrai mécanisme).
+    Aucune modification de comportement, risque nul par construction (commentaire seul). Roslyn 0
+    erreur, Core/Repair inchangés.
+  - **#3 pas codable** (action terrain, pas du code) : message de sollicitation rédigé en anglais
+    (registre du forum VPForums) pour Gregg et itchigo, demandant de tester en priorité C1/H2/F1 sur
+    le prochain build — donné à Maxime dans le chat, pas encore envoyé (aucun canal direct vers le
+    forum depuis cette session).
+  - **Core 279/279, Repair 105/105, Debug ET Release, revérifiés après les 2 changements de code.**
+
 ## DÉCISIONS EN ATTENTE (pour Maxime)
 Rien n'a bloqué la file cette session au sens R3 du handoff (aucune décision qui n'était pas déjà
 prise n'a empêché un item d'être livré). Les points ci-dessous sont des améliorations à faible coût
 repérées en cours de route et volontairement **non codées** hors mandat — consolidées ici pour la
 revue de clôture plutôt que dispersées, cf. détail complet par item plus haut :
-1. **6 scanners pré-existants sans entrée `cat.*` dans `Loc.cs`** (`legacy`,`disk`,`process`,`display`,
-   `media-orphan`,`vpxversion`) — la colonne Module affiche le code brut. Additif trivial.
-2. **`Knowledge.KnowledgeEntry.AutoFixable` est un flag mort** (zéro lecteur dans l'App, confirmé par
-   grep) — à câbler sur le vrai signal Repair, ou à documenter comme décoratif.
+1. ✅ **FAIT (Item 11)** — ~~6 scanners pré-existants sans entrée `cat.*` dans `Loc.cs`~~
+   (`legacy`,`disk`,`process`,`display`,`media-orphan`,`vpxversion`).
+2. ✅ **FAIT (Item 11)** — ~~`Knowledge.KnowledgeEntry.AutoFixable` est un flag mort~~ — documenté
+   comme vestigial plutôt que câblé (raisonnement complet dans l'entrée Item 11).
 3. **Format legacy `.ini` (g-sound) pour AltSound non couvert** (B2) — aucun schéma vérifiable trouvé ;
    additif si Maxime a un exemple réel.
 4. **DLL 32/64-bit de colorisation non vérifiées** (B1, sous-point audit §4) — aucun nom de fichier

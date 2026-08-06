@@ -16,9 +16,16 @@ public sealed record KnowledgeEntry
     public string[] Refs { get; init; } = System.Array.Empty<string>();
 
     /// <summary>
-    /// True when the future Repair module can fix this locally, safely and reversibly
-    /// (no download required). Drives the "one-click fixable (Repair)" tag — the free/paid
-    /// boundary lives here, in the data, not in the UI.
+    /// ⚠️ VESTIGIAL — kept for backward compatibility, has ZERO reader anywhere in the App
+    /// (verified by grep across every .cs and .xaml file, 06/08/2026). It described whether Repair
+    /// *could* fix a code back when that was a static, code-level fact. Since 04/08/2026 the real
+    /// "Repair can fix this" signal is computed per scan by <c>RepairOfferBuilder.Build</c> →
+    /// <c>IRepairEngine.Plan</c> against the closed <c>RepairActionRegistry</c> + the Knowledge Pack's
+    /// <c>repairRules</c> (ADR-005) — which is the only version that can be correct, because
+    /// fixability actually depends on runtime state this static bool cannot see (licensing,
+    /// preflight, action-specific bugs like the `set_default_audio_device` GUID/path mismatch).
+    /// Do not wire this flag to anything — recompute it dynamically instead, or remove it outright.
+    /// See `knowledge/FIELD-LOG.md`, entrée du 06/08 (DÉCISIONS EN ATTENTE #2) for the full reasoning.
     /// </summary>
     public bool AutoFixable { get; init; }
 }
@@ -47,7 +54,11 @@ public static class Knowledge
         return Loc.Lang == "fr" ? (e.CauseFr ?? e.CauseEn) : (e.CauseEn ?? e.CauseFr);
     }
 
-    /// <summary>Whether the future Repair module can fix this finding automatically.</summary>
+    /// <summary>
+    /// ⚠️ VESTIGIAL — zero callers anywhere in the App (verified 06/08/2026). Reads the dead
+    /// <see cref="KnowledgeEntry.AutoFixable"/> flag; see its doc comment. Use
+    /// <c>RepairOfferBuilder.Build</c> for the real, per-scan fixability signal instead.
+    /// </summary>
     public static bool IsAutoFixable(string? code) => For(code)?.AutoFixable ?? false;
 
     private static readonly Dictionary<string, KnowledgeEntry> Table = new()

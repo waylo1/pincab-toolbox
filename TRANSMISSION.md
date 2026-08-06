@@ -1,4 +1,41 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 06/08/2026
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 06/08/2026 (bis)
+
+## ⏱️ MAJ 06/08 (bis) — push GitHub confirmé + les 3 améliorations à coût faible faites
+
+> **Maxime revenu actif** après la clôture ci-dessous : « fais les 3 amélioration a cout faible et
+> c'est poussé sur git tu peux verifier ». Vérification faite avant tout code.
+>
+> **Push confirmé** : `git fetch origin main` depuis le sandbox (la lecture réseau vers GitHub n'est
+> pas bloquée, seul le push l'est) → `origin/main` à `403f3d5`, auteur Maxime Chauvin, message de
+> commit identique à celui fourni. `git diff --stat` contre la base de session confirme les **34
+> fichiers exacts** déjà sur GitHub. **Rien à repousser, c'est bien en ligne.**
+>
+> **#1 fait** — les 6 `cat.*` manquants ajoutés à `Loc.cs` (En+Fr) : `legacy`, `disk`, `process`,
+> `display`, `media-orphan`, `vpxversion`. La colonne Module de ces 6 scanners affiche maintenant un
+> libellé au lieu du code brut.
+>
+> **#2 fait — documenté plutôt que câblé, choix délibéré.** Câbler `AutoFixable` sur un vrai signal
+> aurait été faux, pas juste plus cher : la fixabilité dépend de l'état runtime (licence, préflight,
+> bugs par action) qu'un bool statique par code ne peut pas représenter — exactement pourquoi
+> `RepairOfferBuilder` existe en dehors de ce flag. Doc-comment clair ajouté à la place (vestigial,
+> zéro lecteur vérifié .cs **et** .xaml, pointe vers `RepairOfferBuilder`). Risque nul, commentaire
+> seul.
+>
+> **#3 pas codable** (action terrain) — message rédigé pour Gregg/itchigo (anglais, registre
+> VPForums), à envoyer par Maxime, demandant de tester C1/H2/F1 en priorité sur le prochain build.
+> Donné dans le chat.
+>
+> **Core 279/279, Repair 105/105, Debug ET Release, Roslyn 0 erreur** sur les 2 fichiers touchés
+> (`Knowledge.cs`, `Loc.cs`). Détail complet : FIELD-LOG, entrée du 06/08, Item 11.
+>
+> **Git (action Maxime)** :
+> ```
+> git add src/PincabToolbox.App/Knowledge.cs src/PincabToolbox.App/Localization/Loc.cs knowledge/FIELD-LOG.md TRANSMISSION.md
+> git commit -m "chore(knowledge): cat.* manquants + AutoFixable documente comme vestigial"
+> git push origin main
+> ```
+
+---
 
 ## ⏱️ MAJ 06/08 (autonome Sonnet 5) — file Tier A du handoff LIVRÉE (8/8), dégel formalisé en ADR-010
 
@@ -66,8 +103,8 @@ Rien n'a bloqué la file (aucun item n'a été laissé inachevé) — ce sont de
 coût repérées en cours de route, non codées hors mandat, consolidées ici plutôt que dispersées.
 Détail complet par point : `knowledge/FIELD-LOG.md`, entrée du 06/08, section « DÉCISIONS EN ATTENTE ».
 
-1. 6 scanners pré-existants sans entrée `cat.*` dans `Loc.cs` (colonne Module affiche le code brut) — additif trivial.
-2. `Knowledge.KnowledgeEntry.AutoFixable` est un flag mort (zéro lecteur dans l'App) — à câbler ou documenter comme décoratif.
+1. ✅ **FAIT (MAJ 06/08 bis)** — ~~6 scanners pré-existants sans entrée `cat.*` dans `Loc.cs`~~.
+2. ✅ **FAIT (MAJ 06/08 bis)** — ~~`Knowledge.KnowledgeEntry.AutoFixable` est un flag mort~~ — documenté comme vestigial (pas câblé, choix délibéré — voir raisonnement ci-dessus).
 3. Format legacy `.ini` (g-sound) pour AltSound — aucun schéma vérifiable trouvé, non couvert.
 4. DLL 32/64-bit de colorisation (B1) — aucun nom de fichier distinct confirmé au-delà de `BitnessScanner`.
 5. Position DMD (C1) — deux lectures possibles de la doc officielle, jamais recoupées ; non vérifiée (seul le backglass l'est).
