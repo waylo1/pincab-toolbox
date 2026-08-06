@@ -52,7 +52,7 @@ public partial class MainWindow : Window
     private CancellationTokenSource? _cts;
     private readonly Settings _settings = Settings.Load();
 
-    private bool _showCritical = true, _showWarning = true, _showInfo = true, _showOk = false;
+    private bool _showCritical = true, _showWarning = true, _showNote = true, _showInfo = true, _showOk = false;
     private string? _sortKey;
     private bool _sortAsc = true;
     private string? _demoRoot;                       // real demo path while the box shows a friendly label
@@ -60,11 +60,16 @@ public partial class MainWindow : Window
 
     private static readonly Brush BrushCritical = new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6E));
     private static readonly Brush BrushWarning = new SolidColorBrush(Color.FromRgb(0xF5, 0xA5, 0x24));
+    // Severity.Note — distinct from Info on purpose (Doctrine Note, HANDOFF §"rendu App"): a heuristic
+    // fact is neither a neutral confirmation (Info, blue) nor actionable (Warning, orange). Same violet
+    // as App.xaml's NoteSev StaticResource — kept in sync manually, same pattern as the other 4 pairs.
+    private static readonly Brush BrushNote = new SolidColorBrush(Color.FromRgb(0xB5, 0x8D, 0xF5));
     private static readonly Brush BrushInfo = new SolidColorBrush(Color.FromRgb(0x3E, 0x9C, 0xF3));
     private static readonly Brush BrushOk = new SolidColorBrush(Color.FromRgb(0x46, 0xC0, 0x6E));
 
     private static readonly Brush RowCritical = new SolidColorBrush(Color.FromArgb(0x1E, 0xE5, 0x48, 0x4D));
     private static readonly Brush RowWarning = new SolidColorBrush(Color.FromArgb(0x12, 0xF5, 0xA5, 0x24));
+    private static readonly Brush RowNote = new SolidColorBrush(Color.FromArgb(0x14, 0xB5, 0x8D, 0xF5));
     private static readonly Brush RowInfo = new SolidColorBrush(Color.FromArgb(0x14, 0x3E, 0x9C, 0xF3));
     private static readonly Brush RowOk = new SolidColorBrush(Color.FromArgb(0x14, 0x46, 0xC0, 0x6E));
 
@@ -214,6 +219,7 @@ public partial class MainWindow : Window
         {
             ChipCritical.Text = "0 " + Loc.Get("filter.critical");
             ChipWarning.Text = "0 " + Loc.Get("filter.warning");
+            ChipNote.Text = "0 " + Loc.Get("filter.note");
             ChipInfo.Text = "0 " + Loc.Get("filter.info");
             ChipOk.Text = "0 " + Loc.Get("filter.ok");
         }
@@ -335,7 +341,15 @@ public partial class MainWindow : Window
                     .Add(new PinupDisplayZombieScanner())
                     .Add(new DisplaySetupScanner())
                     .Add(new OrphanedMediaScanner())
-                    .Add(new UpdateWatcherScanner(vps));
+                    .Add(new UpdateWatcherScanner(vps))
+                    .Add(new AliasLoopScanner())
+                    .Add(new NvramScanner())
+                    .Add(new AltColorScanner())
+                    .Add(new AltSoundScanner())
+                    .Add(new ScreenTopologyScanner())
+                    .Add(new JunctionScanner())
+                    .Add(new DirectB2sScanner())
+                    .Add(new PopperPlaylistScanner());
                 return engine.Run(root, profile, progress, ct);
             }, ct);
 
@@ -345,7 +359,8 @@ public partial class MainWindow : Window
             _repairResult = await Task.Run(() => RepairOfferBuilder.Build(report));
             RefreshList();
             LblStatus.Text = string.Format(Loc.Get("status.done"), report.Findings.Count,
-                report.Count(Severity.Critical), report.Count(Severity.Warning), report.Count(Severity.Info));
+                report.Count(Severity.Critical), report.Count(Severity.Warning), report.Count(Severity.Info),
+                report.Count(Severity.Note));
             if (report.Layout.VpxTables.Count == 0)
                 LblPlaceholder.Text = Loc.Get("scan.hint.notables");
             BtnExport.IsEnabled = true;
@@ -382,6 +397,13 @@ public partial class MainWindow : Window
     {
         _showWarning = !_showWarning;
         PillWarning.Opacity = _showWarning ? 1.0 : 0.4;
+        if (_report is not null) RefreshList();
+    }
+
+    private void PillNote_Click(object sender, MouseButtonEventArgs e)
+    {
+        _showNote = !_showNote;
+        PillNote.Opacity = _showNote ? 1.0 : 0.4;
         if (_report is not null) RefreshList();
     }
 
@@ -450,6 +472,7 @@ public partial class MainWindow : Window
 
         ChipCritical.Text = $"{_report.Count(Severity.Critical)} {Loc.Get("filter.critical")}";
         ChipWarning.Text = $"{_report.Count(Severity.Warning)} {Loc.Get("filter.warning")}";
+        ChipNote.Text = $"{_report.Count(Severity.Note)} {Loc.Get("filter.note")}";
         ChipInfo.Text = $"{_report.Count(Severity.Info)} {Loc.Get("filter.info")}";
         ChipOk.Text = $"{_report.Count(Severity.Ok)} {Loc.Get("filter.ok")}";
 
@@ -532,11 +555,17 @@ public partial class MainWindow : Window
             RepairNotAutomatableLine.Visibility = Visibility.Collapsed;
         }
 
+        // Exhaustive over all 5 Severity values on purpose (not "_ => _showOk"): a wildcard here once
+        // silently routed Note through the Ok toggle (hidden by default, wrong bucket) — the exact
+        // "switch App non exhaustif" risk the handoff warned about. Kept explicit so a future Severity
+        // value fails loudly (falls to _showOk, same as today) rather than silently misclassifying.
         bool Show(Severity s) => s switch
         {
             Severity.Critical => _showCritical,
             Severity.Warning => _showWarning,
+            Severity.Note => _showNote,
             Severity.Info => _showInfo,
+            Severity.Ok => _showOk,
             _ => _showOk,
         };
 
@@ -572,18 +601,24 @@ public partial class MainWindow : Window
                 {
                     Severity = f.Severity,
                     SevLabel = Loc.SeverityLabel(f.Severity),
+                    // Exhaustive: an un-handled severity must never fall through to the green Ok
+                    // brush by accident (that silently painted a heuristic Note finding as "fine").
                     SevBrush = f.Severity switch
                     {
                         Severity.Critical => BrushCritical,
                         Severity.Warning => BrushWarning,
+                        Severity.Note => BrushNote,
                         Severity.Info => BrushInfo,
+                        Severity.Ok => BrushOk,
                         _ => BrushOk,
                     },
                     RowBg = f.Severity switch
                     {
                         Severity.Critical => RowCritical,
                         Severity.Warning => RowWarning,
+                        Severity.Note => RowNote,
                         Severity.Info => RowInfo,
+                        Severity.Ok => RowOk,
                         _ => RowOk,
                     },
                     Category = Loc.Get("cat." + f.Category),
@@ -815,7 +850,7 @@ public partial class MainWindow : Window
             if (!string.IsNullOrEmpty(fix)) sb.AppendLine($"           fix: {fix}");
         }
         sb.AppendLine(new string('-', 80));
-        sb.AppendLine($"{r.Count(Severity.Critical)} critical, {r.Count(Severity.Warning)} warnings, {r.Count(Severity.Info)} info, {r.Count(Severity.Ok)} ok");
+        sb.AppendLine($"{r.Count(Severity.Critical)} critical, {r.Count(Severity.Warning)} warnings, {r.Count(Severity.Note)} notes, {r.Count(Severity.Info)} info, {r.Count(Severity.Ok)} ok");
         return sb.ToString();
     }
 
@@ -825,9 +860,12 @@ public partial class MainWindow : Window
         var sb = new StringBuilder();
         sb.AppendLine($"**Pincab Toolbox — scan report** · {DateTime.Now:yyyy-MM-dd HH:mm}");
         sb.AppendLine();
-        sb.AppendLine($"**Health score: {r.Score}/100 ({r.Grade})** — {r.Count(Severity.Critical)} critical · {r.Count(Severity.Warning)} warnings · {r.Count(Severity.Info)} info");
+        sb.AppendLine($"**Health score: {r.Score}/100 ({r.Grade})** — {r.Count(Severity.Critical)} critical · {r.Count(Severity.Warning)} warnings · {r.Count(Severity.Note)} notes · {r.Count(Severity.Info)} info");
         sb.AppendLine();
-        foreach (var sev in new[] { Severity.Critical, Severity.Warning, Severity.Info })
+        // Severity.Note MUST be in this array — it's what actually puts Note findings in the forum
+        // export. Without it they don't render wrong, they silently vanish (found while wiring the
+        // Note doctrine's App rendering; the other 3 severities were already exhaustive by construction).
+        foreach (var sev in new[] { Severity.Critical, Severity.Warning, Severity.Note, Severity.Info })
         {
             var items = r.Rolled().Where(f => f.Severity == sev).ToList();   // shareable = readable
             if (items.Count == 0) continue;
@@ -851,13 +889,14 @@ public partial class MainWindow : Window
         {
             Severity.Critical => "red",
             Severity.Warning => "orange",
+            Severity.Note => "purple",
             Severity.Info => "royalblue",
             _ => "green",
         };
         var scoreColor = r.Score >= 90 ? "green" : r.Score >= 70 ? "orange" : "red";
         var sb = new StringBuilder();
         sb.AppendLine($"[b]Pincab Toolbox — scan report[/b] ({DateTime.Now:yyyy-MM-dd HH:mm})");
-        sb.AppendLine($"[b]Health score: [color={scoreColor}]{r.Score}/100 ({r.Grade})[/color][/b] — {r.Count(Severity.Critical)} critical, {r.Count(Severity.Warning)} warnings, {r.Count(Severity.Info)} info");
+        sb.AppendLine($"[b]Health score: [color={scoreColor}]{r.Score}/100 ({r.Grade})[/color][/b] — {r.Count(Severity.Critical)} critical, {r.Count(Severity.Warning)} warnings, {r.Count(Severity.Note)} notes, {r.Count(Severity.Info)} info");
         sb.AppendLine("[list]");
         foreach (var f in r.Rolled().Where(f => f.Severity != Severity.Ok))
         {
@@ -889,19 +928,22 @@ public partial class MainWindow : Window
         sb.AppendLine("table{width:100%;border-collapse:collapse;font-size:14px}");
         sb.AppendLine("th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #26262F;vertical-align:top}");
         sb.AppendLine("th{color:#9C9CAC;font-size:12px;text-transform:uppercase;letter-spacing:.5px}");
-        sb.AppendLine(".sev{font-weight:800;white-space:nowrap}.c{color:#E5484D}.w{color:#F5A524}.i{color:#3E9CF3}.o{color:#46C06E}");
+        sb.AppendLine(".sev{font-weight:800;white-space:nowrap}.c{color:#E5484D}.w{color:#F5A524}.n{color:#B58DF5}.i{color:#3E9CF3}.o{color:#46C06E}");
         sb.AppendLine(".fix{color:#46C06E;font-size:12.5px}.path{color:#6b6b78;font-family:Consolas,monospace;font-size:11.5px}");
         sb.AppendLine("footer{color:#6b6b78;font-size:12px;margin-top:26px}");
         sb.AppendLine("</style></head><body><div class=\"wrap\">");
         sb.AppendLine("<h1>PINCAB <span>TOOLBOX</span></h1>");
         sb.AppendLine($"<div class=\"meta\">Scan report · {DateTime.Now:yyyy-MM-dd HH:mm}</div>");
         sb.AppendLine($"<div class=\"score\"><b style=\"color:{scoreColor}\">{r.Score}</b><span style=\"color:#9C9CAC\">/100</span><span class=\"g\" style=\"color:{scoreColor}\">{Esc(r.Grade)}</span></div>");
-        sb.AppendLine($"<div class=\"sum\">{r.Count(Severity.Critical)} critical · {r.Count(Severity.Warning)} warnings · {r.Count(Severity.Info)} info · {r.Count(Severity.Ok)} ok</div>");
+        sb.AppendLine($"<div class=\"sum\">{r.Count(Severity.Critical)} critical · {r.Count(Severity.Warning)} warnings · {r.Count(Severity.Note)} notes · {r.Count(Severity.Info)} info · {r.Count(Severity.Ok)} ok</div>");
         sb.AppendLine("<table><tr><th>Severity</th><th>Module</th><th>Subject</th><th>Details</th></tr>");
         // Rolled: the shared HTML report must stay readable on a 2000-table collection.
         foreach (var f in r.Rolled())
         {
-            var cls = f.Severity switch { Severity.Critical => "c", Severity.Warning => "w", Severity.Info => "i", _ => "o" };
+            // Explicit Note arm on purpose: the wildcard used to send Note to "o" (Ok's green class),
+            // painting a heuristic finding as a reassuring confirmation. Same bug family as the screen
+            // SevBrush/RowBg switches above.
+            var cls = f.Severity switch { Severity.Critical => "c", Severity.Warning => "w", Severity.Note => "n", Severity.Info => "i", Severity.Ok => "o", _ => "o" };
             var rel = Rel(f.FilePath);
             var extra = "";
             var fix = Loc.FixHintText(f);

@@ -161,6 +161,12 @@
                                     <TextBlock x:Name="ChipWarning" Text="0" Foreground="{StaticResource Warning}" FontWeight="Bold"/>
                                 </StackPanel>
                             </Border>
+                            <Border x:Name="PillNote" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="11,7" Margin="0,0,8,0" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="PillNote_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="8" Height="8" Fill="{StaticResource NoteSev}" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                                    <TextBlock x:Name="ChipNote" Text="0" Foreground="{StaticResource NoteSev}" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
                             <Border x:Name="PillInfo" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="11,7" Margin="0,0,8,0" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="PillInfo_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <Ellipse Width="8" Height="8" Fill="{StaticResource InfoSev}" VerticalAlignment="Center" Margin="0,0,7,0"/>

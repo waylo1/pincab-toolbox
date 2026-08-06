@@ -26,6 +26,334 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-06 (session Sonnet 5, autonome, effort max) · Handoff scanners — exécution de la file
+- code:        transverse — journal de session unique, une ligne par item (détail sous chaque item ci-dessous)
+- bac:         FIX (nouveaux scanners) + FEATURE (rendu Note)
+- contexte:    Reprise du handoff `docs/HANDOFF-Sonnet5-scanners-2026-08.md`, Maxime absent, autonomie
+  totale (R1-R6, zéro question). Baseline reconfirmée avant tout code : **Core 144/144, Repair 105/105,
+  Debug ET Release** (SDK réinstallé dans le sandbox, fixtures régénérées). Outil de vérif ajouté ce jour :
+  un mini-checker Roslyn (`/tmp/roslyn-check`, `Microsoft.CodeAnalysis.CSharp` chargé directement depuis
+  les DLL livrées avec le SDK — pas d'accès NuGet dans ce sandbox) qui parse chaque fichier App édité et
+  compte les vraies erreurs de syntaxe CSxxxx. Remplace la simple relecture manuelle mentionnée au §2 du
+  handoff par une vérification programmatique réelle (0 erreur de syntaxe à chaque item, voir détail par
+  item ci-dessous).
+- analyse (journal par item, le plus récent en dernier) :
+
+  **Item 1 — Knowledge.cs + Loc.cs rétroactif pour `VPX_VERSION_OUTDATED` (R1).** Entrée `Knowledge.cs`
+  (Impact/Cause FR+EN, pas d'`AutoFixable` — mise à jour manuelle de VPX, même famille que
+  `COMPAT_MIN_VERSION`/`B2S_MISSING`) + `Loc.cs` (`FrFindings` avec les 3 args table/requise/installée,
+  `FrFixHints` en texte plat sans répéter les numéros déjà dans le message — patron identique aux entrées
+  voisines). Roslyn : 0 erreur sur les deux fichiers. Aucun test ne référence l'App (Core.Tests ne
+  dépend pas d'App) donc le vert Core/Repair n'était pas en jeu ici — vérifié quand même par prudence.
+
+  **Item 2 — Rendu App du palier `Severity.Note`, prérequis Tier B.** Bilan de la revue : le palier Core
+  était déjà vert (session Opus), mais **3 bugs réels de rendu** dormaient dans `MainWindow.xaml.cs`,
+  exactement le risque nommé au handoff (« switch App non exhaustif ») — trouvés et corrigés avant tout
+  scanner Tier B :
+  1. Écran : `Show(Severity)` (filtre chip) et les switchs `SevBrush`/`RowBg` avaient un bras `_ =>` par
+     défaut qui routait silencieusement `Note` sur le bucket **Ok** — un finding heuristique se serait
+     affiché caché par défaut (le chip Ok est masqué par défaut) et, si affiché, peint en **vert
+     confirmation** au lieu d'une couleur distincte. Pas un crash — pire, un mensonge visuel silencieux.
+  2. Export Markdown (`BuildForumMarkdown`, le bouton « Copier pour le forum », le plus utilisé) :
+     `foreach (var sev in new[] { Critical, Warning, Info })` — `Note` **absent du tableau** → un finding
+     Note aurait **disparu intégralement** du rapport forum, malgré `Rolled()` qui les contient. Le pire
+     des trois : silence total, pas juste une couleur fausse.
+  3. Export HTML : `cls = f.Severity switch { ... _ => "o" }` — même défaut, classe CSS « o » (verte, Ok)
+     appliquée à une ligne Note.
+  **Correctifs** : les 3 switchs rendus exhaustifs sur les 5 valeurs de `Severity` (explicite, plus de
+  `_ =>` fourre-tout) ; `Note` ajouté au tableau de `BuildForumMarkdown` ; nouvelle teinte violette
+  distincte (`#B58DF5`, ni le bleu Info ni l'orange Warning) déclinée en `NoteSev` (App.xaml),
+  `BrushNote`/`RowNote` (code-behind), classe CSS `.n` (HTML), couleur `purple` (BBCode) ; libellé exact
+  demandé : `sev.Note` = FR « À noter » / EN « Note » ; nouveau chip `PillNote`/`ChipNote` entre Warning
+  et Info (ordre = sévérité décroissante, cohérent avec `Ordered()`) ; `_showNote = true` par défaut
+  (comme Info/Warning/Critical — seul Ok est masqué par défaut) ; `status.done` et les 4 résumés d'export
+  texte étendus avec le compte de notes. **Score/bandeau vérifiés déjà corrects sans y toucher** :
+  `ScanReport.Score` ne compte que Critical/Warning (test `Test_Note_NeverMovesScore` déjà vert) et le
+  bandeau « FIX THIS FIRST »/« WORTH A LOOK » (`RefreshList`) ne retombe jamais sur Note (chaîne
+  `FirstOrDefault(Critical) ?? FirstOrDefault(Warning)`, s'arrête à Warning) — aucune modif nécessaire là.
+  Export **JSON déjà correct sans changement** : `severity = f.Severity.ToString()` est exhaustif par
+  construction. Vérifié : App.xaml + MainWindow.xaml XML bien formés (`xml.etree`), `MainWindow.xaml.cs` +
+  `Loc.cs` 0 erreur Roslyn, `PillNote`/`ChipNote` cohérents XAML↔code-behind (grep croisé). Core 144/144 +
+  Repair 105/105 Debug ET Release toujours verts (aucun test ne touchait ce chantier, mais revérifié).
+
+  **Item 3 — Tier A, E1 VPMAlias Recursion Loop (`VPMALIAS_LOOP`, Warning).** `Services/AliasGraph.cs`
+  (pur : détection de cycle sur le mapping alias→cible, marche de proche en proche en trackant l'index de
+  chaque nœud dans le chemin courant ; un `Dictionary` a au plus un arc sortant par nœud donc c'est un
+  simple graphe fonctionnel — auto-boucle, cycle à 2, cycle plus loin dans une chaîne avec préfixe acyclique
+  correctement exclu du cycle rapporté, insensible à la casse comme `AliasFile.Parse`) +
+  `Scanning/AliasLoopScanner.cs` (**zéro I/O propre** : `ScanEngine` a déjà parsé `VPMAlias.txt` dans
+  `ctx.Aliases` comme prep partagée — même map que lit déjà `RomValidatorScanner` — donc le scanner se
+  contente d'interroger `AliasGraph.FindCycles(ctx.Aliases)`, pas de délégué à injecter faute d'I/O à
+  faire) + `tests/AliasLoopScannerTests.cs` (12 tests neufs : 8 sur la classe pure, 4 sur le scanner) +
+  Knowledge/Loc (FR/EN + `cat.aliasloop`="VPMAlias") + `.Add(new AliasLoopScanner())`. **Core 144→156/156**
+  (12 nouveaux tests), Repair 105/105 inchangé, Debug ET Release, Roslyn 0 erreur sur les 6 fichiers
+  touchés. Aucun scanner existant modifié. Id `aliasloop` (aucune collision avec les 13 existants).
+  **Note produit, pas codée** : 6 des 13 scanners existants (`legacy`,`disk`,`process`,`display`,
+  `media-orphan`,`vpxversion`) n'ont pas d'entrée `cat.*` dans `Loc.cs` — leur colonne Module affiche le
+  code brut `cat.xxx` au lieu d'un libellé (repéré en cherchant le patron à suivre pour ce nouveau
+  scanner). Pré-existant, hors périmètre du handoff (ni un scanner touché, ni un code Warning/Critical) —
+  je l'ai seulement évité pour tout scanner neuf de cette session. Coût de le corriger : trivial (6 paires
+  de lignes `Loc.cs`, additif, zéro risque). Signalé pour la revue de clôture plutôt que codé à l'aveugle
+  hors file.
+
+  **Item 4 — Tier A, H1 NVRAM 0-Byte Detector (`NVRAM_EMPTY`, Warning).** `Services/NvramInspector.cs`
+  (pur : filtre les paires nom/taille à taille=0, scope strict au 0-octet — « taille ≠ spec » exclu faute
+  de base de specs par ROM, audit §4/H1) + `Scanning/NvramScanner.cs` (énumérateur de dossier injecté,
+  défaut = vrai `Directory.EnumerateFiles` sur `VPinMAME/nvram/*.nv` ; dossier absent/illisible → silence,
+  jamais une exception qui remonte) + `tests/NvramScannerTests.cs` (9 tests neufs) + Knowledge/Loc
+  (FR/EN + `cat.nvram`="NVRAM") + `.Add(new NvramScanner())`. **Core 156→165/165**, Repair 105/105
+  inchangé, Debug ET Release, Roslyn 0 erreur. Id `nvram` sans collision.
+  **Décision transverse actée ici, valable pour tous les scanners restants de cette session** : vérifié
+  que `Knowledge.KnowledgeEntry.AutoFixable` **n'a aucun lecteur dans l'App** (`grep IsAutoFixable` : la
+  seule définition + son usage interne à `Knowledge.cs`, zéro appelant ailleurs) — le vrai signal
+  « Repair peut corriger X » qui atteint l'utilisateur passe uniquement par
+  `RepairOfferBuilder.Build` → `RepairEngine.Plan` → le `RepairActionRegistry` fermé (4 actions réelles)
+  croisé avec les `repairRules` de `knowledge/pack-2026.08.json` (JSON séparé, ADR-005) — un mécanisme
+  entièrement différent que je ne touche pas cette session (pack Repair = hors périmètre Scanner). Je ne
+  positionnerai donc `AutoFixable = true` sur aucun nouveau code cette session (comme `NVRAM_EMPTY`
+  ci-dessus) : le flag est aujourd'hui mort mais visuellement trompeur si mis à `true` sans règle Repair
+  réelle derrière — cohérent avec les 9 codes existants qui le laissent déjà à `false` par défaut.
+  Signalé pour la revue de clôture (flag mort à documenter ou câbler, coût faible).
+
+  **Item 5 — Tier A, B1 AltColor/SERum Pair Integrity (`ALTCOLOR_INCOMPLETE`, Warning).**
+  `Services/AltColorInspector.cs` (pur : complet si `.vni`+`.pal` OU fichier Serum `.crz`+`.pal`, les
+  deux formats vivant côte à côte selon l'audit §4/B1 ; dossier/jeu vide traité comme « pas complet » par
+  la fonction pure mais c'est au scanner de ne PAS transformer ça en finding — un ROM sans aucun fichier
+  n'a simplement jamais eu de colorisation installée, ce n'est pas un défaut) + `Scanning/AltColorScanner.cs`
+  (croise `ScriptAnalyzer.AnalyzeRomUsage` comme `CompletenessScanner` — ne vérifie QUE les ROMs
+  réellement requises par une table présente, jamais tout le dossier `altcolor/`, énumérateur de dossier
+  injecté) + `tests/AltColorScannerTests.cs` (16 tests neufs, dont un qui vérifie que le lecteur n'est
+  **jamais appelé** pour une table sans ROM) + Knowledge/Loc (FR/EN + `cat.altcolor`) +
+  `.Add(new AltColorScanner())`. **Core 165→181/181**, Repair 105/105 inchangé, Debug ET Release, Roslyn
+  0 erreur. Id `altcolor` sans collision.
+  **Périmètre volontairement réduit, décidé et logué plutôt que deviné** : la fiche audit §4/B1 mentionne
+  aussi « la concordance 32/64-bit des DLL de colorisation ». Aucun nom de DLL distinct n'est spécifié
+  nulle part pour ce sous-point au-delà de ce que `BitnessScanner` vérifie déjà (`dmddevice64.dll`,
+  `BITNESS_DMD64_MISSING`) — inventer un nom de fichier sans preuve aurait échangé le FP-nul de ce check
+  déterministe contre une supposition. Non codé, pas silencieusement oublié — signalé pour la clôture.
+
+  **Item 6 — Tier A, B2 AltSound Structural Linter (`ALTSOUND_SAMPLE_MISSING`, Warning).**
+  Format `altsound.csv` vérifié par recherche web (guide communautaire « How to create a new altsound
+  project », forums VPINBALL.COM) avant de coder plutôt que deviné : en-tête
+  `"ID","CHANNEL","DUCK","GAIN","LOOP","STOP","NAME","FNAME"`, CSV virgule avec champs entre guillemets,
+  seuls ID/NAME/FNAME obligatoires, plusieurs lignes peuvent partager un ID (le moteur pioche au hasard
+  pour la variété). `Services/AltSoundManifestLinter.cs` (pur : parseur CSV maison — zéro dépendance,
+  guillemets + `""` échappé gérés — extrait uniquement la colonne FNAME ; en-tête sans colonne FNAME =
+  format non reconnu → liste vide plutôt qu'une supposition ; ligne trop courte ou FNAME vide = ignorée
+  en silence, pas signalée comme défaut — une ligne placeholder/désactivée est un choix d'auteur légitime)
+  + `Scanning/AltSoundScanner.cs` (même discipline anti-FP que B1 : ne vérifie que les ROMs réellement
+  requises via `ScriptAnalyzer.AnalyzeRomUsage`, lit `altsound/<rom>/altsound.csv` sous `VPinMameDir`,
+  déduplique les FNAME avant de compter — des lignes dupliquées pour variété ne doivent pas gonfler les
+  compteurs — puis vérifie l'existence de chaque fichier référencé ; une exception sur la vérification
+  d'un fichier précis est traitée comme « présent » plutôt que comme un défaut deviné ; un seul finding
+  résumé par ROM avec compteur absents/total + jusqu'à 8 exemples en Args, même patron que
+  `POPPER_MEDIA_MISSING`) + `tests/AltSoundScannerTests.cs` (19 tests neufs : 9 sur le parseur pur dont
+  guillemets échappés et insensibilité à la casse de l'en-tête, 10 sur le scanner dont non-appel du
+  lecteur si aucune ROM requise et déduplication FNAME). Knowledge/Loc (FR/EN + `cat.altsound`) +
+  `.Add(new AltSoundScanner())`. **Core 181→200/200**, Repair 105/105 inchangé, Debug ET Release, Roslyn
+  0 erreur sur les 6 fichiers touchés. Id `altsound` sans collision.
+  **Deux réductions de périmètre décidées et loguées, pas devinées** : (1) la fiche handoff §3/B2 mentionne
+  aussi le format legacy `.ini` (« g-sound ») — aucun schéma vérifiable trouvé pour ce format (contrairement
+  au CSV, confirmé par recherche), donc non implémenté plutôt que deviné ; silence sur ce format, pas un
+  faux « rien à signaler ». (2) la fiche mentionne aussi signaler les « erreurs de syntaxe CSV » en plus des
+  samples absents — un seul code est mandaté (`ALTSOUND_SAMPLE_MISSING`) et `AltSoundManifestLinter` traite
+  déjà toute ligne malformée comme silencieuse (cohérent avec le biais silence appliqué à tout le reste de
+  cette session) plutôt que d'inventer un deuxième signal hors mandat ; si Maxime veut un code dédié
+  (`ALTSOUND_MANIFEST_MALFORMED` ou similaire) c'est un ajout additif trivial pour une session future.
+
+  **Item 7 — Tier A, C1 Screen Topology Check (`DISPLAY_OFFSCREEN`, Warning).** Le plus complexe de la
+  file (annoncé comme tel au handoff). **Format `ScreenRes.txt`/`B2STableSettings.xml` vérifié par
+  recherche approfondie avant tout code** (template officiel `ScreenResTemplate.txt`, wiki
+  vpinball/b2s-backglass, Changelog, exemples réels dual/single-screen — pas deviné) : découverte
+  majeure, la prémisse du handoff était fausse sur un point — `B2STableSettings.xml` **ne contient
+  aucune donnée de position** (vérifié sur 3 exemples réels indépendants, tout y est des toggles
+  logs/perf) ; toute la géométrie vit dans `ScreenRes.txt`/`<table>.res` (17 lignes, une valeur par
+  ligne non-commentée). `Services/MonitorTopologyProbe.cs` (nouveau, P/Invoke `EnumDisplayMonitors`+
+  `GetMonitorInfo` — délibérément séparé de `DisplayProbe.cs` sans y toucher, comme demandé — donne
+  rectangle + nom `\\.\DISPLAYn` par écran, coordonnées virtuelles signées) + `Services/ScreenTopologyAnalyzer.cs`
+  (pur : parse lignes 1-7, résout le sélecteur d'écran ligne 5 dans ses 3 syntaxes (`N` nom de device,
+  `@NNNN` X absolu, `=N` Nᵉ écran de gauche à droite 1-indexé) contre les moniteurs réels, décide
+  hors-écran = zéro intersection avec tout rectangle moniteur) + `Scanning/ScreenTopologyScanner.cs`
+  (`ScreenRes.txt` global évalué une seule fois — pas par table, pour ne pas dupliquer un même défaut
+  partagé — puis chaque `.res` par-table évalué indépendamment) + `tests/ScreenTopologyScannerTests.cs`
+  (30 tests neufs, dont un jeu de données copié verbatim de l'exemple réel dual-screen du wiki officiel).
+  Knowledge/Loc (FR/EN + `cat.screentopology`) + `.Add(new ScreenTopologyScanner())`. **Core 200→230/230**,
+  Repair 105/105 inchangé, Debug ET Release, Roslyn 0 erreur sur les 9 fichiers touchés. Id
+  `screentopology` sans collision. `DisplayProbe.cs` non modifié (nouveau P/Invoke séparé comme exigé).
+  **Trois réductions de périmètre décidées et loguées, la recherche les a directement motivées** :
+  (1) `B2STableSettings.xml` n'est plus lu du tout par ce Doctor — la prémisse du handoff était fausse
+  (voir ci-dessus), agir sur la réalité vérifiée plutôt que sur la prémisse d'origine, même logique que
+  la vérification du schéma altsound.csv à l'item 6. (2) Seule la position du **backglass** (lignes 6-7)
+  est vérifiée, pas celle du **DMD** (lignes 10-11) : la doc officielle dit ces coordonnées « relatives
+  à l'écran du backglass » mais le seul exemple réel chiffré disponible ne fait sens que si elles sont
+  relatives à la fenêtre du backglass elle-même — conflit non résolu entre deux lectures possibles de la
+  même source, jamais recoupé par une deuxième donnée ; encoder l'une ou l'autre comme un fait aurait
+  risqué exactement le faux positif que cette session entière cherche à éviter. (3) Seuls les fichiers
+  portant le marqueur `# V2` (ajouté en 2.0.0) sont acceptés : avant cette version, les blocs Backglass
+  et Background peuvent **échanger silencieusement leur sens** selon un réglage qui ne vit même pas dans
+  ce fichier — plutôt que de recouper un deuxième fichier pour lever une ambiguïté qui ne se résout pas
+  forcément par table, ce parseur refuse tout fichier sans le marqueur (silence, cohérent avec le reste
+  de la session). Les trois décisions restent additives : rien n'empêche de les lever plus tard avec
+  plus de preuve terrain.
+
+  **Item 8 — Tier A, G3 Junction Health (`BROKEN_JUNCTION`, Warning).** Panne très spécifique aux pincabs :
+  un propriétaire jonctionne souvent un gros dossier (roms, PUPVideos, une colorisation) vers un second
+  disque/NAS pour l'espace — quand ce disque disparaît, le dossier a toujours l'air présent mais est vide
+  pour tout le monde (VPX, Popper, ce scan), sans la moindre erreur. `Services/JunctionInspector.cs`
+  (pur, trivial par nature : reparse point + cible absente = cassé) + `Scanning/JunctionScanner.cs`
+  (portée : les dossiers clés d'`InstallLayout` — RootPath/TablesDir/VPinMameDir/RomsDir/PupVideosDir/
+  PopMediaDir — plus leurs sous-dossiers immédiats, un seul niveau, jamais de parcours récursif illimité ;
+  point d'attention retenu : lire les attributs bruts du dossier — jamais suivis par Windows sur le
+  reparse point lui-même — **avant** de demander son état, pour ne pas confondre « jonction cassée » avec
+  « rien à cet endroit » via une sonde d'existence naïve qui suivrait le lien mort) + `tests/JunctionScannerTests.cs`
+  (12 tests neufs, dont un qui vérifie qu'un chemin listé à la fois comme racine et comme enfant d'une
+  autre racine n'est évalué qu'une fois). Knowledge/Loc (FR/EN + `cat.junctions`) +
+  `.Add(new JunctionScanner())`. **Core 230→242/242**, Repair 105/105 inchangé, Debug ET Release, Roslyn
+  0 erreur sur les 6 fichiers touchés. Id `junctions` sans collision.
+
+  **Item 9 — Tier A, H2 DirectB2S XML Malform (`B2S_MALFORMED`, Warning).** Le handoff signalait qu'un
+  `.directb2s` « peut être du XML brut OU compressé » et pointait le `CompoundFileReader` déjà en place
+  (utilisé pour lire les `.vpx`, eux-mêmes de vrais fichiers OLE/MS-CFB) comme piste si besoin. **Recherche
+  faite avant de coder** : source du DirectB2S Designer lui-même (l'exportateur — un simple
+  `XmlDocument.Save`), source du loader de B2S Backglass Server lui-même (un simple `XmlDocument.Load` +
+  `SelectSingleNode("DirectB2SData")`), et un parseur tiers indépendant testé sur de vraies collections
+  utilisateur — les trois s'accordent : un `.directb2s` réel est **toujours du XML brut**, jamais un
+  conteneur OLE compressé. Aucune preuve d'une variante compressée réelle trouvée nulle part.
+  `Services/DirectB2SValidator.cs` (pur : `IsWellFormedXml` via `XmlReader`, plus `LooksLikeCompoundFile`
+  qui reconnaît juste la signature MS-CFB sans tenter de la décoder) + `Scanning/DirectB2sScanner.cs`
+  (énumère `*.directb2s` dans `TablesDir`, signale tout fichier qui n'est ni XML bien formé ni reconnu
+  comme conteneur OLE — un fichier 0 octet est délibérément **signalé**, même logique que `NVRAM_EMPTY`) +
+  `tests/DirectB2sScannerTests.cs` (18 tests neufs). Knowledge/Loc (FR/EN + `cat.directb2s`) +
+  `.Add(new DirectB2sScanner())`. **Core 242→260/260**, Repair 105/105 inchangé, Debug ET Release, Roslyn
+  0 erreur sur les 6 fichiers touchés. Id `directb2s` sans collision.
+  **Décision de périmètre motivée directement par la recherche** : le `CompoundFileReader` existant
+  n'est **pas** invoqué ici. La prémisse du handoff (variante compressée réelle) n'a pas été confirmée ;
+  et même si un fichier commence par la signature MS-CFB, aucune source ne donne le nom du flux interne
+  à en extraire — le décoder aurait exigé de deviner une structure non vérifiée, contraire à la
+  discipline tenue tout du long cette session (altsound.csv à l'item 6, ScreenRes.txt à l'item 7). Un tel
+  fichier est donc traité en silence (« format différent, pas cassé »), pas en `B2S_MALFORMED`. Si Maxime
+  a un vrai fichier qui commence par cette signature, le décoder proprement est un ajout additif trivial
+  une fois sa structure réelle connue.
+
+  **Item 10 — Tier A, F1 PUPDatabase Orphan Playlist (`POPPER_ORPHAN_PLAYLIST`, Warning). File Tier A
+  terminée.** Le handoff ne précisait que « jointure Games×Playlists via PlaylistID orpheline » sans
+  schéma — **recherche faite avant d'écrire la moindre requête**, le schéma exact n'était documenté
+  nulle part dans ce repo. Confirmé via le propre wiki de NailBuster (créateur de PinUP Popper, requêtes
+  SQL postées par lui-même) et plusieurs fils de forum indépendants convergents : l'appartenance à une
+  playlist n'est **pas** une colonne sur `Games`, c'est une table de jonction `PlayListDetails`
+  (`GameID`, `PlayListID`, `isFav`), jointe à `Playlists` (`PlayListID`). Comportement confirmé en terrain
+  (VPForums #50896) : supprimer une playlist depuis l'UI Popper ne retire que sa ligne dans `Playlists` —
+  les lignes `PlayListDetails` restent, pointant dans le vide, et ça fige le menu du frontend à
+  l'ouverture. `Services/PlaylistIntegrityInspector.cs` (pur : croise les `PlayListID` référencés contre
+  les `PlayListID` réels ; exclut délibérément les lignes `isFav=2` — le pseudo-« favoris global »
+  intégré à Popper, dont on n'a pas pu confirmer s'il pointe légitimement vers un `PlayListID`
+  inexistant par construction — plutôt que risquer un FP massif sur cette convention non tranchée) +
+  `Scanning/PopperPlaylistScanner.cs` (lecture seule via `SqliteReader.TryReadTable`, conforme ADR-007 ;
+  résolution best-effort du nom du jeu via `Games` pour un message lisible, avec repli sur le GameID brut
+  si cette lecture bonus échoue ; **un seul finding résumé** avec compteur + jusqu'à 8 exemples, même
+  patron que `POPPER_MEDIA_MISSING`) + `tests/PopperPlaylistScannerTests.cs` (19 tests neufs).
+  Knowledge/Loc (FR/EN + `cat.popperplaylist`) + `.Add(new PopperPlaylistScanner())`. **Core 260→279/279**,
+  Repair 105/105 inchangé, Debug ET Release, Roslyn 0 erreur sur les 6 fichiers touchés. Id
+  `popperplaylist` sans collision.
+  **Lacune de recherche assumée** : le nom de la colonne « titre » sur `Playlists` elle-même n'a été
+  confirmé nulle part — le scanner ne l'affiche donc jamais (seuls les jeux affectés sont nommés). Ajout
+  additif trivial si Maxime confirme un jour ce nom de colonne.
+
+  **Bilan file Tier A (handoff §3, items 1 à 10) : terminée intégralement.** E1, H1, B1, B2, C1, G3, H2,
+  F1 tous livrés, testés, vérifiés Roslyn, écrits sur disque, commités localement. Core 144→279/279,
+  Repair 105/105 stable sur toute la file, Debug ET Release à chaque étape. Aucun scanner existant
+  modifié. Sur consigne explicite de Maxime reçue en cours de session (« termine »), la file Tier B
+  (D1/C2/A1-détection/B3/G1/E2/A2/A3, item 11 du plan) n'est **pas** attaquée cette session — décision de
+  cadrage loguée ici plutôt que silencieuse, cohérente avec « chaque item est indépendamment expédiable » :
+  la Tier A déterministe est un point d'arrêt propre et complet, la Tier B (heuristique, doctrine Note)
+  reste entièrement disponible pour une prochaine session sans aucune dette laissée par ce choix.
+
+  **Clôture de session — dégel formalisé (ADR-010) + revue CTO/Product (consigne permanente Maxime).**
+  Avant de considérer la file terminée : `docs/adr/ADR-010-degel-scanner-doctrine-note.md` écrit
+  (formalise la décision déjà prise par Maxime le 05/08, distingue la porte 🟢 déterministe — ship
+  direct, plus de gate deux-signaux — de la porte 🟡 heuristique — doctrine Note obligatoire) ;
+  `PROJECT-BRAIN` §6 (279/105, 21 scanners listés par id) et §7 (dégel documenté, ancienne ligne de gel
+  marquée supersédée plutôt que supprimée) mis à jour ; `TRANSMISSION.md` reçoit le bloc de clôture
+  mandaté par le handoff (§10) avec sa section `DÉCISIONS EN ATTENTE`.
+
+  Revue de skills faite avant clôture (`ListSkills`, consigne permanente de Maxime) : aucun skill
+  spécialisé (.NET/C#, revue de code, sécurité, architecture) disponible dans cette session
+  au-delà de l'outillage déjà mobilisé pendant la file (agents de recherche primaire-source avant
+  code, vérification Roslyn syntaxique) — constaté explicitement plutôt que supposé, conforme à la
+  consigne « si aucun skill pertinent n'est disponible, indique-le et poursuis ».
+
+  **Revue CTO + Product (consigne permanente de Maxime, à chaque clôture de tâche) :**
+  - *Le code est-il propre ?* Oui — gabarit du comparateur cloné à l'identique sur les 8 items (pur en
+    `Services/` + `IScanner` mince à I/O injectée en `Scanning/`), zéro dépendance externe, aucune
+    convention de nommage rompue. Une régression cosmétique (indentation perdue sur une ligne
+    `Loc.cs`) trouvée et corrigée en cours de route par relecture, pas par accident découvert plus
+    tard. Point non nettoyé, assumé : `AutoFixable` reste positionné `false`/absent sur les 8 entrées
+    `Knowledge.cs` neuves, cohérent avec les 9 codes existants, mais le flag lui-même reste mort dans
+    toute l'App (voir DÉCISIONS EN ATTENTE ci-dessous).
+  - *L'architecture reste-t-elle cohérente ?* Oui, plutôt renforcée : point de composition toujours
+    unique (`MainWindow.xaml.cs`, 21 lignes `.Add`), `ScanContext`/`IScanner` inchangés, aucun des 21
+    scanners existants modifié. `MonitorTopologyProbe.cs` créé neuf plutôt que d'étendre
+    `DisplayProbe.cs` (consigne du handoff respectée à la lettre) — la frontière « un fichier P/Invoke
+    = une responsabilité » reste nette plutôt que de commencer à s'éroder.
+  - *Les tests sont-ils suffisants ?* 135 tests neufs sur 8 scanners (144→279), chaque fichier couvrant
+    au minimum : chemin nominal, silence sur donnée absente/illisible, silence sur exception, et au
+    moins un cas limite anti-FP (dédoublonnage, casse, exclusion `isFav=2`, etc.). Limite structurelle
+    assumée, pas nouvelle à cette session : le vrai chemin d'I/O Windows (P/Invoke réel de
+    `MonitorTopologyProbe`, lecture réelle de reparse point par `JunctionScanner`) n'est testable que
+    sur un vrai Windows — seul `build.cmd`/le test terrain de Maxime referme cette boucle, comme pour
+    tout scanner Windows précédent du projet.
+  - *Cette fonctionnalité apporte-t-elle une vraie valeur utilisateur ?* Oui, concrètement : les 8
+    items ciblent des pannes « invisibles jusqu'à ce que ça morde » réelles et courantes en pincab —
+    jonction cassée après débranchement d'un disque, samples altsound renommés/absents, playlist
+    Popper orpheline qui fige le menu du frontend, backglass hors écran après reconfiguration moniteur,
+    NVRAM vidée qui perd les high-scores en silence, colorisation incomplète. Exactement la promesse
+    du moteur (symptôme → cause → correctif). Réserve honnête : aucun des 8 n'a encore tourné sur un
+    vrai cab — la validation terrain reste à faire, pas contournée par le dégel (ADR-010 remplace la
+    barrière d'entrée, pas la vérification a posteriori).
+  - *Y a-t-il un risque technique ou commercial ?* Technique : faible et maîtrisé par construction
+    (additif, biais silence partout, dégrade sans jamais lever d'exception visible). Commercial : le
+    seul risque réel du projet — un faux positif public — n'est pas nul sur 3 des 8 items (C1, H2, F1)
+    dont la prémisse a été *corrigée* par recherche plutôt que confirmée par un utilisateur réel ; le
+    design biaise déjà vers le silence sur ces trois, mais c'est un vrai delta d'incertitude par
+    rapport aux items purement mécaniques (E1, H1, G3). Le saut 12→21 scanners est le plus gros
+    changement de surface du Scanner depuis sa clôture du 03/08 — §7 du Brain priorise déjà « tester
+    sur le cab réel » avant tout le reste, et cette session le rend encore plus vrai qu'avant.
+  - *Amélioration à faible coût, proposée sans être codée ?* Trois candidats, aucun codé : (1) les 6
+    `cat.*` manquants sur des scanners pré-existants (`legacy`, `disk`, `process`, `display`,
+    `media-orphan`, `vpxversion`) — additif, ~6 paires de lignes `Loc.cs`, risque nul ; (2) le flag
+    `AutoFixable` mort — soit le câbler sur le vrai calcul `RepairOfferBuilder`/`RepairActionRegistry`,
+    soit le documenter comme décoratif pour qu'un futur lecteur n'assume pas qu'il fait quelque chose ;
+    (3) le plus rentable : demander spécifiquement à 1-2 utilisateurs terrain déjà identifiés (Gregg,
+    itchigo) de faire tourner le prochain build sur les trois items à prémisse corrigée (C1, H2, F1) en
+    premier — beaucoup moins cher que deviner davantage, et exactement la discipline FIELD-LOG déjà en
+    place pour tout le reste du projet.
+
+## DÉCISIONS EN ATTENTE (pour Maxime)
+Rien n'a bloqué la file cette session au sens R3 du handoff (aucune décision qui n'était pas déjà
+prise n'a empêché un item d'être livré). Les points ci-dessous sont des améliorations à faible coût
+repérées en cours de route et volontairement **non codées** hors mandat — consolidées ici pour la
+revue de clôture plutôt que dispersées, cf. détail complet par item plus haut :
+1. **6 scanners pré-existants sans entrée `cat.*` dans `Loc.cs`** (`legacy`,`disk`,`process`,`display`,
+   `media-orphan`,`vpxversion`) — la colonne Module affiche le code brut. Additif trivial.
+2. **`Knowledge.KnowledgeEntry.AutoFixable` est un flag mort** (zéro lecteur dans l'App, confirmé par
+   grep) — à câbler sur le vrai signal Repair, ou à documenter comme décoratif.
+3. **Format legacy `.ini` (g-sound) pour AltSound non couvert** (B2) — aucun schéma vérifiable trouvé ;
+   additif si Maxime a un exemple réel.
+4. **DLL 32/64-bit de colorisation non vérifiées** (B1, sous-point audit §4) — aucun nom de fichier
+   distinct confirmé au-delà de ce que `BitnessScanner` couvre déjà.
+5. **Position DMD non vérifiée par `ScreenTopologyScanner`** (C1, seul le backglass l'est) — deux
+   lectures possibles de la doc officielle, jamais recoupées par une deuxième source ; fichiers
+   pré-2.0.0 (sans marqueur `# V2`) volontairement ignorés pour la même raison.
+6. **`.directb2s` compressé (OLE/MS-CFB) traité en silence, jamais décodé** (H2) — aucune preuve
+   qu'une telle variante existe réellement ; si Maxime a un fichier qui matche la signature MS-CFB,
+   sa structure interne reste à documenter avant tout décodage.
+7. **Sémantique `isFav=2` sur `PlayListDetails` et nom de colonne « titre » sur `Playlists` non
+   confirmés** (F1) — les favoris globaux sont exclus du check par prudence plutôt que par certitude ;
+   le nom de la playlist elle-même n'est donc jamais affiché, seuls les jeux affectés le sont.
+8. **File Tier B entièrement reportée** (D1 audio, C2 DPI, A1 core.vbs détection, B3 COM-probe, G1
+   séparateur FR, puis E2/A2/A3) — sur consigne explicite de Maxime en cours de session (« termine »),
+   pas un blocage. Prérequis (rendu App `Note`) déjà livré, aucune dette technique laissée par ce choix.
+
 ## 2026-08-05 (session Opus, 2 missions + dégel + palier Note) · Comparateur VPX livré + audit Scanner + handoff autonome Sonnet 5
 - code:        VPX_VERSION_OUTDATED (nouveau, Warning) · Severity.Note (nouveau palier) · transverse (audit/produit)
 - bac:         FIX (nouveau scanner + palier) + FEATURE (audit) + décision produit (dégel)

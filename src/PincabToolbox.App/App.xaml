@@ -15,6 +15,10 @@
         <SolidColorBrush x:Key="Critical" Color="#FFE5484D"/>
         <SolidColorBrush x:Key="Warning" Color="#FFF5A524"/>
         <SolidColorBrush x:Key="InfoSev" Color="#FF3E9CF3"/>
+        <!-- Severity.Note — heuristic "worth a look" fact (Doctrine Note), deliberately distinct from
+             InfoSev (neutral confirmation, blue) and Warning (actionable, orange). Violet reads as a
+             separate annotation register without borrowing the alarm colours. -->
+        <SolidColorBrush x:Key="NoteSev" Color="#FFB58DF5"/>
         <SolidColorBrush x:Key="OkSev" Color="#FF46C06E"/>
 
         <Style TargetType="TextBlock">

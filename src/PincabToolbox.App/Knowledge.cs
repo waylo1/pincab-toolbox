@@ -129,6 +129,83 @@ public static class Knowledge
             CauseEn = "The table script declares a minimum VPX version newer than the one that may be installed.",
             CauseFr = "Le script de la table déclare une version VPX minimale plus récente que celle potentiellement installée.",
         },
+        // Tier A (handoff Sonnet 5, 06/08) — B1 AltColor/SERum Pair Integrity.
+        ["ALTCOLOR_INCOMPLETE"] = new()
+        {
+            ImpactEn = "The DMD is likely to show in mono instead of full color, or the colorization plugin may fail to load this ROM's set at all.",
+            ImpactFr = "Le DMD risque de s'afficher en mono au lieu de la colorisation complète, ou le plugin de colorisation peut échouer à charger le jeu de fichiers de cette ROM.",
+            CauseEn = "Only part of a colorization set was extracted into altcolor/<rom>/ — e.g. the .pal without its matching .vni, or a Serum file without its .pal. A common result of extracting a downloaded archive without its subfolder, or an interrupted download.",
+            CauseFr = "Seule une partie d'un jeu de colorisation a été extraite dans altcolor/<rom>/ — par ex. le .pal sans son .vni, ou un fichier Serum sans son .pal. Résultat fréquent d'une extraction d'archive sans son sous-dossier, ou d'un téléchargement interrompu.",
+        },
+        // Tier A (handoff Sonnet 5, 06/08) — B2 AltSound Structural Linter.
+        ["ALTSOUND_SAMPLE_MISSING"] = new()
+        {
+            ImpactEn = "Some AltSound cues will stay silent during play, or the AltSound plugin may fail to load this ROM's sound pack altogether.",
+            ImpactFr = "Certains sons AltSound resteront silencieux en jeu, ou le plugin AltSound peut échouer à charger le pack sonore de cette ROM.",
+            CauseEn = "altsound.csv references one or more .wav/.ogg sample files that aren't present in altsound/<rom>/ — usually a partial extraction or a hand-edited manifest that no longer matches the files on disk.",
+            CauseFr = "altsound.csv référence un ou plusieurs fichiers .wav/.ogg absents de altsound/<rom>/ — généralement une extraction partielle, ou un manifeste modifié à la main qui ne correspond plus aux fichiers présents.",
+        },
+        // Tier A (handoff Sonnet 5, 06/08) — C1 Screen Topology Check.
+        ["DISPLAY_OFFSCREEN"] = new()
+        {
+            ImpactEn = "The backglass window will never be visible — it opens on a position no connected monitor covers, even though B2S Backglass Server itself reports no error.",
+            ImpactFr = "La fenêtre du backglass ne sera jamais visible — elle s'ouvre à une position qu'aucun écran connecté ne couvre, même si B2S Backglass Server ne signale aucune erreur de son côté.",
+            CauseEn = "ScreenRes.txt (or a table's own .res override) declares a backglass position that was valid for a monitor layout that has since changed — a monitor removed, a GPU swapped, or displays reconnected in a different arrangement.",
+            CauseFr = "ScreenRes.txt (ou le .res propre à une table) déclare une position de backglass qui était valide pour une disposition d'écrans qui a changé depuis — un écran retiré, une carte graphique remplacée, ou des écrans rebranchés dans un ordre différent.",
+        },
+        // Tier A (handoff Sonnet 5, 06/08) — G3 Junction Health.
+        ["BROKEN_JUNCTION"] = new()
+        {
+            ImpactEn = "Everything expected under this folder — an entire ROM set, a whole PUP-Pack collection, a colorization archive — is invisible to Visual Pinball, PinUP Popper and this scan alike, with no error anywhere.",
+            ImpactFr = "Tout ce qui est attendu sous ce dossier — un jeu de ROM entier, toute une collection de PUP-Packs, une archive de colorisation — est invisible pour Visual Pinball, PinUP Popper et ce scan, sans la moindre erreur nulle part.",
+            CauseEn = "This folder is an NTFS junction or directory symlink pointing at a drive, network share or path that is no longer there — commonly after a second drive is renamed, disconnected, or a NAS share drops offline.",
+            CauseFr = "Ce dossier est une jonction NTFS ou un lien symbolique pointant vers un disque, un partage réseau ou un chemin qui n'existe plus — typiquement après le renommage ou la déconnexion d'un second disque, ou un partage NAS hors ligne.",
+        },
+        // Tier A (handoff Sonnet 5, 06/08) — H2 DirectB2S XML Malform.
+        ["B2S_MALFORMED"] = new()
+        {
+            ImpactEn = "This backglass will not appear at all — B2S Backglass Server refuses to load a file that isn't well-formed XML, typically with just a generic \"not a valid directb2s backglass file\" error.",
+            ImpactFr = "Ce backglass n'apparaîtra pas du tout — B2S Backglass Server refuse de charger un fichier qui n'est pas du XML bien formé, en général avec une simple erreur générique « not a valid directb2s backglass file ».",
+            CauseEn = "The .directb2s file is truncated, empty, or otherwise not well-formed XML — most often an interrupted download or an export that didn't finish writing.",
+            CauseFr = "Le fichier .directb2s est tronqué, vide, ou n'est pas du XML bien formé — le plus souvent un téléchargement interrompu ou un export qui ne s'est pas terminé.",
+        },
+        // Tier A (handoff Sonnet 5, 06/08) — F1 PUPDatabase Orphan Playlist.
+        ["POPPER_ORPHAN_PLAYLIST"] = new()
+        {
+            ImpactEn = "The PinUP Popper frontend menu is known to freeze when opened, because it can't resolve a game's playlist assignment to a playlist that actually exists.",
+            ImpactFr = "Le menu du frontend PinUP Popper est connu pour se figer à l'ouverture, car il ne peut pas résoudre l'affectation de playlist d'un jeu vers une playlist qui existe réellement.",
+            CauseEn = "A playlist was deleted from PinUP Popper's admin UI while games were still assigned to it — deleting a playlist only removes the Playlists row, leaving the game assignments behind pointing at nothing.",
+            CauseFr = "Une playlist a été supprimée depuis l'interface d'administration de PinUP Popper alors que des jeux y étaient encore affectés — supprimer une playlist ne retire que sa ligne dans Playlists, les affectations de jeux restent en place et pointent dans le vide.",
+        },
+        // Tier A (handoff Sonnet 5, 06/08) — H1 NVRAM 0-Byte Detector.
+        ["NVRAM_EMPTY"] = new()
+        {
+            ImpactEn = "This table is likely to boot to a black screen or freeze instead of starting fresh — VPinMAME can't read any saved state from a 0-byte file.",
+            ImpactFr = "Cette table risque de démarrer sur un écran noir ou de figer au lieu de démarrer proprement — VPinMAME ne peut lire aucun état sauvegardé depuis un fichier de 0 octet.",
+            CauseEn = "The .nv save file was truncated to 0 bytes — usually a crash or forced shutdown mid-write, or a full disk at the moment VPinMAME tried to save.",
+            CauseFr = "Le fichier de sauvegarde .nv a été tronqué à 0 octet — généralement un plantage ou un arrêt forcé en pleine écriture, ou un disque plein au moment où VPinMAME sauvegardait.",
+            // Pas d'AutoFixable : ce flag n'a aucun lecteur dans l'App aujourd'hui (vérifié — le vrai
+            // signal "réparable" vient de knowledge/pack-2026.08.json + RepairActionRegistry, un
+            // registre fermé séparé, ADR-005). Le laisser à false partout où aucune règle Repair
+            // réelle n'existe évite de donner un sens à une donnée qui n'en a pas encore.
+        },
+        // Tier A (handoff Sonnet 5, 06/08) — E1 VPMAlias Recursion Loop.
+        ["VPMALIAS_LOOP"] = new()
+        {
+            ImpactEn = "VPinMAME crashes with a stack overflow the instant a table needs this ROM name — it never gets to load anything, the process simply dies.",
+            ImpactFr = "VPinMAME plante avec un stack overflow dès qu'une table a besoin de ce nom de ROM — il ne charge jamais rien, le processus meurt directement.",
+            CauseEn = "VPMAlias.txt contains a circular alias chain (one alias eventually points back to itself) — almost always a manual editing mistake, since a normal alias always resolves to a real ROM set name.",
+            CauseFr = "VPMAlias.txt contient une chaîne d'alias circulaire (un alias finit par pointer vers lui-même) — presque toujours une erreur de modification manuelle, un alias normal se résout toujours vers un vrai nom de set ROM.",
+        },
+        // Rétroactif — comparateur VPX livré le 05/08, Knowledge/Loc complétés le 06/08 (R1 du handoff
+        // Sonnet 5 : additif, calqué sur le patron COMPAT_MIN_VERSION voisin).
+        ["VPX_VERSION_OUTDATED"] = new()
+        {
+            ImpactEn = "The table may fail to load or behave incorrectly — this isn't a table that merely mentions a version, it's a confirmed shortfall against the VPX actually installed.",
+            ImpactFr = "La table peut échouer à se charger ou mal se comporter — ce n'est pas juste une table qui mentionne une version, c'est un manque confirmé face au VPX réellement installé.",
+            CauseEn = "Visual Pinball X on this machine was never updated to the version this table declares it needs, checked against the newest installed VPX executable's real file version (not a guess).",
+            CauseFr = "Visual Pinball X sur cette machine n'a jamais été mis à jour vers la version que cette table déclare nécessiter, vérifié contre la version fichier réelle du plus récent exécutable VPX installé (pas une supposition).",
+        },
         ["UPDATE_AVAILABLE"] = new()
         {
             ImpactEn = "You may be missing fixes or improvements shipped in a newer release of this table.",

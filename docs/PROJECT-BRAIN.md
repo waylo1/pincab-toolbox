@@ -2,7 +2,7 @@
 
 **Source de vérité unique du projet.** En cas de contradiction avec n'importe quel autre document, **ce fichier gagne.**
 
-MC Automation — Maxime Chauvin · Dernière mise à jour : **04/08/2026** (nuit — licence + revue qualité pré-v1.0)
+MC Automation — Maxime Chauvin · Dernière mise à jour : **06/08/2026** (session autonome Sonnet 5 — dégel Scanner formalisé en ADR-010, file Tier A livrée, 21 scanners)
 
 > **Règle de maintenance** : toute décision susceptible d'être relue dans six mois entre ici ou dans un ADR, le jour où elle est prise. Un document qui n'est plus vrai est plus dangereux qu'un document qui n'existe pas — on l'archive immédiatement.
 
@@ -105,15 +105,15 @@ Deux choses à retenir sans y revenir :
 
 | Bloc | État | Compilable dans le cloud ? |
 |---|---|---|
-| `PincabToolbox.Core` (net8.0, zéro dépendance) | ✅ Stable — **128 tests verts** | ✅ Oui — TDD réel |
-| `PincabToolbox.Repair` (net8.0, zéro dépendance) | ✅ Moteur v1 — **101 tests verts**, 5 actions (`unblock_file`, `restore_rom_archive`, `kill_zombie_pinup_display`, `quarantine_orphaned_media`, `set_default_audio_device` — cette dernière pas encore utilisable pour de vrai, voir §7) + module `Licensing/` (ECDSA local, ADR-002/009) | ✅ Oui — TDD réel |
+| `PincabToolbox.Core` (net8.0, zéro dépendance) | ✅ Stable — **279 tests verts** | ✅ Oui — TDD réel |
+| `PincabToolbox.Repair` (net8.0, zéro dépendance) | ✅ Moteur v1 — **105 tests verts**, 5 actions (`unblock_file`, `restore_rom_archive`, `kill_zombie_pinup_display`, `quarantine_orphaned_media`, `set_default_audio_device` — cette dernière pas encore utilisable pour de vrai, voir §7) + module `Licensing/` (ECDSA local, ADR-002/009) | ✅ Oui — TDD réel |
 | `tools/PincabToolbox.Repair.Demo` | ✅ Bac à sable — 7 scénarios sur une fausse install | ✅ Oui, et sur ton PC |
 | `tools/PincabToolbox.LicenseTool` | ✅ Génère/signe/vérifie des licences, OFFLINE uniquement | ✅ Oui (pas de WPF) |
 | `PincabToolbox.App` (net8.0-windows, WPF) | ✅ Compile chez Maxime — Écran 1 de Repair câblé (offre gratuite), Écran 2 (bouton Apply) volontairement PAS câblé | ❌ Non — édition + vérification structurelle, Maxime recompile |
 | Landing (`flipsync-site/landing/index.html`) | ✅ Corrigée, validée | Non déployée — **feu vert explicite requis** |
 | Documents légaux (CGU / CGV / Terms) | 🟡 Brouillons | Voir §8 |
 
-**7 scanners** enregistrés dans `ScanEngine` : `rom` · `bitness` · `completeness` · `compat` · `security` · `dependencies` · `updates`, + onglet Script Diff.
+**21 scanners** enregistrés dans `ScanEngine` (composition unique : `MainWindow.xaml.cs`) : `rom` · `bitness` · `completeness` · `compat` · `vpxversion` · `security` (blocked-file) · `dependencies` · `disk` · `legacy` · `process` (zombie PinUP Display) · `display` (setup) · `media-orphan` · `updates` · `aliasloop` · `nvram` · `altcolor` · `altsound` · `screentopology` · `junctions` · `directb2s` · `popperplaylist`, + onglet Script Diff. Historique du décompte : 7 (avant 30/07) → 12 (clôture 03/08) → 13 (comparateur VPX, 05/08) → **21 (file Tier A du dégel, 06/08 — voir §7 et ADR-010)**.
 
 **Score de santé** : `max(0, 100 − 15×Critical − 5×Warning)` · Grades `A+ ≥100 / A ≥90 / B ≥70 / C ≥40 / F`.
 
@@ -125,8 +125,8 @@ build.cmd                                    # → publish\PincabToolbox.exe (se
 
 # tests (fonctionnent aussi dans le cloud)
 python3 tests/fixtures/make_fixtures.py
-dotnet run --project tests/PincabToolbox.Core.Tests   -c Release   # 42 passed
-dotnet run --project tests/PincabToolbox.Repair.Tests -c Release   # 61 passed
+dotnet run --project tests/PincabToolbox.Core.Tests   -c Release   # 279 passed
+dotnet run --project tests/PincabToolbox.Repair.Tests -c Release   # 105 passed
 
 # voir Repair travailler pour de vrai, sans risque (équivalent du mode démo du Scanner)
 dotnet run --project tools/PincabToolbox.Repair.Demo
@@ -144,8 +144,36 @@ python3 knowledge/selftest.py
 
 ## 7. Backlog
 
-### Avant le lancement forum — et rien d'autre
-Le set de checks actuel est cohérent et testé. **Ne pas ajouter de nouveaux checks avant le lancement** : un faux positif introduit juste avant le post tue la crédibilité.
+### Scanner — dégel du gel (05/08) et file Tier A livrée (06/08) — voir ADR-010
+**Le gel « Avant le lancement forum : ne pas ajouter de nouveaux checks » ci-dessous est supersédé.**
+Décision Maxime du 05/08 (« je sonne le dégel du gel ») après audit fonctionnel complet
+(`docs/AUDIT-Scanner-2026-08.md`, 6 catégories non couvertes identifiées) : le gel de calendrier est
+levé, **pas** la règle anti-FP — formalisé dans **ADR-010**. Nouvelle règle d'entrée pour un check :
+🟢 déterministe (FP nul démontrable) → ship direct en `Warning`, plus besoin des « deux signaux
+terrain » ; 🟡 heuristique → doit passer par le nouveau palier **`Severity.Note`** (score-neutre,
+jamais « FIX THIS FIRST », voir ADR-010) plutôt que d'attendre indéfiniment un signal terrain.
+
+Session autonome Sonnet 5 du 06/08 (`docs/HANDOFF-Sonnet5-scanners-2026-08.md`, exécutée seule,
+Maxime absent) : **file Tier A (8 checks 🟢 déterministes) livrée intégralement** —
+`VPMALIAS_LOOP` (E1) · `NVRAM_EMPTY` (H1) · `ALTCOLOR_INCOMPLETE` (B1) · `ALTSOUND_SAMPLE_MISSING`
+(B2) · `DISPLAY_OFFSCREEN` (C1) · `BROKEN_JUNCTION` (G3) · `B2S_MALFORMED` (H2) ·
+`POPPER_ORPHAN_PLAYLIST` (F1). Rendu App du palier `Note` (prérequis Tier B) livré en amont de la
+file. **Core 144→279/279, Repair 105/105 stable, Debug ET Release à chaque étape ; aucun des 21
+scanners existants modifié** (gabarit du comparateur VPX cloné à l'identique 8 fois). Détail complet,
+recherches primaire-source par item et réductions de périmètre : `knowledge/FIELD-LOG.md`, entrée
+« 2026-08-06 (session Sonnet 5, autonome, effort max) ».
+
+**File Tier B (🟡 heuristique, doctrine Note) : pas attaquée cette session**, sur consigne explicite
+de Maxime reçue en cours de route (« termine ») — reportée, pas abandonnée. Reste entièrement
+disponible pour une prochaine session : D1 audio · C2 DPI · A1 core.vbs (détection seule, le *fix*
+reste hors périmètre) · B3 COM-probe · G1 séparateur FR · puis E2/A2/A3. Même gabarit, même discipline
+anti-FP, prérequis (rendu `Note`) déjà en place.
+
+### Avant le lancement forum — et rien d'autre *(gel de calendrier historique, voir ci-dessus)*
+Le set de checks actuel est cohérent et testé. ~~**Ne pas ajouter de nouveaux checks avant le
+lancement**~~ — supersédé par le dégel du 05/08 (ADR-010) pour les checks 🟢 déterministes
+uniquement ; l'esprit de la règle (un faux positif introduit juste avant le post tue la crédibilité)
+reste la raison d'être de la discipline anti-FP elle-même, pas une interdiction totale de coder.
 
 1. **Tester sur le cab réel.** Prioritaire sur tout le reste — ça remontera de vrais bugs.
 2. ~~Bouton « Copier le rapport »~~ — **déjà fait** (`BtnCopyForum`, markdown forum), ainsi que les exports txt / md / BBCode / HTML / JSON.
@@ -251,8 +279,11 @@ testés le 04/08 — reste à Maxime de lancer `license-tool init` pour génére
 | `docs/adr/ADR-007` | Écriture SQLite Popper hors v1 | 🟢 Accepté |
 | `docs/adr/ADR-008` | Pilotage par indicateurs (roadmap KPI-gated) | 🟢 Accepté |
 | `docs/adr/ADR-009` | Plateforme de paiement : Lemon Squeezy (MoR) | 🟢 Accepté |
+| `docs/adr/ADR-010` | Dégel du Scanner + doctrine `Severity.Note` | 🟢 Accepté |
 | `docs/PARKING-plateformes-paiement.md` | Veille paiement/TVA — **décision reportée** | 🅿️ Parqué |
 | `docs/PARKING-pincab-hors-windows.md` | Pincab Linux/macOS — **décision reportée** | 🅿️ Parqué |
+| `docs/AUDIT-Scanner-2026-08.md` | Audit fonctionnel Scanner (12→21) + vision produit | 🔵 Référence (05/08) |
+| `docs/HANDOFF-Sonnet5-scanners-2026-08.md` | Gabarit + file de travail Tier A/B (base d'ADR-010) | 🟢 Vivant — Tier B ouverte |
 | `docs/DESIGN-Repair-v1.md` | Design du moteur Repair | 🟢 Vivant |
 | `docs/UX-COPY-Repair.md` | Copie UX des 4 écrans critiques (FR/EN) | 🟢 Vivant |
 | `knowledge/` | Format du Knowledge Pack, pack 2026.08, validateur CI | 🟢 Vivant |

@@ -1,4 +1,81 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 05/08/2026
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 06/08/2026
+
+## ⏱️ MAJ 06/08 (autonome Sonnet 5) — file Tier A du handoff LIVRÉE (8/8), dégel formalisé en ADR-010
+
+> **Session autonome, Maxime absent toute la session** (« Tu avances SEUL »), exécutée sur
+> `docs/HANDOFF-Sonnet5-scanners-2026-08.md` dans l'ordre prescrit, zéro question posée. Baseline
+> reconfirmée avant tout code (Core 144/144, Repair 105/105) puis file Tier A **exécutée
+> intégralement, 8/8** : `VPMALIAS_LOOP` (E1) · `NVRAM_EMPTY` (H1) · `ALTCOLOR_INCOMPLETE` (B1) ·
+> `ALTSOUND_SAMPLE_MISSING` (B2) · `DISPLAY_OFFSCREEN` (C1) · `BROKEN_JUNCTION` (G3) ·
+> `B2S_MALFORMED` (H2) · `POPPER_ORPHAN_PLAYLIST` (F1) — plus le rétroactif R1
+> (Knowledge/Loc pour `VPX_VERSION_OUTDATED`) et le rendu App du palier `Severity.Note`
+> (prérequis Tier B, 3 vrais bugs de rendu trouvés et corrigés au passage : `Note` retombait
+> silencieusement sur le bucket `Ok` dans 3 switchs non-exhaustifs, y compris l'export Markdown
+> forum — le plus utilisé). **Gabarit du comparateur cloné à l'identique sur les 8 items** (pur en
+> `Services/` + `IScanner` mince en `Scanning/` + tests + Knowledge/Loc + une ligne `.Add`), aucun
+> des 21 scanners jamais touché. **Core 144→279/279 (+135 tests), Repair 105/105 stable, Debug ET
+> Release à chaque étape, revérifié une dernière fois à la clôture.** Écrit sur le disque au fil de
+> l'eau, 10 commits locaux atomiques dans le sandbox (`a57d414`→`21e4e46`, un par item).
+>
+> **Quatre fois cette session, une recherche primaire-source a été faite avant d'écrire le moindre
+> parseur** (jamais deviné un format sur la seule parole du handoff) — deux fois, ça a corrigé une
+> prémisse du handoff lui-même : `B2STableSettings.xml` ne contient **aucune** donnée de position
+> (toute la géométrie vit dans `ScreenRes.txt`/`.res`, C1 reconstruit en conséquence) ; aucune preuve
+> qu'un `.directb2s` compressé (OLE) existe réellement (H2 le reconnaît sans jamais le décoder). Une
+> fois, ça a comblé un vrai trou de doc du dépôt : le schéma `Playlists`/`PlayListDetails` de
+> `PUPDatabase.db` (F1) n'était documenté nulle part ici, confirmé via le wiki du créateur de PinUP
+> Popper lui-même. Détail complet, par item : `knowledge/FIELD-LOG.md`, entrée du 06/08.
+>
+> **DÉGEL FORMALISÉ — `docs/adr/ADR-010-degel-scanner-doctrine-note.md` écrit.** Reportait une
+> décision déjà prise par Maxime le 05/08 (« je sonne le dégel du gel ») mais jamais montée en ADR.
+> Fixe la règle d'entrée pour tout futur check : **🟢 déterministe → ship direct, le FP nul
+> démontrable remplace le gate « deux signaux terrain »** (c'est la porte qu'a empruntée toute la
+> file de cette session) ; **🟡 heuristique → doit passer par `Severity.Note`** (score-neutre, jamais
+> « FIX THIS FIRST ») avant tout ship. `PROJECT-BRAIN` §6 (279/105, 21 scanners listés) et §7 (ancien
+> gel marqué supersédé, pas supprimé) mis à jour en conséquence.
+>
+> **Sur consigne explicite reçue en cours de session (« termine »), la file Tier B n'a pas été
+> attaquée** (D1 audio · C2 DPI · A1 core.vbs détection · B3 COM-probe · G1 séparateur FR · puis
+> E2/A2/A3) — reportée, pas abandonnée : le prérequis (rendu `Note`) est déjà livré, donc le premier
+> item Tier B d'une prochaine session n'a plus aucun prérequis à lever. Décision de cadrage loguée,
+> pas silencieuse.
+>
+> **Revue CTO + Product faite avant clôture** (consigne permanente de Maxime) — verdict résumé : code
+> propre (gabarit tenu à l'identique, une régression cosmétique trouvée et corrigée en cours de
+> route), architecture cohérente (composition toujours unique, aucun scanner existant modifié),
+> 135 tests neufs avec limite assumée (I/O Windows réelle non testable en sandbox Linux, comme tout
+> scanner Windows précédent du projet), vraie valeur utilisateur (pannes invisibles réelles et
+> courantes en pincab), risque commercial concentré sur 3 items à prémisse *corrigée* par recherche
+> plutôt que confirmée terrain (C1/H2/F1 — silence-biaisés mais à surveiller en priorité sur le
+> prochain retour réel). Trois améliorations à faible coût identifiées, **aucune codée** (voir
+> DÉCISIONS EN ATTENTE). Détail complet : FIELD-LOG, même entrée, section « Revue CTO + Product ».
+>
+> **Git (action Maxime — le proxy bloque le push depuis le sandbox, comme d'habitude)** — un seul
+> commit suffit, tous les fichiers sont déjà à jour sur ton disque :
+> ```
+> git add knowledge/FIELD-LOG.md src/PincabToolbox.App/App.xaml src/PincabToolbox.App/Knowledge.cs src/PincabToolbox.App/Localization/Loc.cs src/PincabToolbox.App/MainWindow.xaml src/PincabToolbox.App/MainWindow.xaml.cs src/PincabToolbox.Core/Scanning/AliasLoopScanner.cs src/PincabToolbox.Core/Scanning/AltColorScanner.cs src/PincabToolbox.Core/Scanning/AltSoundScanner.cs src/PincabToolbox.Core/Scanning/DirectB2sScanner.cs src/PincabToolbox.Core/Scanning/JunctionScanner.cs src/PincabToolbox.Core/Scanning/NvramScanner.cs src/PincabToolbox.Core/Scanning/PopperPlaylistScanner.cs src/PincabToolbox.Core/Scanning/ScreenTopologyScanner.cs src/PincabToolbox.Core/Services/AliasGraph.cs src/PincabToolbox.Core/Services/AltColorInspector.cs src/PincabToolbox.Core/Services/AltSoundManifestLinter.cs src/PincabToolbox.Core/Services/DirectB2SValidator.cs src/PincabToolbox.Core/Services/JunctionInspector.cs src/PincabToolbox.Core/Services/MonitorTopologyProbe.cs src/PincabToolbox.Core/Services/NvramInspector.cs src/PincabToolbox.Core/Services/PlaylistIntegrityInspector.cs src/PincabToolbox.Core/Services/ScreenTopologyAnalyzer.cs tests/PincabToolbox.Core.Tests/AliasLoopScannerTests.cs tests/PincabToolbox.Core.Tests/AltColorScannerTests.cs tests/PincabToolbox.Core.Tests/AltSoundScannerTests.cs tests/PincabToolbox.Core.Tests/DirectB2sScannerTests.cs tests/PincabToolbox.Core.Tests/JunctionScannerTests.cs tests/PincabToolbox.Core.Tests/NvramScannerTests.cs tests/PincabToolbox.Core.Tests/PopperPlaylistScannerTests.cs tests/PincabToolbox.Core.Tests/ScreenTopologyScannerTests.cs docs/PROJECT-BRAIN.md docs/adr/ADR-010-degel-scanner-doctrine-note.md TRANSMISSION.md
+> git commit -m "feat(scanner): file Tier A du handoff (8 checks deterministes) + degel formalise en ADR-010"
+> git push origin main
+> ```
+
+---
+
+## 🗂️ DÉCISIONS EN ATTENTE (pour Maxime) — issues de la session du 06/08
+
+Rien n'a bloqué la file (aucun item n'a été laissé inachevé) — ce sont des améliorations à faible
+coût repérées en cours de route, non codées hors mandat, consolidées ici plutôt que dispersées.
+Détail complet par point : `knowledge/FIELD-LOG.md`, entrée du 06/08, section « DÉCISIONS EN ATTENTE ».
+
+1. 6 scanners pré-existants sans entrée `cat.*` dans `Loc.cs` (colonne Module affiche le code brut) — additif trivial.
+2. `Knowledge.KnowledgeEntry.AutoFixable` est un flag mort (zéro lecteur dans l'App) — à câbler ou documenter comme décoratif.
+3. Format legacy `.ini` (g-sound) pour AltSound — aucun schéma vérifiable trouvé, non couvert.
+4. DLL 32/64-bit de colorisation (B1) — aucun nom de fichier distinct confirmé au-delà de `BitnessScanner`.
+5. Position DMD (C1) — deux lectures possibles de la doc officielle, jamais recoupées ; non vérifiée (seul le backglass l'est).
+6. `.directb2s` compressé (H2) — silence, jamais décodé (aucune preuve qu'une telle variante existe réellement).
+7. Sémantique `isFav=2` et nom de colonne « titre » sur `Playlists` (F1) — non confirmés, exclus par prudence.
+8. **File Tier B entièrement reportée** (D1/C2/A1-détection/B3/G1/E2/A2/A3) sur consigne « termine » — prérequis déjà livré, zéro dette technique laissée par ce choix.
+
+---
 
 ## ⏱️ MAJ 05/08 (5) — comparateur VPX LIVRÉ (vert) + audit Scanner + handoff Sonnet 5 autonome + DÉGEL du Scanner
 

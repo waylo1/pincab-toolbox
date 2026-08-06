@@ -80,6 +80,7 @@ public static class Loc
         ["scan.hint.notables"] = "No .vpx tables found — check that you selected the right folder.",
         ["filter.critical"] = "Critical",
         ["filter.warning"] = "Warnings",
+        ["filter.note"] = "Notes",
         ["filter.info"] = "Info",
         ["filter.ok"] = "OK",
         ["score.a"] = "Healthy install",
@@ -117,6 +118,7 @@ public static class Loc
         ["action.copied"] = "Copied to clipboard.",
         ["sev.Critical"] = "CRITICAL",
         ["sev.Warning"] = "Warning",
+        ["sev.Note"] = "Note",
         ["sev.Info"] = "Info",
         ["sev.Ok"] = "OK",
         ["diff.old"] = "Old table (.vpx or .vbs):",
@@ -126,7 +128,7 @@ public static class Loc
         ["diff.placeholder"] = "Pick two versions of a table (or two .vbs scripts) to see exactly what changed — before installing an update blindly.",
         ["report.saved"] = "Report saved: ",
         ["status.ready"] = "Ready.",
-        ["status.done"] = "Analysis complete · {0} checks — {1} critical, {2} warnings, {3} info.",
+        ["status.done"] = "Analysis complete · {0} checks — {1} critical, {2} warnings, {3} info, {4} notes.",
         ["scan.demolabel"] = "Demo — sample install",
         ["diff.empty"] = "Compare the script of two versions of a table (.vpx or .vbs) to see exactly what changed. Pick an old and a new file above, then Compare.",
         ["scan.copied"] = "✓ Copied",
@@ -137,6 +139,14 @@ public static class Loc
         ["cat.updates"] = "Updates",
         ["cat.security"] = "Security",
         ["cat.dependencies"] = "Plugins",
+        ["cat.aliasloop"] = "VPMAlias",
+        ["cat.nvram"] = "NVRAM",
+        ["cat.altcolor"] = "AltColor",
+        ["cat.altsound"] = "AltSound",
+        ["cat.screentopology"] = "Screen Topology",
+        ["cat.junctions"] = "Junctions",
+        ["cat.directb2s"] = "DirectB2S",
+        ["cat.popperplaylist"] = "Playlists",
         ["about.tagline"] = "The mechanic for your pincab.",
         ["about.body"] = "Pincab Toolbox scans your Visual Pinball X / PinUP Popper installation and tells you what is broken, missing or mismatched — before you hit Start on a table.\n\n• 100% local — nothing is uploaded, no telemetry, no account.\n• Read-only — the free scanner never modifies a single file.\n• The Update Watcher uses the open-source Virtual Pinball Spreadsheet database and only ever links you to official pages. It never downloads tables, ROMs or media.",
         ["about.roadmap"] = "Coming next: Repair — optional one-click fixes for some of what the scanner finds, always with a backup first, a preview of every change, and undo. The free scanner always stays read-only. Follow the forum thread to be notified.",
@@ -169,6 +179,7 @@ public static class Loc
         ["scan.hint.notables"] = "Aucune table .vpx trouvée — vérifie que tu as choisi le bon dossier.",
         ["filter.critical"] = "Critiques",
         ["filter.warning"] = "Avertissements",
+        ["filter.note"] = "Notes",
         ["filter.info"] = "Infos",
         ["filter.ok"] = "OK",
         ["score.a"] = "Installation saine",
@@ -206,6 +217,7 @@ public static class Loc
         ["action.copied"] = "Copié dans le presse-papiers.",
         ["sev.Critical"] = "CRITIQUE",
         ["sev.Warning"] = "Avertissement",
+        ["sev.Note"] = "À noter",
         ["sev.Info"] = "Info",
         ["sev.Ok"] = "OK",
         ["diff.old"] = "Ancienne table (.vpx ou .vbs) :",
@@ -215,7 +227,7 @@ public static class Loc
         ["diff.placeholder"] = "Choisis deux versions d'une table (ou deux scripts .vbs) pour voir exactement ce qui a changé — avant d'installer une mise à jour à l'aveugle.",
         ["report.saved"] = "Rapport enregistré : ",
         ["status.ready"] = "Prêt.",
-        ["status.done"] = "Analyse terminée · {0} vérifications — {1} critiques, {2} avertissements, {3} infos.",
+        ["status.done"] = "Analyse terminée · {0} vérifications — {1} critiques, {2} avertissements, {3} infos, {4} à noter.",
         ["scan.demolabel"] = "Démo — installation d'exemple",
         ["diff.empty"] = "Compare le script de deux versions d'une table (.vpx ou .vbs) pour voir exactement ce qui a changé. Choisis un ancien et un nouveau fichier ci-dessus, puis Comparer.",
         ["scan.copied"] = "✓ Copié",
@@ -226,6 +238,14 @@ public static class Loc
         ["cat.updates"] = "Mises à jour",
         ["cat.security"] = "Sécurité",
         ["cat.dependencies"] = "Plugins",
+        ["cat.aliasloop"] = "VPMAlias",
+        ["cat.nvram"] = "NVRAM",
+        ["cat.altcolor"] = "AltColor",
+        ["cat.altsound"] = "AltSound",
+        ["cat.screentopology"] = "Topologie écrans",
+        ["cat.junctions"] = "Jonctions",
+        ["cat.directb2s"] = "DirectB2S",
+        ["cat.popperplaylist"] = "Playlists",
         ["about.tagline"] = "Le mécanicien de ton pincab.",
         ["about.body"] = "Pincab Toolbox scanne ton installation Visual Pinball X / PinUP Popper et te dit ce qui est cassé, manquant ou incompatible — avant que tu ne lances une table.\n\n• 100 % local — rien n'est envoyé, zéro télémétrie, zéro compte.\n• Lecture seule — le scanner gratuit ne modifie jamais le moindre fichier.\n• L'Update Watcher s'appuie sur la base open source Virtual Pinball Spreadsheet et se contente de te donner le lien officiel. Il ne télécharge jamais ni table, ni ROM, ni média.",
         ["about.roadmap"] = "Bientôt : Repair — des réparations optionnelles en un clic pour une partie de ce que le scanner trouve, toujours avec sauvegarde avant, aperçu de chaque changement et annulation. Le scanner gratuit reste toujours en lecture seule. Suis le fil du forum pour être prévenu.",
@@ -243,6 +263,22 @@ public static class Loc
     {
         // Ligne de regroupement (ScanReport.Rolled) — {0} = nombre, {1} = code regroupé.
         ["GROUPED"] = "{0} résultats similaires ({1}) — regroupés pour garder la liste lisible. Le rapport texte complet les contient tous.",
+        // Tier A (handoff Sonnet 5, 06/08) — B1. {0} = nom de la ROM.
+        ["ALTCOLOR_INCOMPLETE"] = "« {0} » a un jeu de colorisation AltColor/Serum incomplet — des fichiers existent dans altcolor/{0}/ mais ne forment pas une paire complète (.vni+.pal, ou un fichier Serum+.pal). Le DMD risque de s'afficher en mono, ou la colorisation peut ne pas se charger du tout.",
+        // Tier A (handoff Sonnet 5, 06/08) — B2. {0}=ROM, {1}=nb absents, {2}=nb total référencés.
+        ["ALTSOUND_SAMPLE_MISSING"] = "« {0} » : altsound.csv référence {1} échantillon(s) sur {2} qui sont absents de altsound/{0}/ — ces sons resteront silencieux, ou le plugin AltSound peut échouer à se charger.",
+        // Tier A (handoff Sonnet 5, 06/08) — C1. {0} = fichier ScreenRes concerné (ScreenRes.txt ou "TableName").
+        ["DISPLAY_OFFSCREEN"] = "La position du backglass définie dans « {0} » tombe entièrement en dehors de tous les écrans connectés — elle ne sera jamais visible, même si le fichier se charge sans erreur.",
+        // Tier A (handoff Sonnet 5, 06/08) — G3. {0} = chemin du dossier, {1} = cible de la jonction.
+        ["BROKEN_JUNCTION"] = "« {0} » est une jonction/lien symbolique pointant vers « {1} », qui n'existe plus — tout ce qui est attendu sous ce dossier est invisible pour Visual Pinball, PinUP Popper et ce scan.",
+        // Tier A (handoff Sonnet 5, 06/08) — H2. {0} = nom du fichier .directb2s.
+        ["B2S_MALFORMED"] = "« {0} » n'est pas du XML bien formé — B2S Backglass Server refuse de le charger, ce backglass n'apparaîtra donc pas du tout.",
+        // Tier A (handoff Sonnet 5, 06/08) — F1. {0} = nb de jeux affectés, {1} = exemples (noms ou GameID).
+        ["POPPER_ORPHAN_PLAYLIST"] = "{0} jeu(x) dans la base PinUP Popper sont affectés à une playlist qui n'existe plus — ceci est connu pour figer le menu du frontend Popper à l'ouverture.",
+        // Tier A (handoff Sonnet 5, 06/08) — H1. {0} = nom de la ROM (sans extension).
+        ["NVRAM_EMPTY"] = "Le fichier de sauvegarde NVRAM de « {0} » est vide (0 octet) — VPinMAME ne peut lire aucun état sauvegardé, la table risque de démarrer sur un écran noir ou de figer.",
+        // Tier A (handoff Sonnet 5, 06/08) — E1. {0} = chaîne de la boucle (ex. "a -> b -> a").
+        ["VPMALIAS_LOOP"] = "VPMAlias.txt contient une boucle d'alias : {0}. VPinMAME plante (stack overflow) dès qu'une table a besoin de ce nom de ROM.",
 
         ["ROM_MISSING"] = "« {0} » ne démarrera pas : la ROM « {1} » est absente du dossier roms.",
         ["ROM_OK"] = "« {0} » — ROM trouvée : {1}.",
@@ -269,6 +305,8 @@ public static class Loc
         ["POPPER_DB_NOT_FOUND"] = "Base PinUP Popper introuvable — vérifications frontend ignorées.",
         ["PUPPACK_PRESENT"] = "« {0} » a un PUP-Pack ({1}).",
         ["COMPAT_MIN_VERSION"] = "« {0} » déclare nécessiter VPX {1}+ — vérifie ta version installée avant de lancer.",
+        // Rétroactif (comparateur VPX du 05/08, complété 06/08 — R1). {0}=table, {1}=version requise, {2}=version installée.
+        ["VPX_VERSION_OUTDATED"] = "« {0} » déclare nécessiter Visual Pinball X {1}+, mais la version VPX la plus récente installée est {2} — cette table risque de ne pas se charger ou de mal fonctionner tant que Visual Pinball X n'est pas mis à jour.",
         ["COMPAT_SIGNATURE"] = "« {0} » : {1}.",
         ["UPDATE_AVAILABLE"] = "« {0} » — tu as la v{1}, la v{2} est répertoriée sur le Virtual Pinball Spreadsheet. Voir {3}.",
         ["VPS_UNAVAILABLE"] = "Base VPS indisponible (hors ligne ?) — vérification des mises à jour ignorée. Elle se fera à la prochaine connexion.",
@@ -295,6 +333,14 @@ public static class Loc
         // Audit 2026-08-04 : manquait — ROM_MISSING est le Critical le plus fréquent (8 occurrences
         // sur le propre scan réel de Maxime), c'était donc le message de fix le plus vu qui
         // retombait silencieusement en anglais pour un utilisateur FR.
+        ["ALTCOLOR_INCOMPLETE"] = "Retélécharge le jeu de colorisation de cette ROM et extrais tous les fichiers qu'il contient dans le dossier altcolor correspondant — une extraction partielle (par ex. seulement le .pal, ou seulement le .vni) est la cause la plus fréquente.",
+        ["ALTSOUND_SAMPLE_MISSING"] = "Réextrais le pack AltSound de cette ROM dans le dossier altsound correspondant — une extraction partielle est la cause la plus fréquente. Si tu as modifié altsound.csv à la main, vérifie la colonne FNAME par rapport aux fichiers réellement présents.",
+        ["DISPLAY_OFFSCREEN"] = "Relance B2S_ScreenResIdentifier (ou ton éditeur ScreenRes) avec tous les écrans branchés dans leur disposition normale du cab, puis resauvegarde — un ScreenRes.txt/.res périmé après un changement d'écran ou de carte graphique en est la cause la plus fréquente.",
+        ["BROKEN_JUNCTION"] = "Reconnecte le disque/partage vers lequel pointe le lien, ou recrée la jonction (mklink /J) vers son emplacement correct et actuellement disponible. Supprime-la si le dossier lié a disparu pour de bon.",
+        ["B2S_MALFORMED"] = "Retélécharge ou réexporte ce backglass — un téléchargement tronqué ou un export interrompu en est la cause la plus fréquente.",
+        ["POPPER_ORPHAN_PLAYLIST"] = "Dans l'outil d'administration de PinUP Popper, rouvre et resauvegarde l'affectation de playlist de chaque jeu concerné (ou retire-la), ou recrée la playlist manquante.",
+        ["NVRAM_EMPTY"] = "Supprime le fichier .nv vide et lance la table une fois — VPinMAME le recrée avec les valeurs par défaut. Si tu as une sauvegarde .nv d'avant le problème, restaure-la plutôt pour garder tes meilleurs scores.",
+        ["VPMALIAS_LOOP"] = "Ouvre VPMAlias.txt et casse la boucle : le dernier alias de la chaîne doit pointer directement vers le vrai nom de set ROM, pas vers un alias déjà vu.",
         ["ROM_MISSING"] = "Place le fichier .zip de la ROM (nom exact, sans le décompresser) dans le dossier roms de VPinMAME.",
         ["ROM_UNZIPPED"] = "Recompresse le dossier de la ROM en un .zip du même nom dans le dossier roms (ne zippe pas un dossier parent supplémentaire autour).",
         ["POPPER_MEDIA_MISSING"] = "Ajoute une image de wheel nommée exactement comme le jeu (son GameName Popper) sous POPMedia\\<émulateur>\\Wheel, ou relance l'import des médias Popper.",
@@ -303,5 +349,8 @@ public static class Loc
         ["PINUP_DISPLAY_ZOMBIE"] = "Ferme PinUpDisplay.exe depuis le Gestionnaire des tâches avant de relancer une table.",
         ["DISPLAY_SETUP_INCOMPLETE"] = "Vérifie le câblage et que la veille des moniteurs est désactivée indépendamment de la veille du PC — cause très fréquente d'écrans qui se reconnectent dans le mauvais ordre après un redémarrage (guides communautaires : Pincab Passion « Changer l'ordre des écrans dans Windows »).",
         ["ORPHANED_MEDIA_FILE"] = "Peut être revu à la main, ou mis en quarantaine avec Repair une fois disponible (déplacé de côté avec sauvegarde, jamais supprimé). Ne supprime pas de média à la main sans vérifier d'abord — des variantes comme « (SCREEN2) »/« (SCREEN3) » peuvent encore être utilisées même si le nom de base semble inconnu.",
+        // Rétroactif (comparateur VPX du 05/08, complété 06/08 — R1). Pas de {n} : les deux numéros de
+        // version sont déjà dans le message ci-dessus, inutile de les répéter ici.
+        ["VPX_VERSION_OUTDATED"] = "Mets à jour Visual Pinball X vers la version requise par la table (indiquée dans le message ci-dessus). Tu peux garder ta version actuelle en parallèle — les builds VPX coexistent, les autres tables ne sont pas affectées.",
     };
 }
