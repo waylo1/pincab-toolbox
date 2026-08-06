@@ -5,12 +5,20 @@ public enum Severity
 {
     /// <summary>Everything is fine — informational confirmation.</summary>
     Ok = 0,
-    /// <summary>Informational — nothing broken, worth knowing.</summary>
+    /// <summary>Informational — nothing broken, worth knowing (neutral confirmation).</summary>
     Info = 1,
+    /// <summary>
+    /// Advisory "note" — a fact worth the user's attention that we do NOT assert is a defect.
+    /// Sits between Info and Warning. Like Info (and Ok), it NEVER moves the health score and NEVER
+    /// triggers the "FIX THIS FIRST" banner — it is below the Warning "watch" threshold. This is the
+    /// honest home for heuristic findings (the "Doctrine Note"): we state what we observed, the user
+    /// decides. A false Note therefore cannot damage the score or hijack the priority banner.
+    /// </summary>
+    Note = 2,
     /// <summary>Likely to cause degraded behaviour.</summary>
-    Warning = 2,
+    Warning = 3,
     /// <summary>Will break a table or the cab.</summary>
-    Critical = 3,
+    Critical = 4,
 }
 
 /// <summary>

@@ -26,6 +26,44 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-05 (session Opus, 2 missions + dégel + palier Note) · Comparateur VPX livré + audit Scanner + handoff autonome Sonnet 5
+- code:        VPX_VERSION_OUTDATED (nouveau, Warning) · Severity.Note (nouveau palier) · transverse (audit/produit)
+- bac:         FIX (nouveau scanner + palier) + FEATURE (audit) + décision produit (dégel)
+- contexte:    Maxime, 2 missions (carte blanche, ordre libre) : (1) coder le comparateur version VPX
+  (chantier identifié MAJ 05/08 (4)) ; (2) audit fonctionnel complet du Scanner + vision produit + handoff
+  Sonnet 5. En cours de session, décisions produit de Maxime : **dégel du gel Scanner**, « rendre les 🟡
+  sûrs », « bouton de MAJ », et **« une nouvelle catégorie que Info, genre note »**.
+- analyse:
+  1. **Comparateur VPX livré, vert** (Core 140→144/144, Repair 105/105, Debug+Release). Le morceau que
+     `CompatibilityScanner` laissait explicitement à faire. Sévérité = **Warning, pas Critical** (la
+     déclaration « requires VPX 10.x » est une heuristique de commentaire ; un faux Critical plomberait le
+     score et le bandeau — dégât asymétrique du 30/07, verrouillé par un test dédié). Silence total si
+     version installée indétectable. Multi-exe → on prend la **plus haute** installée. 3 fichiers neufs +
+     1 ligne MainWindow, aucun scanner existant touché. Loose end : pas encore d'entrée Knowledge.cs/Loc.cs
+     pour `VPX_VERSION_OUTDATED` → délégué à Sonnet (handoff R1).
+  2. **Audit Scanner** (`docs/AUDIT-Scanner-2026-08.md`) : 6 catégories non couvertes, ancrées code réel
+     des 12 scanners + FIELD-LOG + corroboration terrain (pas web seul). Classement **FP-risk (🟢
+     déterministe / 🟡 heuristique)** qui pilote la barre de preuve. Arbitrage des 2 salves Gemini
+     (pépite/glaise, bonne pêche cette fois : core.vbs, ScreenRes+B2STableSettings, AltColor/AltSound,
+     VPMAlias loop, NVRAM 0-octet, directb2s XML, PUPDatabase orphelin…). Monétisation par ligne
+     (détection gratuite → fix/gestion payante) ; Table Companion confirmé meilleur 2ᵉ produit. §8.4 bouton
+     de MAJ (canal Knowledge Pack = valeur ADR-002 ; canal binaire conditionné à la signature de code).
+  3. **DÉGEL** (décision Maxime) : le Scanner rouvre. Le gel de *calendrier* tombe, la règle anti-FP reste.
+  4. **Doctrine Note + nouveau palier `Severity.Note`** (demande Maxime) : entre `Info` et `Warning`,
+     score-neutre, jamais « FIX THIS FIRST ». Rend les 🟡 shippables **en énonçant le fait en `Note`**
+     (jamais le jugement en `Warning`), escalade `Warning` seulement sur du déterministe, résumé par-table
+     (2ᵉ leçon du 30/07 : pas de bruit). **Partie Core livrée verte** (`Finding.cs` : Ok=0/Info=1/Note=2/
+     Warning=3/Critical=4 ; score/rollup gèrent Note comme Info sans changement de formule ; 4 tests
+     `SeverityNoteTests`). **Reste le rendu App** (libellé FR « À noter »/EN « Note », couleur, 6 exports)
+     = prérequis Sonnet avant tout scanner Tier B (sinon `switch` App non exhaustif → crash runtime).
+  5. **Handoff Sonnet 5 autonome** (`docs/HANDOFF-Sonnet5-scanners-2026-08.md`) : effort max, zéro question,
+     never-block, décisions pré-tranchées (R1-R6), recette build sandbox, gabarit = le comparateur, file
+     Tier A (🟢 → Warning) + Tier B (🟡 → Note). Objectif : la session de demain avance seule sans Maxime.
+- disposition: comparateur + palier Note (Core) + 2 docs écrits sur le disque de Maxime, tests verts.
+  **À formaliser par Maxime/ADR** : reporter le dégel dans `PROJECT-BRAIN` ; ADR core.vbs OSS ; acter
+  Table Companion 2ᵉ produit ; ADR carve-out auto-update. **Git à pusher par Maxime** (le proxy bloque le
+  repo depuis le sandbox — commande dans TRANSMISSION MAJ (5)). Sonnet exécute le handoff demain.
+
 ## 2026-08-05 (solo, carte blanche après l'heure) · Durcissement licence codé, limites tenues sur Scanner/nouvelles actions
 - code:        transverse (sécurité) — pas un finding
 - bac:         FIX (infra)

@@ -1,5 +1,99 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 05/08/2026
 
+## ⏱️ MAJ 05/08 (5) — comparateur VPX LIVRÉ (vert) + audit Scanner + handoff Sonnet 5 autonome + DÉGEL du Scanner
+
+> **Mission 1 — comparateur de version VPX : LIVRÉ ET VERT.** Nouveau scanner qui compare la version VPX
+> **installée** (lue au PE via `FileVersionInfo`) à la version **requise déclarée** par chaque table, et
+> n'émet un `Warning` (`VPX_VERSION_OUTDATED`) que sur un vrai manque (installée < requise) — silence si
+> installée indétectable, >=, ou pas de requirement. Même discipline anti-FP que `COMPAT_MIN_VERSION` (le
+> faux positif du 30/07 est verrouillé par un test dédié). **3 fichiers neufs** :
+> `Core/Services/VpxVersionComparer.cs` (pur), `Core/Scanning/VpxVersionScanner.cs` (IScanner, lecteur PE
+> injectable), `tests/Core.Tests/VpxVersionScannerTests.cs` (12 tests). **1 ligne** dans `MainWindow.xaml.cs`.
+> Aucun scanner existant touché. **Core 140/140 + Repair 105/105, Debug ET Release** (SDK installé dans le
+> sandbox : `apt-get install dotnet-sdk-8.0`). Écrit sur le disque. ⚠️ **Loose end** : `VPX_VERSION_OUTDATED`
+> n'a pas encore d'entrée `Knowledge.cs` / `Loc.cs` FR-EN (périmètre strict tenu) — le Finding s'affiche via
+> son `EnglishText`. À compléter par Sonnet (R1 du handoff).
+>
+> **Mission 2 — audit Scanner + vision produit : LIVRÉ** (`docs/AUDIT-Scanner-2026-08.md`). Reste-t-il des
+> catégories non détectées ? **Oui, 6** : scripts partagés (core.vbs) ; topologie d'affichage réelle
+> (ScreenRes+B2STableSettings) ; colorisation/altsound ; état audio ; résidus Freezy ; hygiène système FR.
+> Ancré CODE réel des 12 scanners + FIELD-LOG + corroboration terrain, **pas** web seul. 2 salves Gemini
+> arbitrées « pépite/glaise » (bonne pêche cette fois). Priorisation P0-P3, monétisation par ligne (Table
+> Companion = meilleur 2ᵉ produit). §8.4 = bouton de MAJ (infra ; canal Knowledge Pack = valeur ADR-002 ;
+> canal binaire conditionné à la signature de code).
+>
+> **DÉGEL DU SCANNER (décision Maxime 05/08 — « je sonne le dégel du gel »).** Supersède « SCANNER GELÉ
+> 03/08 » + `PROJECT-BRAIN` §7 (**à reporter dans le Brain + un ADR**). On rouvre le Scanner. **Nuance CTO** :
+> le dégel lève le gel de *calendrier*, PAS la règle anti-FP. → **🟢 déterministes shippés en `Warning` ;
+> 🟡 heuristiques shippés AUSSI via la « doctrine Note »** — **nouveau palier `Severity.Note`** ajouté à la
+> demande de Maxime (« une catégorie que Info, genre note »), entre `Info` et `Warning`, score-neutre et
+> jamais « FIX THIS FIRST ». **Core livré vert cette session (144/144, 4 tests dédiés)** ; **reste le rendu
+> App de `Note`** (libellé FR/EN, couleur, 6 exports) = prérequis Sonnet avant le 1er scanner Tier B.
+> Émettre le fait en `Note`, escalade `Warning` seulement sur du déterministe, résumer par-table.
+> Irréductibles hors file : **F3 quote-safety** et le **fix** Repair core.vbs (ADR OSS).
+>
+> **Mission 3 — handoff Sonnet 5 AUTONOME : LIVRÉ** (`docs/HANDOFF-Sonnet5-scanners-2026-08.md`). Cadré pour
+> tourner **seul, effort max, ZÉRO question, sans jamais s'arrêter** : directive d'autonomie, décisions
+> pré-tranchées (R1-R6), recette build sandbox, gabarit = le comparateur, **file ordonnée** Tier A (🟢, ship
+> Warning : E1 VPMAlias · H1 NVRAM 0-octet · B1 AltColor · B2 AltSound · C1 Screen-Topology *scope
+> déterministe* · G3 Junctions · H2 directb2s XML · F1 PUPDatabase orphelin) puis Tier B (🟡 Info : D1 audio ·
+> C2 DPI · A1 core.vbs détection · B3 COM-probe · G1 séparateur FR · E2/A2/A3). Protocole « si bloqué → logge
+> dans DÉCISIONS EN ATTENTE et passe au suivant ». **Lancer la session de demain en Sonnet effort max, pointée
+> sur ce handoff.**
+>
+> **À formaliser (Maxime/ADR)** : (1) reporter le **dégel** ; (2) **ADR core.vbs OSS** (débloque le fix
+> payant) ; (3) acter **Table Companion** 2ᵉ produit ; (4) **ADR carve-out auto-update** premier-parti.
+>
+> **Git (action Maxime — le proxy bloque le repo depuis le sandbox)** :
+> ```
+> git add src/PincabToolbox.Core/Services/VpxVersionComparer.cs src/PincabToolbox.Core/Scanning/VpxVersionScanner.cs src/PincabToolbox.Core/Models/Finding.cs tests/PincabToolbox.Core.Tests/VpxVersionScannerTests.cs src/PincabToolbox.App/MainWindow.xaml.cs docs/AUDIT-Scanner-2026-08.md docs/HANDOFF-Sonnet5-scanners-2026-08.md knowledge/FIELD-LOG.md TRANSMISSION.md
+> git commit -m "feat: comparateur version VPX + audit Scanner + handoff Sonnet 5 + degel Scanner"
+> git push origin main
+> ```
+
+---
+
+## ⏱️ MAJ 05/08 (4) — sync GitHub résolue, inventaire Scanner fait, prochain chantier identifié
+
+> **Push GitHub résolu** : Maxime a lancé les 3 commandes depuis sa machine (verrou `.git/index.lock`
+> périmé supprimé au passage), commit `749ec4d` poussé avec succès sur `waylo1/pincab-toolbox`. Le
+> dépôt distant est à jour. Plus aucune action git en attente.
+>
+> **Erreur de méthode corrigée** : la recherche produit "6 idées" de tout à l'heure avait été faite
+> par recherche web seule, sans vérifier le code existant d'abord — **5 des 6 idées existent déjà**
+> dans le Scanner (lecture seule, en prod) : `B2S_MISSING`/`B2S_ORPHAN` (idée backglass),
+> `POPPER_NOT_REGISTERED`/`POPPER_MEDIA_MISSING` (idée base Popper — lit déjà `PUPDatabase.db` en
+> SQLite pur, lecteur maison sans dépendance), `POPPER_MEDIA_MISSING` encore (idée wheel/médias),
+> registre VPinMAME déjà lu (`VpinmameRegistry.cs`) pour localiser le dossier roms (idée mapping
+> ROM). Inventaire complet des 12 scanners existants donné à Maxime dans le chat (Scanner en lecture
+> seule : ROM Validator, Install Auditor, Orphaned Media, Compatibility Linter, Bitness Doctor,
+> Dependency Check, Legacy Tables, Blocked-file check, Disk Space, Stuck Processes, Display Setup,
+> Update Watcher).
+>
+> **Le vrai chantier identifié — pas encore codé** : `CompatibilityScanner.cs` extrait déjà la
+> version VPX qu'une table déclare requérir (`COMPAT_MIN_VERSION`) mais compare exprès jamais à la
+> version VPX réellement installée — le commentaire du fichier dit littéralement que c'est à faire
+> "quand on saura lire la version installée" (un faux positif avait cassé un rapport en juillet
+> 2026, FIELD-LOG 2026-07-30). C'est le morceau manquant, sûr et cadré. **Prochaine étape : coder ce
+> comparateur dans un fichier neuf, sans toucher `CompatibilityScanner.cs`** (accord Maxime du 05/08
+> : nouveaux fichiers, existant jamais touché), le brancher dans `ScanEngine` via un `.Add(...)`
+> supplémentaire dans `MainWindow.xaml.cs` (le seul endroit à toucher côté composition).
+>
+> **Deuxième piste, pas encore designée** : vendre un vrai correctif Repair pour `B2S_ORPHAN`
+> (backglass orphelin, mismatch de nom) — aucun fix payant derrière aujourd'hui. Attention : la
+> plupart des orphelins sont des restes, pas des matchs cachés — un renommage automatique à
+> l'aveugle casserait des installs. Ça demande un choix affiché à l'utilisateur, pas un automatisme
+> silencieux — design à montrer à Maxime avant de câbler quoi que ce soit.
+>
+> **Gregg (2 questions de diagnostic)** : rédigées et données à Maxime (entrée FIELD-LOG du
+> 2026-08-05, section Gregg), pas encore confirmées envoyées/répondues.
+>
+> **Réponse à itchigo** : rédigée et donnée à Maxime, pas encore confirmée postée. Confirmé avec
+> Maxime : rien à construire spécifiquement pour son profil (auto-suffisant, s'exclut lui-même) —
+> le Scanner gratuit sans engagement le sert déjà si besoin.
+
+---
+
 ## ⏱️ MAJ 05/08 (3) — carte blanche : durcissement licence codé, Scanner/nouvelles actions sciemment pas touchés
 
 > Maxime, sur le récap de l'heure solo : « pas le temps de discuter, si tu as trouvé c'est que ça

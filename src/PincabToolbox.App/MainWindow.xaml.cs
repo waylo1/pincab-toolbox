@@ -327,6 +327,7 @@ public partial class MainWindow : Window
                     .Add(new BitnessScanner())
                     .Add(new CompletenessScanner())
                     .Add(new CompatibilityScanner())
+                    .Add(new VpxVersionScanner())
                     .Add(new BlockedFileScanner())
                     .Add(new DependencyScanner())
                     .Add(new DiskSpaceScanner())
