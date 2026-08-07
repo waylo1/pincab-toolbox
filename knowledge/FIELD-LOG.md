@@ -26,6 +26,19 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-07 · Maxime a lancé 2 scans réels sur sa cab (build Tier B) — bug confirmé + KPI #1 toujours ouvert
+- code:        `ROM_MISSING` (8×, recoupe exactement le relevé du 04/08) · `security`/`SCANNER_ERROR` (échec confirmé, contenu par `ScanEngine` — pas un crash d'app) · `B2S_MISSING`/`B2S_ORPHAN` (~205 combinés) · `NVRAM_EMPTY`(1) · `ALTCOLOR_INCOMPLETE`(2 paires) · `B2S_MALFORMED`(2) · `POPPER_ORPHAN_PLAYLIST`(1, 421 jeux)
+- bac:         FIX (vérification cab réel) + FN (bug de scan confirmé) + FP potentiel (KPI #1, toujours sans réponse)
+- contexte:    Maxime a installé l'app Claude desktop directement sur sa cab (distincte de Pincab Toolbox lui-même) et lancé 2 scans réels avec le build Tier B fraîchement livré : `pincabtoolboxreport202608070032.html` (00:32, racine `C:\`, par erreur) puis `pincabtoolboxreport202608070040.html` (00:40, racine `C:\Visual Pinball`, corrigée après une capture du sélecteur de dossier). Cab confirmée par photo : tabletop/cocktail, un seul écran, **aucun backglass**.
+- analyse:
+  1. **Bug confirmé — pas un faux négatif de détection, un vrai échec de scanner, mais CONTENU par le filet de sécurité existant, pas un crash d'app.** Le rapport 00:32 (racine `C:\`) ne montre aucun `BLOCKED_NONE`/`BLOCKED_DLL` du module `security` (`BlockedFileScanner`), alors que le rapport contient par ailleurs des chemins sous `$Recycle.Bin\<SID-utilisateur>\...` et `.\Visual Pinball\VPinMAME\nvram\spagb_100.nv` — signe que le balayage est bien descendu jusque dans `C:\Documents and Settings` (jonction NTFS historique vers `C:\Users`, `UnauthorizedAccessException` par conception Windows, même en admin). **Root cause lue et confirmée dans le code cette fois** (pas juste déduite comme le 06/08) : `BlockedFileScanner.cs` L.71-79 enveloppe l'APPEL à `Directory.EnumerateFiles(root, "*.dll", SearchOption.AllDirectories)` dans un try/catch, mais cet appel est paresseux (lazy) — l'exception part réellement pendant le `foreach` de consommation (L.82), qui lui n'est PAS protégé. **Correction importante après relecture de `ScanEngine.cs`** : `ScanEngine.Run` (L.53-69) enveloppe l'appel à CHAQUE `scanner.Scan(ctx)` dans son propre try/catch et convertit toute exception échappée en un finding `SCANNER_ERROR` (Warning, message technique brut) — donc ce bug ne fait PAS planter l'app ni le reste du scan, il fait juste disparaître silencieusement le résultat normal du module `security` au profit d'une ligne d'erreur technique peu engageante. Reste un vrai défaut (perte du check + mauvaise UX), juste moins grave qu'un crash. **Deuxième occurrence identique trouvée en vérifiant les scanners voisins** : `CompletenessScanner.CollectWheelStems` (L.163-166) a exactement le même patron (assignation protégée, `foreach` de consommation non protégé) sur `Directory.EnumerateDirectories(popMediaDir, "Wheel", SearchOption.AllDirectories)` — même filet `ScanEngine` en dernier recours, risque plus faible en pratique (`popMediaDir` est un sous-dossier d'install, pas `C:\`), mais même bug de fond. `LayoutDetector.SafeEnumerateDirs`/`SafeEnumerateFiles` ont déjà le bon patron (try/catch PAR dossier, jamais sur l'IEnumerable entier) — c'est le patron à répliquer, pas à inventer. **Aucun correctif appliqué** : les deux fichiers sont des scanners EXISTANTS, jamais touchés sans reconfirmation explicite (règle du projet) — question posée à Maxime le 06/08, toujours sans réponse à ce jour.
+  2. **Root scope confirme le diagnostic empiriquement.** Le rapport 00:40 (racine corrigée `C:\Visual Pinball`) montre le module `security` propre (résultat `BLOCKED_NONE`/`BLOCKED_DLL` normal, aucun `SCANNER_ERROR`) — `C:\Documents and Settings` n'existe que directement sous `C:\`, jamais atteint depuis une racine plus profonde. Prédiction du 06/08 vérifiée sur le terrain, pas juste en théorie.
+  3. **8 `ROM_MISSING` critical recoupent EXACTEMENT le relevé du 04/08** (Blood Machines VPW 2022, hpgf-052-DOF, Jurassicparklimitededition, leprechaun, Munsters 2020, Stranger Things SE 1.47_OSB, The Goonies Javier1515 2019, Willy Wonka Pro — mêmes tables que bloodmach/hpgof/jurassic/leprechaun/mmunsters/STLE/goonies/willywonka du 04/08). Deux sessions, plusieurs jours d'écart, même liste stable → cohérence forte, mais **ne tranche toujours pas la question KPI #1** (originales/homebrew sans ROM vs vrais hacks nécessitant une ROM précise) — toujours sans réponse de Maxime, voir DÉCISIONS EN ATTENTE #12.
+  4. **Score 0/100·F vérifié conforme à la formule**, pas un bug : `max(0, 100 − 15×Critical − 5×Warning)`, Warning plafonné à −30 depuis le 03/08. 8 critical × 15 = 120 à eux seuls > 100 → plancher à 0 attendu, indépendamment des ~105 warnings (déjà plafonnés). Confirmé à Maxime.
+  5. **Constat produit (pas un bug) : cab sans backglass confirmé par photo** (tabletop/cocktail, écran unique, pas de second moniteur) génère ~205 findings combinés `B2S_MISSING`+`B2S_ORPHAN` — bruit attendu structurellement sur ce type de cab, jamais actionnable par cet utilisateur précis. Piste de dé-emphase déjà notée en DÉCISIONS EN ATTENTE #13, pas codée, pas urgente.
+  6. Autres findings du scan réel (racine correcte, 00:40), actions Maxime uniquement — pas de code à écrire : 1 `NVRAM_EMPTY` (`spagb_100.nv`, à supprimer + relancer la table une fois), 2 paires `ALTCOLOR_INCOMPLETE` (avs_170c, mt_145hc), 2 `B2S_MALFORMED` (Goldorak_1.00, Iron Maiden Virtual Time 2020), 1 `POPPER_ORPHAN_PLAYLIST` (421 jeux — à retrier dans l'admin PinUP Popper).
+- disposition: **3 décisions posées à Maxime, toutes sans réponse à ce jour** (voir DÉCISIONS EN ATTENTE #11-13). Rien codé cette entrée (constat de terrain + vérification de code, pas un chantier). Action Maxime en plus des 3 décisions : re-scanner en pointant la racine sur le dossier parent commun (Visual Pinball + PinUP Popper) pour une couverture complète en un seul rapport propre ; confirmer le `git push` des 2 commits Tier B (`14894ed`, `1ab33fc`) — pas de capture reçue depuis.
+
 ## 2026-08-06 (session Sonnet 5, autonome, effort max) · Handoff scanners — exécution de la file
 - code:        transverse — journal de session unique, une ligne par item (détail sous chaque item ci-dessous)
 - bac:         FIX (nouveaux scanners) + FEATURE (rendu Note)
@@ -455,6 +468,30 @@ revue de clôture plutôt que dispersées, cf. détail complet par item plus hau
     (quelle version fait référence aujourd'hui dans la communauté vpinball) que je n'ai pas la
     légitimité de deviner — **décision Maxime**, débloquable en une session courte une fois les
     valeurs connues.
+11. **Bug confirmé (lecture de code) — énumération paresseuse non protégée dans 2 scanners existants**
+    (`BlockedFileScanner.cs` module `security`, `CompletenessScanner.CollectWheelStems`) —
+    `Directory.Enumerate*(root, pattern, SearchOption.AllDirectories)` est protégé par try/catch sur
+    l'APPEL, mais l'énumération réelle est paresseuse et part pendant le `foreach` de consommation,
+    non protégé — une `UnauthorizedAccessException` (ex. jonction système `C:\Documents and
+    Settings`) fait échouer le scanner entier (`SCANNER_ERROR`, Warning technique peu engageant —
+    contenu par le try/catch générique de `ScanEngine.Run`, PAS un crash d'app). Confirmé sur le
+    terrain le 07/08 (scan racine `C:\`).
+    Le bon patron existe déjà dans le projet (`LayoutDetector.SafeEnumerateDirs`/`SafeEnumerateFiles`,
+    try/catch PAR dossier) — à répliquer, pas à inventer. **Ce sont 2 scanners EXISTANTS : aucun
+    correctif sans ton feu vert explicite** (règle du projet). Question posée le 06/08, toujours sans
+    réponse.
+12. **KPI #1 toujours ouvert — les 8 `ROM_MISSING` critical (Blood Machines, hpgf-052-DOF, Jurassic
+    Park, leprechaun, Munsters 2020, Stranger Things SE, The Goonies, Willy Wonka Pro) sont-ils de
+    vrais hacks nécessitant une ROM précise, ou des originales/homebrew qui ne devraient rien
+    réclamer ?** Liste identique sur 2 sessions distinctes (04/08 et 07/08, plusieurs jours d'écart) —
+    stabilité qui argue plutôt pour « vrais hacks » (une originale mal classée aurait des chances de
+    varier ou d'être reconnue par Maxime d'un coup d'œil), mais ne tranche rien sans vérification
+    d'au moins un cas. Un seul cas confirmé homebrew suffirait à rouvrir le chantier FP.
+13. **[Basse priorité, pas un bug] Dé-emphase `B2S_MISSING`/`B2S_ORPHAN` pour les cabs sans
+    backglass** — le cab réel de Maxime (photo confirmée : tabletop/cocktail, écran unique) génère
+    ~205 findings combinés structurellement inévitables sur ce type de cab. Piste produit seulement
+    (regrouper/dé-prioriser ces codes quand `DisplaySetupScanner` ne détecte aucun second écran) —
+    pas codée, pas demandée, à garder en tête pour une session UX future.
 
 ## 2026-08-05 (session Opus, 2 missions + dégel + palier Note) · Comparateur VPX livré + audit Scanner + handoff autonome Sonnet 5
 - code:        VPX_VERSION_OUTDATED (nouveau, Warning) · Severity.Note (nouveau palier) · transverse (audit/produit)

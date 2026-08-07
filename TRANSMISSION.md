@@ -1,4 +1,40 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 06/08/2026 (ter)
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 07/08/2026
+
+## ⏱️ MAJ 07/08 — test terrain réel sur la cab de Maxime (2 scans) : bug confirmé (2 occurrences), KPI #1 toujours ouvert
+
+> **Maxime a lancé le build Tier B sur sa vraie cab** (app Claude desktop installée en parallèle sur
+> la machine, distincte de Pincab Toolbox) — 2 rapports HTML réels : `...0032` (racine `C:\`, par
+> erreur) puis `...0040` (racine `C:\Visual Pinball`, corrigée). Cab confirmée par photo : tabletop/
+> cocktail, écran unique, **aucun backglass**.
+>
+> **Bug confirmé par lecture directe du code** (pas juste déduit comme le 06/08) : `BlockedFileScanner.cs`
+> (module `security`) protège l'APPEL à `Directory.EnumerateFiles(..., AllDirectories)` par try/catch
+> mais pas le `foreach` de consommation qui suit — l'énumération est paresseuse, l'exception part
+> pendant le `foreach`, non protégé. **Précision après relecture de `ScanEngine.cs`** : chaque scanner
+> tourne déjà dans son propre try/catch au niveau moteur, donc ce bug ne plante PAS l'app — il fait
+> juste échouer le module en un `SCANNER_ERROR` (Warning technique brut) au lieu du résultat normal.
+> A échoué ainsi sur `C:\Documents and Settings` (jonction NTFS système) quand la racine était `C:\`.
+> **Deuxième occurrence identique trouvée** : `CompletenessScanner.CollectWheelStems` a le même patron
+> exact (risque plus faible en pratique, mais même bug de fond). `LayoutDetector.SafeEnumerateDirs`/
+> `SafeEnumerateFiles` ont déjà le bon patron à répliquer. **Aucun correctif fait** — 2 scanners
+> EXISTANTS, jamais touchés sans ton feu vert explicite (toujours sans réponse depuis le 06/08).
+> Racine corrigée (00:40) confirme le diagnostic : module `security` propre, aucun `SCANNER_ERROR`.
+>
+> **8 `ROM_MISSING` critical identiques au relevé du 04/08**, deux sessions distinctes, même liste
+> stable — cohérence forte, mais ne tranche toujours pas KPI #1 (originales/homebrew vs vrais hacks).
+> **Score 0/100·F revérifié conforme à la formule** (8×15=120 > 100, plancher attendu) — pas un bug.
+> **Constat produit, pas un bug** : cab sans backglass confirmée → ~205 findings B2S_MISSING/ORPHAN
+> structurellement inévitables sur ce cab précis — piste de dé-emphase notée, pas codée, pas urgente.
+>
+> Détail complet (root cause ligne par ligne, tous les codes du scan, actions Maxime) :
+> `knowledge/FIELD-LOG.md`, entrée du 07/08.
+>
+> **3 décisions ajoutées à la liste ci-dessous (#11-13), toutes sans réponse.** Rien codé cette
+> session (vérification + terrain, pas un chantier). **Action Maxime** : re-scanner racine = dossier
+> parent commun (Visual Pinball + PinUP Popper) pour un rapport complet en un coup ; confirmer le
+> `git push` des 2 commits Tier B (`14894ed`, `1ab33fc`) — pas de capture reçue depuis.
+
+---
 
 ## ⏱️ MAJ 06/08 (ter) — build Windows réel cassé puis réparé + Tier B livrée (5/5)
 
@@ -169,11 +205,11 @@
 
 ---
 
-## 🗂️ DÉCISIONS EN ATTENTE (pour Maxime) — issues de la session du 06/08
+## 🗂️ DÉCISIONS EN ATTENTE (pour Maxime) — liste vivante, mise à jour à chaque session
 
 Rien n'a bloqué la file (aucun item n'a été laissé inachevé) — ce sont des améliorations à faible
 coût repérées en cours de route, non codées hors mandat, consolidées ici plutôt que dispersées.
-Détail complet par point : `knowledge/FIELD-LOG.md`, entrée du 06/08, section « DÉCISIONS EN ATTENTE ».
+Détail complet par point : `knowledge/FIELD-LOG.md`, section « DÉCISIONS EN ATTENTE ».
 
 1. ✅ **FAIT (MAJ 06/08 bis)** — ~~6 scanners pré-existants sans entrée `cat.*` dans `Loc.cs`~~.
 2. ✅ **FAIT (MAJ 06/08 bis)** — ~~`Knowledge.KnowledgeEntry.AutoFixable` est un flag mort~~ — documenté comme vestigial (pas câblé, choix délibéré — voir raisonnement ci-dessus).
@@ -185,6 +221,9 @@ Détail complet par point : `knowledge/FIELD-LOG.md`, entrée du 06/08, section 
 8. ✅ **FAIT (MAJ 06/08 ter)** — ~~File Tier B entièrement reportée~~ — D1/C2/B3/G1/E2 livrés (5/5, commit `14894ed`). A1/A2/A3 restent reportés, voir #9-10.
 9. **B3 — nom de clé INI du port COM non confirmé** sur un vrai `dmddevice.ini` (`port`/`comport`/`com_port`/`serialport` tous acceptés, par prudence). Sans risque (silence si aucun ne matche), mais peut sous-détecter. Action à coût quasi nul : coller un `dmddevice.ini` réel dans le chat, ou juste confirmer le nom de clé.
 10. **A1 Script Doctor bloqué par l'absence d'un plancher de version en donnée de profil** — débloquable en ajoutant un champ à `profiles/vpx-popper.json` (ex. `sharedScriptFloors`) avec, par script partagé (`core.vbs`, `controller.vbs`, `VPMKeys.vbs`, `nudge.vbs`), la version en-dessous de laquelle le déclarer périmé. Jugement métier que je ne peux pas deviner — une fois les valeurs données, c'est une session courte.
+11. **Bug confirmé (07/08) — énumération paresseuse non protégée dans 2 scanners existants** (`BlockedFileScanner.cs` module `security`, `CompletenessScanner.CollectWheelStems`) — try/catch sur l'appel `Directory.Enumerate*(..., AllDirectories)` mais pas sur le `foreach` de consommation qui suit ; échoue (`SCANNER_ERROR`, contenu par `ScanEngine` — pas un crash d'app) sur une jonction système (`C:\Documents and Settings`). Patron correct déjà dans `LayoutDetector` à répliquer. **Décision requise avant tout correctif** (2 scanners existants) — sans réponse depuis le 06/08.
+12. **KPI #1 toujours ouvert** — les 8 `ROM_MISSING` critical (Blood Machines, hpgf-052-DOF, Jurassic Park, leprechaun, Munsters 2020, Stranger Things SE, The Goonies, Willy Wonka Pro) sont-ils de vrais hacks ROM ou des originales/homebrew ? Même liste stable sur 2 sessions (04/08, 07/08). Un seul cas vérifié tranche pour tous.
+13. **[Basse priorité] Dé-emphase `B2S_MISSING`/`B2S_ORPHAN` pour cabs sans backglass** — constat du cab réel de Maxime (~205 findings structurellement inévitables sans backglass). Idée produit seulement, pas codée, pas urgente.
 
 ---
 

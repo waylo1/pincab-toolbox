@@ -19,7 +19,7 @@
 ### Décisions DÉJÀ PRISES (tu n'as pas à les reposer)
 - **R1 — Knowledge.cs + Loc.cs : AUTORISÉ.** Tu **dois** ajouter, pour chaque nouveau code Warning/Critical (et rétroactivement pour `VPX_VERSION_OUTDATED`), une entrée `Knowledge.cs` (impact + cause) et `Loc.cs` (FR **et** EN), en calquant **exactement** le patron des entrées voisines. C'est additif et sûr. Vérifie chaque fichier App édité par un **parse Roslyn** (0 erreur CSxxxx) — l'App WPF ne compile pas sous Linux, donc c'est ta seule vérif syntaxique.
 - **R2 — Scanners 🟢 déterministes : BUILD ET SHIP (le gel est LEVÉ).** Maxime a **levé le gel Scanner le 05/08** (« je sonne le dégel du gel ») — cette décision supersède le « SCANNER GELÉ » du 03/08 et `PROJECT-BRAIN` §7 (à reporter dans le Brain/un ADR). Tu **construis entièrement ET tu actives** les scanners marqués 🟢 *déterministes* : fichiers neufs + tests + Knowledge/Loc + **vraie ligne `.Add(new XxxScanner())`** dans `MainWindow.xaml.cs` (exactement comme le comparateur). Garde chaque ajout **atomique** (une ligne = un scanner) pour que Maxime puisse en désactiver un seul au besoin. ⚠️ **Ce qui n'est PAS levé** : la règle anti-faux-positif. Un check 🟢 *déterministe* a un FP nul par construction → OK pour ship. Un check 🟡 *heuristique* (jugement, FP possible) attend **toujours un signal terrain** avant d'être codé — ce n'était pas le gel qui le bloquait, c'est le risque de FP (la fausse alerte KPI#1 venait exactement de là). **🟢 → ship maintenant (Warning). 🟡 → shippables AUSSI, mais via la « Doctrine Note » (section juste après §0-bis) : émettre le FAIT dans le nouveau palier `Note`, jamais le jugement en Warning. Seuls vrais exclus : F3 quote-safety + le FIX core.vbs (ADR).**
-- **R3 — STOPS NETS (tu ne touches JAMAIS, tu logges et tu passes)** : (a) les 12 fichiers scanners existants ; (b) l'Écran 2 / bouton Apply de Repair ; (c) le fix `B2S_ORPHAN` ; (d) la fonctionnalité auto-update ; (e) le **fix Repair core.vbs** (question ADR OSS non tranchée — la *détection* seule reste permise en `Note`, cf. Doctrine) ; (f) le scanner **F3 quote-safety** (non rendable sûr à coût raisonnable, FP même en `Note`). *(Les autres 🟡 ne sont plus des stops : ils se shippent en `Note` via la Doctrine ci-dessous — File Tier B.)*
+- **R3 — STOPS NETS (tu ne touches JAMAIS, tu logges et tu passes)** : (a) les 12 fichiers scanners existants ; (b) l'Écran 2 / bouton Apply de Repair ; (c) le fix `B2S_ORPHAN` ; (d) la fonctionnalité auto-update ; (e) le **fix Repair core.vbs** — l'ADR OSS est **ACTÉE (06/08 : core.vbs = dépendance OSS providable)**, mais le *fix* demande une **passe de design** avant tout code (quelle version restaurer, bundle vs fetch, backup/undo) → hors file autonome ; la *détection* seule reste permise en `Note` ; (f) le scanner **F3 quote-safety** (non rendable sûr à coût raisonnable, FP même en `Note`). *(Les autres 🟡 ne sont plus des stops : ils se shippent en `Note` via la Doctrine ci-dessous — File Tier B.)*
 - **R4 — Sévérité par défaut = Warning.** `Critical` uniquement sur une panne certaine et non-heuristique. Au moindre doute → **biais silence** (pas de Finding).
 - **R5 — Zéro dépendance, fichiers neufs uniquement + la ligne commentée.** Jamais de NuGet. Jamais un fichier scanner existant modifié.
 - **R6 — Gabarit obligatoire** : classe pure dans `Services/` + `IScanner` mince à I/O injectée dans `Scanning/` + fichier de tests neuf. Clone la structure du comparateur (`VpxVersionComparer` / `VpxVersionScanner` / `VpxVersionScannerTests`). Ne réinvente rien.
@@ -216,12 +216,12 @@ Chaque nouveau code **Warning/Critical** devrait avoir : une entrée `src/Pincab
 
 ## 8. Opus/Maxime vs Sonnet 5 — répartition
 
-**Restent à Maxime SEUL (hors file autonome — Sonnet ne les touche pas, cf. R3)** :
-- Trancher l'**ADR core.vbs OSS** (débloque A1-fix).
-- Acter **Table Companion** comme 2ᵉ produit et le **modèle de monétisation** par famille.
-- Le **carve-out ADR auto-update** (§8.4 audit).
-- Décider quels 🟡 passent le seuil « deux signaux terrain » et sont **activés** (les 🟢 sont déjà buildables sans lui, cf. R2).
-- *(Le périmètre Knowledge/Loc est désormais tranché — R1 — plus une question ouverte.)*
+**Décisions produit — ACTÉES par Maxime le 06/08** (ce ne sont plus des questions ouvertes) :
+- ✅ **Dégel** officiel du Scanner → **à reporter dans `PROJECT-BRAIN` §7** (1re tâche doc de Sonnet).
+- ✅ **core.vbs = dépendance OSS providable** → débloque le *principe* du fix A1 ; reste une passe de design avant code (R3-e).
+- ✅ **Table Companion = 2ᵉ produit** payant + monétisation par famille (audit §8).
+- ✅ **Carve-out ADR auto-update** premier-parti (audit §8.4) → canal Knowledge Pack ouvrable ; canal binaire après signature de code.
+- Reste à Maxime au fil de l'eau : décider quels 🟡 *additionnels* passent le seuil terrain. *(Knowledge/Loc déjà tranché — R1.)*
 
 **Délégable à Sonnet 5 (implémentation cadrée)** :
 - Coder chaque Doctor débloqué **en suivant le gabarit §1** (le comparateur est le modèle exact à cloner).
