@@ -68,14 +68,28 @@ public sealed class BlockedFileScanner : IScanner
         if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
             return findings;
 
-        IEnumerable<string> dlls;
-        try
+        // Walk directory-by-directory (LayoutDetector.SafeEnumerateDirs), each protected by its
+        // own try/catch — NOT a single Directory.EnumerateFiles(..., AllDirectories) call. That
+        // enumeration is lazy: the try/catch around the call only guards against the call itself
+        // throwing, not the deferred iteration that actually walks the tree during the foreach
+        // below. An UnauthorizedAccessException from a protected subtree (e.g. the
+        // C:\Documents and Settings NTFS junction under a C:\ root) would escape the unprotected
+        // foreach and fail the whole scanner (caught upstream by ScanEngine as a raw
+        // SCANNER_ERROR) instead of just skipping that one subtree.
+        var dlls = new List<string>();
+        foreach (var dir in LayoutDetector.SafeEnumerateDirs(root, int.MaxValue))
         {
-            dlls = Directory.EnumerateFiles(root, "*.dll", SearchOption.AllDirectories);
-        }
-        catch
-        {
-            return findings; // unreadable tree — skip silently
+            ct.ThrowIfCancellationRequested();
+            string[] files;
+            try
+            {
+                files = Directory.GetFiles(dir, "*.dll");
+            }
+            catch
+            {
+                continue; // this directory is unreadable — skip it, keep walking the rest of the tree
+            }
+            dlls.AddRange(files);
         }
 
         int blocked = 0;

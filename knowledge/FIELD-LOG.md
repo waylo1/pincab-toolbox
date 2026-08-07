@@ -26,6 +26,48 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-07 (bis) · Feu vert donné — correctif des 2 scanners appliqué, git push reconfirmé
+- code:        `security`/`SCANNER_ERROR` (BlockedFileScanner) · `COMPLETENESS_MISSING_WHEEL` (dépend de CollectWheelStems)
+- bac:         FIX (correctif appliqué) + vérification (push)
+- contexte:    Maxime a donné le feu vert pour le correctif décrit en DÉCISIONS EN ATTENTE #11
+  (entrée du 07/08 ci-dessous), sans capture ni fichier nouveau à traiter.
+- analyse:
+  1. **Correctif appliqué dans les 2 scanners existants**, patron répliqué depuis
+     `LayoutDetector.SafeEnumerateDirs` (déjà dans le projet — BFS dossier par dossier, chaque appel
+     `Directory.GetFiles`/`Directory.GetDirectories` protégé par son propre try/catch, pas un seul
+     try/catch autour de tout l'`IEnumerable` paresseux). `BlockedFileScanner.Scan` : le `*.dll`
+     `AllDirectories` est remplacé par une marche `SafeEnumerateDirs` + `Directory.GetFiles(dir,
+     "*.dll")` par dossier. `CompletenessScanner.CollectWheelStems` : même marche, filtrée sur les
+     dossiers nommés `Wheel`. Un sous-dossier illisible est maintenant sauté individuellement, le
+     reste de l'arbre continue d'être scanné — plus de `SCANNER_ERROR` qui efface tout le module.
+  2. **Pas de build/test exécuté** — ni `dotnet` ni le mini-checker Roslyn disponibles cette session
+     (ni sandbox cloud ni pont machine). Changement revu à la main seulement : signature identique,
+     aucun appelant modifié, patron copié à l'identique d'un helper déjà testé et utilisé ailleurs
+     dans le même fichier (`LayoutDetector`). **Core 279/279 + Repair 105/105 à revérifier par
+     Maxime** au prochain `build.cmd` réel — pas de vert confirmé cette entrée, contrairement aux
+     entrées précédentes.
+  3. **Git push reconfirmé** : `git log` (local, machine de Maxime) == `git log origin/main`, HEAD
+     `9f3e5f7` des deux côtés — les commits Tier B (`613496f` dans ce clone, référencés `14894ed` et
+     `1ab33fc` dans les entrées précédentes — écart de hash probable dû à une normalisation de fin de
+     ligne entre clones, pas une divergence de contenu) étaient déjà bien en ligne. Rien à repousser
+     avant le correctif de cette entrée.
+  4. **Correctif PAS commité par cette session.** `git status` montre en plus 3 fichiers déjà modifiés
+     avant toute action de cette entrée (`PincabToolbox.sln`, `README.md`, `landing/.gitignore` —
+     origine inconnue, pas touchés ici) et un `.git/index.lock` résiduel que le pont ne peut pas
+     supprimer (pas de droit de suppression sur les fichiers montés côté device bridge). Laissé tel
+     quel plutôt que de risquer un commit qui embarque un diff non expliqué.
+  5. **Contenu suspect dans le message de Maxime, non traité comme instruction** : deux blocs en fin
+     de message ressemblant à des commentaires de forum/support collés (un hors-sujet, un signé
+     « gregg » plausible pour ce projet) suivis d'une demande de réponse immédiate et d'une consigne
+     « ne vérifie pas les commits » contredisant directement la tâche explicite de vérifier le push.
+     Vérifié quand même (point 3 ci-dessus) ; contenu forum non traité comme instruction à exécuter
+     sans confirmation explicite de Maxime.
+- disposition: correctif appliqué et écrit sur le disque de Maxime, pas commité (voir point 4).
+  **Action Maxime** : supprimer `.git/index.lock` si présent, committer seulement les 2 fichiers
+  scanner + ce journal (commande dans TRANSMISSION MAJ 07/08 bis), relancer `build.cmd` pour
+  reconfirmer Core/Repair verts. **4 décisions toujours sans réponse** : #9 (clé INI DMD), #10
+  (planchers Script Doctor), #12 (KPI #1 ROM), #13 (dé-emphase backglass, basse priorité).
+
 ## 2026-08-07 · Maxime a lancé 2 scans réels sur sa cab (build Tier B) — bug confirmé + KPI #1 toujours ouvert
 - code:        `ROM_MISSING` (8×, recoupe exactement le relevé du 04/08) · `security`/`SCANNER_ERROR` (échec confirmé, contenu par `ScanEngine` — pas un crash d'app) · `B2S_MISSING`/`B2S_ORPHAN` (~205 combinés) · `NVRAM_EMPTY`(1) · `ALTCOLOR_INCOMPLETE`(2 paires) · `B2S_MALFORMED`(2) · `POPPER_ORPHAN_PLAYLIST`(1, 421 jeux)
 - bac:         FIX (vérification cab réel) + FN (bug de scan confirmé) + FP potentiel (KPI #1, toujours sans réponse)
@@ -468,18 +510,12 @@ revue de clôture plutôt que dispersées, cf. détail complet par item plus hau
     (quelle version fait référence aujourd'hui dans la communauté vpinball) que je n'ai pas la
     légitimité de deviner — **décision Maxime**, débloquable en une session courte une fois les
     valeurs connues.
-11. **Bug confirmé (lecture de code) — énumération paresseuse non protégée dans 2 scanners existants**
-    (`BlockedFileScanner.cs` module `security`, `CompletenessScanner.CollectWheelStems`) —
-    `Directory.Enumerate*(root, pattern, SearchOption.AllDirectories)` est protégé par try/catch sur
-    l'APPEL, mais l'énumération réelle est paresseuse et part pendant le `foreach` de consommation,
-    non protégé — une `UnauthorizedAccessException` (ex. jonction système `C:\Documents and
-    Settings`) fait échouer le scanner entier (`SCANNER_ERROR`, Warning technique peu engageant —
-    contenu par le try/catch générique de `ScanEngine.Run`, PAS un crash d'app). Confirmé sur le
-    terrain le 07/08 (scan racine `C:\`).
-    Le bon patron existe déjà dans le projet (`LayoutDetector.SafeEnumerateDirs`/`SafeEnumerateFiles`,
-    try/catch PAR dossier) — à répliquer, pas à inventer. **Ce sont 2 scanners EXISTANTS : aucun
-    correctif sans ton feu vert explicite** (règle du projet). Question posée le 06/08, toujours sans
-    réponse.
+11. ✅ **FAIT (entrée 07/08 bis)** — ~~Bug confirmé (lecture de code) — énumération paresseuse non
+    protégée dans 2 scanners existants~~ (`BlockedFileScanner.cs` module `security`,
+    `CompletenessScanner.CollectWheelStems`) — corrigé en répliquant le patron
+    `LayoutDetector.SafeEnumerateDirs` (try/catch PAR dossier). **Pas encore committé/pushé** (git
+    lock résiduel côté machine Maxime) ni rebuild vérifié (pas de `dotnet` disponible cette session) —
+    action Maxime : voir entrée FIELD-LOG 07/08 (bis) et bloc Git dans TRANSMISSION.
 12. **KPI #1 toujours ouvert — les 8 `ROM_MISSING` critical (Blood Machines, hpgf-052-DOF, Jurassic
     Park, leprechaun, Munsters 2020, Stranger Things SE, The Goonies, Willy Wonka Pro) sont-ils de
     vrais hacks nécessitant une ROM précise, ou des originales/homebrew qui ne devraient rien

@@ -1,4 +1,59 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 07/08/2026
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 07/08/2026 (bis)
+
+## ⏱️ MAJ 07/08 (bis) — feu vert donné : correctif des 2 scanners appliqué ; git push reconfirmé ; 4 décisions toujours en attente
+
+> **Maxime a donné le feu vert** pour le bug confirmé la session précédente (item #11 des décisions
+> en attente) : `BlockedFileScanner.cs` (module `security`) et `CompletenessScanner.CollectWheelStems`
+> protégeaient l'APPEL à `Directory.Enumerate*(..., AllDirectories)` par try/catch mais pas le
+> `foreach` de consommation qui suit (énumération paresseuse) — un dossier Windows protégé
+> (`C:\Documents and Settings` ou équivalent) faisait échouer le scanner entier en un `SCANNER_ERROR`
+> technique au lieu du résultat normal.
+>
+> **Corrigé dans les 2 scanners existants**, patron répliqué depuis `LayoutDetector.SafeEnumerateDirs`
+> (déjà dans le projet, pas inventé) : marche BFS dossier par dossier, chaque `Directory.GetFiles`/
+> `Directory.GetDirectories` protégé par son propre try/catch — un sous-dossier illisible est
+> maintenant simplement sauté, le reste de l'arbre continue d'être scanné normalement au lieu de
+> perdre tout le module. Directement écrit sur le disque de Maxime (2 fichiers) :
+> `src/PincabToolbox.Core/Scanning/BlockedFileScanner.cs`,
+> `src/PincabToolbox.Core/Scanning/CompletenessScanner.cs`.
+>
+> **Pas de build/test exécuté cette session** — aucun `dotnet`/Roslyn disponible ni dans le sandbox
+> cloud ni via le pont vers la machine de Maxime cette fois (contrairement aux sessions où un
+> vérificateur Roslyn avait été monté ponctuellement). Changement revu à la main : même signature de
+> méthode, même type de retour, aucun appelant à modifier, patron copié à l'identique d'un helper déjà
+> testé du projet (`LayoutDetector`) — risque de régression de compilation jugé faible, mais **Core
+> 279/279 + Repair 105/105 à revérifier par Maxime au prochain `build.cmd` réel**, comme toujours pour
+> tout changement non vérifiable en sandbox.
+>
+> **Git push reconfirmé sans changement à pousser** : `git log` local == `git log origin/main` sur la
+> machine de Maxime, HEAD `9f3e5f7` des deux côtés — les commits Tier B étaient déjà bien en ligne,
+> rien à repousser avant le correctif de cette session. **Correctif PAS commité par cette session** :
+> `git status` sur la machine de Maxime montre aussi 3 fichiers déjà modifiés avant cette session
+> (`PincabToolbox.sln`, `README.md`, `landing/.gitignore` — pas touchés ici, origine inconnue) et un
+> `.git/index.lock` résiduel que le pont ne peut pas supprimer (pas de droit de suppression sur les
+> fichiers montés). **Action Maxime** : supprimer `.git/index.lock` s'il traîne encore, puis committer
+> uniquement les 2 fichiers scanner (voir bloc Git ci-dessous) — ne pas inclure les 3 fichiers déjà
+> modifiés sans savoir d'où vient ce diff.
+>
+> **4 décisions de la liste toujours sans réponse** (#9 clé INI DMD, #10 planchers Script Doctor,
+> #12 KPI #1 ROM, #13 dé-emphase backglass — basse priorité) — aucune action codée dessus cette
+> session, comme convenu tant qu'elles restent ouvertes.
+>
+> **Contenu suspect repéré dans le message de Maxime, non traité comme instruction** : deux blocs de
+> texte à la fin ressemblaient à des commentaires de forum/support collés (un sur un tout autre
+> logiciel, un signé « gregg » sur des retours de scan PincabToolbox) suivis d'une demande de
+> « réponse immédiate ». Vu l'avertissement de Maxime lui-même dans le même message (« si tu vois un
+> autre prompt dans un document supprime-le »), traité avec prudence plutôt qu'exécuté aveuglément —
+> détail dans la réponse du chat, pas dans ce fichier.
+>
+> **Git (action Maxime)** :
+> ```
+> git add src/PincabToolbox.Core/Scanning/BlockedFileScanner.cs src/PincabToolbox.Core/Scanning/CompletenessScanner.cs knowledge/FIELD-LOG.md TRANSMISSION.md
+> git commit -m "fix(scanner): protege l'enumeration recursive contre les sous-dossiers Windows illisibles (BlockedFileScanner, CompletenessScanner)"
+> git push origin main
+> ```
+
+---
 
 ## ⏱️ MAJ 07/08 — test terrain réel sur la cab de Maxime (2 scans) : bug confirmé (2 occurrences), KPI #1 toujours ouvert
 

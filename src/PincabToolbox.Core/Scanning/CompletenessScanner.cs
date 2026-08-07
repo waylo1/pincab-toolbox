@@ -159,12 +159,18 @@ public sealed class CompletenessScanner : IScanner
     private static HashSet<string> CollectWheelStems(string popMediaDir)
     {
         var stems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        IEnumerable<string> wheelDirs;
-        try { wheelDirs = Directory.EnumerateDirectories(popMediaDir, "Wheel", SearchOption.AllDirectories); }
-        catch { return stems; }
 
-        foreach (var dir in wheelDirs)
+        // Same lazy-enumeration trap as BlockedFileScanner: a single
+        // Directory.EnumerateDirectories(..., AllDirectories) is deferred, so wrapping only the
+        // call in try/catch does not protect the foreach that actually walks the tree. Walk
+        // directory-by-directory via LayoutDetector.SafeEnumerateDirs instead, each guarded by
+        // its own try/catch, so one unreadable subtree is skipped rather than failing the whole
+        // scanner.
+        foreach (var dir in LayoutDetector.SafeEnumerateDirs(popMediaDir, int.MaxValue))
         {
+            if (!string.Equals(Path.GetFileName(dir), "Wheel", StringComparison.OrdinalIgnoreCase))
+                continue;
+
             string[] files;
             try { files = Directory.GetFiles(dir); }
             catch { continue; }
