@@ -1,6 +1,124 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 07/08/2026 (bis)
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 07/08/2026 (quater)
 
-## ⏱️ MAJ 07/08 (bis) — feu vert donné : correctif des 2 scanners appliqué ; git push reconfirmé ; 4 décisions toujours en attente
+## ⏱️ MAJ 07/08 (quater) — bouton "Check for updates" codé (feu vert donné) : PREMIER appel réseau du projet
+
+> **Maxime a donné le feu vert pour coder le bouton de MAJ.** Codé — mais c'est un changement de
+> nature différente des correctifs habituels : **c'est le tout premier appel réseau de tout le
+> projet.** `grep -ri "HttpClient\|WebClient\|https://" src/` ne remontait strictement rien avant
+> cette session. Traité comme tel : manuel, opt-in, jamais automatique, et **le texte "About" (qui
+> promettait "100% local — rien n'est envoyé") a été corrigé pour rester honnête**, pas juste le
+> code — un utilisateur qui lit cette promesse doit continuer à pouvoir s'y fier.
+>
+> **Ce qui est codé** :
+> - `PincabToolbox.Core/Services/UpdateChecker.cs` — `GitHubUpdateChecker` interroge l'API publique
+>   GitHub (`api.github.com/repos/waylo1/pincab-toolbox/releases/latest`, pas d'auth, timeout 6s),
+>   lit le tag de la dernière release. Ne télécharge, n'installe, ne remplace **rien** — juste un
+>   lien vers la page de release, l'utilisateur décide. `AppVersionCompare` (comparaison pure,
+>   testée) décide si le tag est plus récent que `0.1.1`.
+> - `MainWindow.xaml` / `.xaml.cs` — bouton "Check for updates" / "Vérifier les mises à jour" dans
+>   l'onglet About, à côté du numéro de version. Clic → "Checking…" → soit "à jour", soit un lien
+>   cliquable vers la release, soit un message d'erreur neutre (hors ligne / GitHub injoignable).
+>   **Jamais de vérification au démarrage, jamais en tâche de fond.**
+> - `Loc.cs` (FR+EN) — nouvelles clés pour le bouton et les 3 états, **et le texte `about.body`
+>   corrigé** pour disclosure honnête : "Scan 100% local... Seule exception : le bouton [...] est
+>   manuel et volontaire [...] Rien concernant ta cab, tes tables ou tes résultats de scan n'est
+>   jamais envoyé."
+> - `AppVersionCompareTests.cs` (10 tests) — comparaison de version pure, testée sans réseau : tag
+>   plus récent/identique/plus vieux, préfixe `v`/`V` optionnel, suffixe pré-release, tag malformé
+>   (jamais de faux "MAJ disponible" sur un tag illisible — même doctrine que le reste du scanner
+>   sur les données non lisibles).
+>
+> **Pas de build/test exécuté** — toujours aucun `dotnet` disponible cette session (ni sandbox, ni
+> pont). Vérification manuelle : accolades/parenthèses équilibrées sur les 2 nouveaux fichiers,
+> types et signatures cohérents avec le reste du projet (`net8.0`, `HttpClient`/`System.Text.Json`
+> déjà dans le framework, aucune dépendance NuGet ajoutée — le projet reste "zéro dépendance
+> externe" comme annoncé dans son propre `.csproj`). **Core (279+10=289 attendu) + Repair 105/105 +
+> App (compile réel du XAML) à vérifier par Maxime au prochain `build.cmd` — pas de vert confirmé.**
+>
+> **Pas commité par cette session** — même bloqueur que l'entrée précédente potentiellement
+> (`.git/index.lock` avait été débloqué par Maxime entre-temps, donc ça devrait passer, mais pas
+> vérifié). Commande ci-dessous.
+>
+> **Point d'attention produit, pas juste technique** : c'est la première fois que l'app fait
+> sortir quoi que ce soit vers Internet. Le design retenu (manuel, opt-in, aucune donnée sur la
+> cab/les tables envoyée, texte About mis à jour en conséquence) vise à rester dans l'esprit
+> "confiance" du projet plutôt qu'à le rompre — mais **ça mérite un ADR formel** (pas fait cette
+> session, faute de temps annoncé par Maxime) pour que ce ne soit pas juste tribal knowledge dans
+> un commentaire de code. À faire lundi ou plus tard.
+>
+> **Git (action Maxime)** :
+> ```
+> git add src/PincabToolbox.Core/Services/UpdateChecker.cs src/PincabToolbox.App/MainWindow.xaml src/PincabToolbox.App/MainWindow.xaml.cs src/PincabToolbox.App/Localization/Loc.cs tests/PincabToolbox.Core.Tests/AppVersionCompareTests.cs knowledge/FIELD-LOG.md TRANSMISSION.md
+> git commit -m "feat(app): bouton Check for updates (GitHub releases, manuel/opt-in) - premier appel reseau du projet, About.md mis a jour en consequence"
+> git push origin main
+> ```
+
+---
+
+## 🔜 PROMPT DE PASSATION — session de lundi 10/08 14h00
+
+> Copier-coller tel quel pour ouvrir la session de lundi :
+>
+> « Tu reprends Pincab Toolbox / FlipSync (MC Automation, Maxime Chauvin). Lis TRANSMISSION.md
+> (bloc du haut) et knowledge/FIELD-LOG.md (dernière entrée + section DÉCISIONS EN ATTENTE tout en
+> bas) pour le contexte complet avant de faire quoi que ce soit.
+>
+> État au 07/08 (ter) : le bug des 2 scanners existants (BlockedFileScanner, CompletenessScanner)
+> est corrigé, commité (`f7f2ab1`) et poussé sur GitHub — reste juste mon rebuild Windows à
+> reconfirmer en vert (Core 279/279, Repair 105/105), aucun `dotnet` disponible en sandbox pour
+> vérifier. Les 3 cas terrain de Gregg (BKSOR, Rocky & Bullwinkle, Spiderman) sont clos, 0 bug
+> scanner trouvé. J'ai annoncé le nouveau scanner + le développement de Repair sur les forums/FB
+> (FR+EN) dans le week-end du 08-09/08 — vérifie s'il y a des retours/questions de la communauté à
+> traiter en premier (nouvelles idées de check demandées, questions sur Repair, etc.) avant
+> d'attaquer autre chose.
+>
+> Le bouton "Check for updates" est maintenant codé (premier appel réseau du projet, manuel/opt-in,
+> texte About corrigé en conséquence) — vérifie en premier que mon `build.cmd` du week-end est bien
+> passé vert dessus (Core/Repair/App) avant d'y toucher, et regarde si un ADR formel a été écrit
+> pour ce choix (pas fait le 07/08, faute de temps).
+>
+> 4 décisions toujours en attente de ma part, aucune ne doit être devinée : #9 (clé INI du port COM
+> DMD — j'ai peut-être un vrai `dmddevice.ini` à coller si j'ai fait la manip ce week-end), #10
+> (versions de référence par script pour Script Doctor — idem, j'ai peut-être les valeurs), #12
+> (KPI #1 — est-ce qu'une de mes 8 tables ROM manquante est en fait une originale/homebrew sans
+> ROM), #13 (dé-emphase backglass, basse priorité, pas bloquant).
+>
+> Si j'ai répondu à une ou plusieurs de ces décisions, débloque les scanners correspondants (A1
+> Script Doctor si #10 répondu, B3 fiabilisé si #9 répondu). Si aucune réponse, avance sur autre
+> chose d'utile sans redemander (voir « pistes non bloquantes » dans FIELD-LOG) plutôt que
+> d'attendre. Revue CTO + Product avant toute clôture, comme toujours. »
+
+---
+
+## ⏱️ MAJ 07/08 (ter) — annonce communauté préparée (FR+EN, scanner + Repair en dev) ; bouton de MAJ scanner confirmé NON câblé
+
+> **Réponse à la question de Maxime : le "bouton de mise à jour" du scanner n'est pas câblé — il
+> n'existe même pas dans le code.** Vérifié par recherche exhaustive dans `src/` (aucune occurrence
+> de `Update`/`AutoUpdate`/bouton de MAJ nulle part) : c'est resté au stade audit (`§8.4` de
+> `docs/AUDIT-Scanner-2026-08.md`, 05/08) — un canal Knowledge Pack (valeur ADR-002, déjà réel :
+> `RepairOfferBuilder.LoadPack()` charge un fichier JSON local) vs un canal binaire conditionné à la
+> signature de code (jamais commencé). **Donc non : aujourd'hui, chaque nouvelle version du scanner
+> = un nouveau téléchargement complet pour l'utilisateur.** Rien à annoncer là-dessus pour l'instant
+> — si Maxime se fait poser la question sur les forums, la réponse honnête est "en réflexion, pas
+> encore fait".
+>
+> **Repair, état réel du code** (pour cadrer l'annonce sans survendre) : `RepairOfferBuilder`
+> (App) construit déjà l'écran 1 "Repair available" (résumé gratuit, lecture seule) à partir de 4
+> actions déjà codées dans `PincabToolbox.Repair` : `UnblockFileAction` (débloquer un DLL Windows —
+> rejoint directement le bug `BLOCKED_DLL` du module `security`), `RestoreRomArchiveAction`,
+> `QuarantineOrphanedMediaAction`, `KillZombiePinUpDisplayAction`. **Le chemin d'écriture réel
+> (Preflight/Apply/Undo) n'est PAS câblé dans l'App** — décision volontairement mise en attente
+> (HANDOFF 27/07), Maxime doit re-trancher avant que ça s'active. `SetDefaultAudioDeviceAction`
+> existe aussi mais n'est même pas encore branché au registre d'actions.
+>
+> **Annonce FR+EN préparée dans le chat** (scanner Tier A/B + palier Note + comparateur VPX +
+> dégel ; Repair en développement, 4 actions de correction déjà en chantier citées par leur intitulé
+> utilisateur, pas de mention de prix ; question ouverte à la communauté sur les prochains checks
+> scanner/Repair souhaités). **Pas de prix annoncé** comme demandé — si la question tombe,
+> Maxime répond "oui" en privé/commentaire, pas dans le post lui-même.
+>
+> **Prompt de passation lundi 14h ajouté en haut de ce fichier.** Rien codé cette entrée (annonce +
+> clarification, pas un chantier).
 
 > **Maxime a donné le feu vert** pour le bug confirmé la session précédente (item #11 des décisions
 > en attente) : `BlockedFileScanner.cs` (module `security`) et `CompletenessScanner.CollectWheelStems`

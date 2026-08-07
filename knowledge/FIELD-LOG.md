@@ -26,6 +26,40 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-07 (quater) · Bouton "Check for updates" codé — premier appel réseau du projet
+- code:        transverse (infra App/Core) — pas un finding de scan
+- bac:         FEATURE (demande directe de Maxime : « fais le bouton »)
+- contexte:    Maxime, après avoir appris que le bouton n'existait pas dans le code (session
+  précédente) : feu vert direct pour le coder, malgré le manque de temps annoncé.
+- analyse:
+  1. **Fait exprès de le traiter comme un changement de nature différente**, pas un bugfix de plus :
+     c'est le premier `HttpClient`/appel sortant de tout le projet (vérifié par recherche exhaustive
+     avant de coder, zéro résultat). Le texte About affichait jusque-là "100% local — rien n'est
+     envoyé" — une vraie promesse utilisateur, pas juste un détail d'implémentation.
+  2. **Design retenu pour rester dans l'esprit du projet** : bouton manuel dans l'onglet About
+     uniquement, aucune vérification au démarrage ni en tâche de fond, timeout court (6s) pour ne
+     jamais donner l'impression que l'app se fige sur une cab hors ligne (cas documenté — certains
+     utilisateurs gardent leur cab volontairement offline, cf. commentaire forum du 07/08), et
+     surtout **le texte About corrigé en même temps** (FR+EN) pour disclosure honnête plutôt que de
+     laisser une promesse devenue fausse.
+  3. **Ce qui est codé** : `GitHubUpdateChecker` (Core/Services) lit `api.github.com/repos/waylo1/
+     pincab-toolbox/releases/latest`, ne télécharge/installe rien, retourne juste tag + URL de
+     release ; `AppVersionCompare` (comparaison pure, 10 tests) décide si c'est plus récent que
+     `0.1.1` ; bouton + résultat cliquable dans `MainWindow.xaml`/`.xaml.cs` ; clés `about.*`
+     ajoutées dans `Loc.cs` FR+EN.
+  4. **Pas de build/test exécuté** (aucun `dotnet` disponible cette session, ni sandbox ni pont) —
+     vérification manuelle seulement (accolades/parenthèses, cohérence des types avec le reste du
+     projet, `net8.0` supporte `HttpClient`/`System.Text.Json` nativement, zéro dépendance NuGet
+     ajoutée). **Core/Repair/App à revérifier par Maxime au prochain build réel — pas de vert
+     confirmé cette entrée, contrairement à la doctrine habituelle du projet.**
+  5. **ADR formel pas écrit** — devrait l'être (premier appel réseau = décision structurante), mais
+     pas fait faute de temps annoncé par Maxime en fin de session. Noté dans le prompt de passation
+     de lundi.
+- disposition: codé et écrit sur le disque de Maxime, pas commité (voir bloc Git dans TRANSMISSION
+  MAJ 07/08 quater). **Action Maxime** : `build.cmd` pour confirmer Core/Repair/App verts, puis
+  commit/push. Écrire l'ADR quand il aura le temps — pas bloquant pour merger, mais à ne pas
+  oublier (première fois que le projet sort de son modèle "100% offline").
+
 ## 2026-08-07 (bis) · Feu vert donné — correctif des 2 scanners appliqué, git push reconfirmé
 - code:        `security`/`SCANNER_ERROR` (BlockedFileScanner) · `COMPLETENESS_MISSING_WHEEL` (dépend de CollectWheelStems)
 - bac:         FIX (correctif appliqué) + vérification (push)
@@ -67,6 +101,36 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
   scanner + ce journal (commande dans TRANSMISSION MAJ 07/08 bis), relancer `build.cmd` pour
   reconfirmer Core/Repair verts. **4 décisions toujours sans réponse** : #9 (clé INI DMD), #10
   (planchers Script Doctor), #12 (KPI #1 ROM), #13 (dé-emphase backglass, basse priorité).
+  **MAJ** : `.git/index.lock` supprimé par Maxime, commit `f7f2ab1` poussé (`9f3e5f7..f7f2ab1`,
+  4 fichiers, capture terminal reçue) — correctif bien en ligne sur `origin/main`.
+
+## 2026-08-07 (ter) · Rapport réel de Gregg reçu — les 2 derniers items clos, scanner ROM confirmé exact
+- code:        `ROM_MISSING` (`Black Knight - Sword Of Rage`, `The Adventures ofRocky & Bullwinkle 0.96`)
+- bac:         FIX (résultat de fix confirmé, BKSOR) + **pas un FN — confirmation que le scanner a raison** (R&B)
+- contexte:    Gregg (VPForums), suite d'échange après son rapport `pincabtoolboxreport202608061631.html`.
+  Il avait d'abord dit (message précédent) que le scan « cherchait un autre nom de ROM que celui
+  réellement utilisé » pour R&B — cette entrée corrige/clôt ce point avec sa réponse exacte.
+- analyse:
+  1. **Black Knight - Sword Of Rage — confirmé, pas un bug scanner, erreur utilisateur banale mais
+     instructive.** Le fichier ROM de Gregg s'appelait en réalité `bksor.zip.zip` (double extension,
+     probablement un dézippage qui n'a pas retiré `.zip` du nom d'origine) — invisible dans
+     l'explorateur Windows si les extensions de fichier sont masquées (réglage par défaut). Renommé
+     en `bksor` (fichier zip), le `CRITICAL` a disparu. **Le scanner a fait exactement son travail** :
+     un fichier mal nommé, même visuellement identique à l'œil, est un vrai ROM manquant du point de
+     vue de VPinMAME. Bon exemple concret à garder pour la doc/FAQ utilisateur (extensions de fichier
+     masquées → doubles extensions invisibles).
+  2. **Rocky & Bullwinkle — Gregg confirme son erreur initiale, pas un défaut du scanner.** Il avait
+     regardé le script d'une *autre* copie de la table par erreur ; la version `0.96` réelle déclare
+     bien `cGameName = "Rab"` (ROM `Rab.zip`) dans son script, et ce ROM n'est simplement pas dans son
+     dossier `roms`. Scanner exact — pas de FN, pas d'écart de nommage. Confirme le point noté hier :
+     le nom `Rab` est lu depuis le script, jamais deviné.
+  3. **Amazing Spider-Man** — déjà clos par Gregg lui-même à l'étape précédente (nom de fichier B2S
+     différent du nom de table, sans lien avec le scanner ROM).
+- disposition: **2 items sur 2 clos, aucun code à toucher — le scanner ROM sort renforcé de ce
+  round de test réel** (0 faux positif détecté sur 3 cas terrain remontés par Gregg). Réponse de
+  remerciement envoyée dans le chat. Ne tranche toujours pas KPI #1/#12 (les 8 `ROM_MISSING` de
+  Maxime lui-même) — mécanisme différent (nom de ROM erroné vs originale-sans-ROM) — mais ajoute de
+  la confiance générale dans la fiabilité du module `rom`.
 
 ## 2026-08-07 · Maxime a lancé 2 scans réels sur sa cab (build Tier B) — bug confirmé + KPI #1 toujours ouvert
 - code:        `ROM_MISSING` (8×, recoupe exactement le relevé du 04/08) · `security`/`SCANNER_ERROR` (échec confirmé, contenu par `ScanEngine` — pas un crash d'app) · `B2S_MISSING`/`B2S_ORPHAN` (~205 combinés) · `NVRAM_EMPTY`(1) · `ALTCOLOR_INCOMPLETE`(2 paires) · `B2S_MALFORMED`(2) · `POPPER_ORPHAN_PLAYLIST`(1, 421 jeux)

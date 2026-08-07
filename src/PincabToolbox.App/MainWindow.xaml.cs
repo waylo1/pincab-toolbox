@@ -55,6 +55,12 @@ public partial class MainWindow : Window
     private CancellationTokenSource? _cts;
     private readonly Settings _settings = Settings.Load();
 
+    // Keep in sync with AssemblyInfo/csproj version — same literal ApplyTexts already displayed
+    // in the About tab before this change, just named now so BtnCheckUpdate_Click can compare
+    // against it too.
+    private const string CurrentVersion = "0.1.1";
+    private readonly IUpdateChecker _updateChecker = new GitHubUpdateChecker();
+
     private bool _showCritical = true, _showWarning = true, _showNote = true, _showInfo = true, _showOk = false;
     private string? _sortKey;
     private bool _sortAsc = true;
@@ -239,7 +245,8 @@ public partial class MainWindow : Window
         AboutTagline.Text = Loc.Get("about.tagline");
         AboutBody.Text = Loc.Get("about.body");
         AboutRoadmap.Text = Loc.Get("about.roadmap");
-        AboutVersion.Text = Loc.Get("about.version") + " 0.1.1";
+        AboutVersion.Text = Loc.Get("about.version") + " " + CurrentVersion;
+        BtnCheckUpdate.Content = Loc.Get("about.checkupdate");
         OnbTitle.Text = Loc.Get("onb.title");
         OnbLead.Text = Loc.Get("onb.lead");
         OnbP1.Text = Loc.Get("onb.p1");
@@ -252,6 +259,49 @@ public partial class MainWindow : Window
     }
 
     private void BtnLang_Click(object sender, RoutedEventArgs e) => Loc.Toggle();
+
+    /// <summary>
+    /// The one and only network call in the app (see <see cref="GitHubUpdateChecker"/>) — fires
+    /// exclusively on this click, never automatically. Disables the button for the duration so a
+    /// slow/offline check can't be fired twice, and always ends in a result text (never a
+    /// crash/hang), including when the cab PC has no internet at all.
+    /// </summary>
+    private async void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        BtnCheckUpdate.IsEnabled = false;
+        UpdateResultText.Inlines.Clear();
+        UpdateResultText.Text = Loc.Get("about.update.checking");
+
+        var result = await _updateChecker.CheckAsync(CancellationToken.None);
+
+        UpdateResultText.Text = "";
+        UpdateResultText.Inlines.Clear();
+
+        if (!result.Success || result.LatestVersion is null || result.ReleaseUrl is null)
+        {
+            UpdateResultText.Text = Loc.Get("about.update.error");
+        }
+        else if (AppVersionCompare.IsNewer(result.LatestVersion, CurrentVersion))
+        {
+            var link = new System.Windows.Documents.Hyperlink(new System.Windows.Documents.Run(
+                string.Format(Loc.Get("about.update.available"), result.LatestVersion)))
+            {
+                NavigateUri = new Uri(result.ReleaseUrl),
+            };
+            link.Click += (_, _) =>
+            {
+                try { Process.Start(new ProcessStartInfo(result.ReleaseUrl) { UseShellExecute = true }); }
+                catch { /* best-effort — never let a browser-launch failure crash the app */ }
+            };
+            UpdateResultText.Inlines.Add(link);
+        }
+        else
+        {
+            UpdateResultText.Text = string.Format(Loc.Get("about.update.uptodate"), CurrentVersion);
+        }
+
+        BtnCheckUpdate.IsEnabled = true;
+    }
 
     // ---------------- scanner ----------------
 
