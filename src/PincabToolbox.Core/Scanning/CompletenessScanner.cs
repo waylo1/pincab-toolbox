@@ -12,11 +12,33 @@ public sealed class CompletenessScanner : IScanner
     public string Id => "completeness";
     public string Name => "Install Auditor";
 
+    /// <summary>
+    /// Backglass component roles that imply the cab is meant to drive a physical backglass
+    /// screen (same set DisplaySetupScanner uses to infer a multi-screen setup).
+    /// </summary>
+    private static readonly string[] BackglassRoles = { "b2s" };
+
     public IEnumerable<Finding> Scan(ScanContext ctx)
     {
         if (ctx.Layout.TablesDir is null) yield break;
 
         var popperGames = LoadPopperGames(ctx.Layout.PupDatabasePath);
+
+        // De-emphasis (TRANSMISSION #13, decided 10/08): on a cab with no backglass server
+        // installed at all, B2S_MISSING/B2S_ORPHAN on EVERY table is structurally inevitable and
+        // tells the user nothing actionable — a real field cab without a backglass screen produced
+        // ~205 such findings (FIELD-LOG 2026-08-07). Same detection DisplaySetupScanner already
+        // uses to infer a multi-screen setup (a b2s server binary present under the install),
+        // reused here rather than re-guessed. This is a HEURISTIC, not a certainty (a user could
+        // still want backglasses staged for later) — so it downgrades severity to Note rather than
+        // silencing the finding: Note never moves the score or triggers "FIX THIS FIRST" (Finding.cs
+        // doctrine), but the information stays visible in the full report. Deterministic, no new
+        // false positive introduced: the Warning path is untouched whenever a backglass component
+        // IS present.
+        var hasBackglassComponent = ctx.Profile.BinaryRoles
+            .Where(r => BackglassRoles.Contains(r.Role, StringComparer.OrdinalIgnoreCase))
+            .Any(r => LayoutDetector.FindFilesByPattern(ResolveScopeRoot(ctx.Layout, r.Scope), r.Pattern, 4).Any());
+        var b2sMissingSeverity = hasBackglassComponent ? Severity.Warning : Severity.Note;
 
         foreach (var (path, table) in ctx.Tables)
         {
@@ -29,10 +51,12 @@ public sealed class CompletenessScanner : IScanner
             {
                 yield return new Finding
                 {
-                    Code = "B2S_MISSING", Severity = Severity.Warning, Category = Id,
+                    Code = "B2S_MISSING", Severity = b2sMissingSeverity, Category = Id,
                     Subject = baseName, FilePath = path,
                     Args = new[] { baseName },
-                    EnglishText = $"'{baseName}' has no .directb2s backglass file next to the table.",
+                    EnglishText = hasBackglassComponent
+                        ? $"'{baseName}' has no .directb2s backglass file next to the table."
+                        : $"'{baseName}' has no .directb2s backglass file next to the table — no backglass component was detected on this install, so this is likely expected (no backglass screen).",
                     FixHint = "If you use a backglass screen, download the matching .directb2s and place it in the tables folder with the exact same base name.",
                 };
             }
@@ -92,6 +116,8 @@ public sealed class CompletenessScanner : IScanner
             if (tableNames.Contains(b2sName)) continue;
             yield return new Finding
             {
+                // Already Info (never moved the score/banner) — left untouched by the #13
+                // de-emphasis above, which only applies to the per-table B2S_MISSING Warning.
                 Code = "B2S_ORPHAN", Severity = Severity.Info, Category = Id,
                 Subject = b2sName, FilePath = file,
                 Args = new[] { b2sName },
@@ -178,6 +204,15 @@ public sealed class CompletenessScanner : IScanner
         }
         return stems;
     }
+
+    /// <summary>Same scope-root resolution DisplaySetupScanner uses for its own backglass-component probe.</summary>
+    private static string ResolveScopeRoot(InstallLayout layout, string scope) => scope switch
+    {
+        "root" => layout.RootPath,
+        "vpinmame" => layout.VPinMameDir ?? layout.RootPath,
+        "tables" => layout.TablesDir ?? layout.RootPath,
+        _ => layout.RootPath,
+    };
 
     /// <summary>Reads GameName + GameFileName from PUPDatabase.db via the built-in read-only SQLite reader.</summary>
     private static HashSet<string>? LoadPopperGames(string? dbPath)

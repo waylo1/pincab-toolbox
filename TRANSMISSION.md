@@ -1,4 +1,242 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 07/08/2026 (quater)
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 10/08/2026
+
+## ✅ MAJ 10/08 — règle « feu vert par défaut » étendue à tout produit hors Scanner ; #13 codé (dé-emphase B2S) ; scope disque à clarifier davantage
+
+> **Décision de Maxime (10/08) : la règle du 07/08 (« feu vert par défaut » pour une demande
+> communauté raisonnable, sauf téléchargement illégal) est étendue à TOUT produit hors Scanner**,
+> pas seulement Repair. Le Scanner garde sa doctrine gelée inchangée (03/08) — deux signaux terrain
+> indépendants requis pour tout nouveau check.
+>
+> **Décisions en attente tranchées ce jour** (voir liste complète plus bas) :
+> - **#9 (clé INI port COM DMD)** : pas de fichier réel fourni — **reste sur les 4 variantes
+>   tolérées** (`port`/`comport`/`com_port`/`serialport`), aucun changement de code.
+> - **#10 (planchers Script Doctor A1)** : **reste bloqué**, pas de valeurs données — A1 non codé.
+> - **#12 (KPI#1 ROM_MISSING × 8)** : **reste ouvert**, à vérifier plus tard — aucun correctif codé,
+>   aucune des 8 tables n'a été tranchée originale/homebrew vs vrai hack.
+> - **#13 (dé-emphase B2S_MISSING/B2S_ORPHAN sans backglass) : CODÉ.** Voir détail ci-dessous.
+>
+> **Codé — `CompletenessScanner.cs`** : réutilise exactement la détection déjà éprouvée par
+> `DisplaySetupScanner` (présence d'un binaire de rôle `b2s` sous l'install, via
+> `ctx.Profile.BinaryRoles` + `LayoutDetector.FindFilesByPattern`) pour savoir si l'install a un
+> composant backglass du tout. **Si aucun composant `b2s` n'est détecté**, `B2S_MISSING` passe de
+> `Warning` à **`Note`** (palier existant, ADR du 07/08 — jamais de score/bannière FIX THIS FIRST,
+> mais reste visible dans le rapport complet) au lieu d'être supprimé — c'est une heuristique, pas
+> une certitude (un utilisateur pourrait vouloir préparer ses backglass plus tard), donc doctrine
+> "jamais de silence sur une info potentiellement utile" respectée. Le texte anglais distingue les
+> deux cas. `B2S_ORPHAN` (déjà `Info`) **non touché** — il n'a jamais pesé sur le score. **Aucun
+> autre scanner existant modifié.** Livré directement sur le disque de Maxime (1 fichier) :
+> `src/PincabToolbox.Core/Scanning/CompletenessScanner.cs`. **Pas de build/test exécuté** — toujours
+> aucun `dotnet` disponible dans ce sandbox ; relu à la main (accolades équilibrées, même signature
+> de méthode `Scan`, pattern de détection copié à l'identique d'un scanner déjà testé). **Core
+> (tests existants de `CompletenessScanner`, s'il y en a) à revérifier par Maxime au prochain
+> `build.cmd`.**
+>
+> **Non fait volontairement — la demande « le scanner doit lire tout le disque, pas fichier par
+> fichier » reste ouverte.** Clarifiée en partie (Maxime : couverture de tous les fichiers du disque,
+> pas seulement la racine VPX choisie) mais **c'est un changement d'ARCHITECTURE de scan, pas un
+> nouveau check** — ça touche `LayoutDetector`/`ScanContext`/tout scanner qui suppose une racine
+> unique, et ça entre en tension directe avec le Scanner gelé (03/08, "aucun nouveau check sans deux
+> signaux terrain indépendants" — un changement de portée globale n'est pas non plus un cas couvert
+> par cette règle, il faudrait une décision explicite de Maxime pour rouvrir le Scanner sur ce point
+> précis). Pas codé sans cadrage supplémentaire : que vise-t-on concrètement — scanner plusieurs
+> lecteurs/dossiers en une passe (multi-racines), ou aller chercher les tables même hors de la
+> racine choisie (perte du confinement ADR-005/006 qui borne où Repair peut écrire) ? Question à
+> reposer à Maxime avant tout code.
+>
+> **Précision donnée par Maxime après coup (10/08)** : ce n'est pas un crawl indiscriminé de tout
+> le disque — « tous les dossiers liés à mon pincab sont dans mon disque C:, je veux pas scanner
+> fichier par fichier mais l'ensemble ». Compris comme : **auto-détecter tous les dossiers pincab
+> pertinents sur C:** (Tables, VPinMAME, PinUP Popper, etc., même hors de la racine unique
+> aujourd'hui choisie à la main) plutôt qu'un scan disque entier indifférencié. Reste un changement
+> de `LayoutDetector` (aujourd'hui : une racine + chemins relatifs candidats) vers une détection
+> multi-racines sur un même lecteur — **toujours pas codé**, toujours en tension avec le Scanner
+> gelé, toujours besoin d'un feu vert explicite de Maxime pour rouvrir ce point précis avant
+> d'écrire quoi que ce soit.
+>
+> **Règle "feu vert par défaut" — précision de Maxime (10/08)** : « les gens demandent, on fait, si
+> c'est possible et légal. » Reformule/confirme l'extension à tout produit hors Scanner posée plus
+> haut, avec le rappel explicite que "possible" reste un vrai filtre (pas un blanc-seing aveugle :
+> une demande techniquement irréalisable ou nécessitant un jugement métier non tranché — cf. #10 —
+> continue à être cadrée avant d'être codée, pas devinée).
+>
+> **FlexDMD (Gregg, item #1 de la reprise du 10/08) — recherche primaire-source faite, spec de
+> Maxime introuvable.** Recherche demandée avant tout code : comment une table VPX déclare l'usage
+> de FlexDMD. **Confirmé par deux sources indépendantes** (tutoriel VPForums "Add a flexDMD to EM
+> tables", doc officielle `flexdmd/docs/JPSalas.md` du dépôt `vbousquet/flexdmd`) : la déclaration
+> canonique est `Set FlexDMD = CreateObject("FlexDMD.FlexDMD")`, suivie d'un test d'existence
+> `If Not FlexDMD is Nothing Then` — pas de `On Error` explicite dans les deux conventions
+> observées (VPForums générique et JPSalas), l'échec de `CreateObject` se traduit par `FlexDMD`
+> qui reste `Nothing`. Signature déterministe exploitable par `ScriptAnalyzer` : chercher
+> `CreateObject("FlexDMD.FlexDMD")` (insensible à la casse/espaces) dans le script de la table.
+> **Mais** : la "spec complète et ordre de travail" que la consigne de reprise dit avoir été donnée
+> le 08/08 dans `TRANSMISSION.md` **n'existe nulle part dans ce fichier ni dans FIELD-LOG.md**
+> (vérifié par recherche exhaustive du terme "FlexDMD" dans les deux fichiers, zéro résultat avant
+> cette entrée) — les deux fichiers sur le disque de Maxime datent du 07/08 au plus tard, la session
+> qui a produit la spec du 08/08 n'a jamais écrit sur le disque. **Pas codé** : coder le câblage de
+> `FLEXDMD_MISSING` sans cette spec serait deviner l'ordre de travail (quel scanner, quel Loc
+> câblé, quelle sévérité) — exactement ce que la doctrine interdit. **Action Maxime** : soit
+> retrouver/recoller la spec du 08/08 (chat de cette date-là), soit la redonner en quelques lignes
+> — la partie recherche (ce texte) est acquise et ne sera pas refaite.
+>
+> **Repair "config audio stable au boot" (Jarr3, item #2) — pas commencée cette session.**
+> Portée confirmée trop large pour un feu vert automatique même sous la règle étendue du 10/08
+> (déclenchement au démarrage hors VPX/Popper, UI overlay flipper, préférences persistantes,
+> premier ADR d'auto-modification système potentiel — cf. reprise du 10/08). Nécessite une vraie
+> session de recherche technique (interception input flipper hors VPX/Popper) avant tout cadrage,
+> pas juste une recherche primaire-source ponctuelle comme FlexDMD — non lancée par manque de temps
+> cette session, à prioriser à la prochaine reprise si Maxime confirme.
+
+---
+
+## 📏 RÈGLE PERMANENTE (posée le 07/08, ÉTENDUE le 10/08) — tout produit hors Scanner : construction par défaut
+
+> **Décision de Maxime, à appliquer par toutes les sessions futures, tant qu'elle n'est pas révoquée
+> explicitement :**
+>
+> « Repair c'est pas pareil que le Scanner. Nouvelle règle : dès que quelqu'un veut quelque chose
+> pour Repair ou les autres produits hors Scanner, on le fait — sauf si c'est pour télécharger
+> illégalement. » **Étendue le 10/08 : ne se limite plus à Repair — s'applique à TOUT produit hors
+> Scanner** (Repair, et tout ce qui viendra après).
+>
+> **Ce que ça change concrètement** :
+> - Pour le **Scanner** : rien ne change. La doctrine existante reste en vigueur intégralement —
+>   aucun scanner EXISTANT modifié sans feu vert explicite, aucun nouveau check sans preuve
+>   déterministe, biais silence sur l'incertain, jamais de faux positif accepté sciemment. Toutes les
+>   décisions en attente déjà listées (#9, #10, #12) restent des décisions Maxime, pas devinées.
+>   (#13 tranché et codé le 10/08 — dé-emphase B2S sans backglass, palier Note, doctrine respectée
+>   car explicitement demandé par Maxime, pas deviné.)
+> - Pour **tout produit hors Scanner** (Repair et au-delà) : une demande communauté raisonnable
+>   devient un feu vert par défaut, plus besoin de redemander à chaque fois. **Seule exception
+>   explicite** : tout ce qui faciliterait le téléchargement illégal (ROMs piratées, tables/médias
+>   protégés par copyright, contournement de DRM) reste refusé, sans exception, peu importe la
+>   demande ou son cadrage.
+> - Ça ne supprime pas le bon sens produit/technique — une demande vague (ex. "un réglage plugins
+>   qui marche vraiment") a quand même besoin d'être cadrée techniquement avant d'être codée (quel
+>   registre, quel mécanisme, quels plugins visés) ; la règle dit "on construit par défaut", pas "on
+>   devine l'implémentation sans clarifier ce qui est raisonnablement ambigu".
+>
+> Noté ici en clair pour que ça survive au changement de session, plutôt que de rester seulement
+> dans un message de chat.
+
+---
+
+## ✅ MAJ 07/08 (huit) — v0.1.2-alpha publiée sur GitHub, chaîne complète en ligne
+
+> Maxime a lancé la séquence (`.\makezip.cmd` puis `gh release create`) — capture terminal reçue,
+> confirmée : `https://github.com/waylo1/pincab-toolbox/releases/tag/v0.1.2-alpha` est en ligne.
+> Note pour la prochaine fois : `gh` est installé globalement, contrairement à `makezip.cmd`/
+> `build.cmd` (scripts locaux) — pas besoin du préfixe `.\` pour `gh`, seulement pour les `.cmd` du
+> dossier courant (PowerShell ne charge rien du dossier courant par défaut, contrairement à
+> `cmd.exe`).
+>
+> **Chaîne bout en bout maintenant cohérente** : `github.com/.../releases/latest` sert `v0.1.2-alpha`
+> → le bouton "Download for Windows" de la landing et le bouton "Check for updates" de l'app
+> pointent tous les deux dessus (`/latest/download/...` et l'API `/releases/latest`) → version
+> interne de l'app (`0.1.2`) correctement inférieure au tag publié, donc le check de MAJ fonctionnera
+> correctement pour les prochaines releases (voir entrée précédente sur le bug évité).
+>
+> **Reste à faire (pas fait cette session)** : Maxime doit encore lancer `vercel --prod` depuis
+> `flipsync-site/landing` pour que les 3 séries de retouches de landing (What's New/Repair preview,
+> voix "je", mockup Note) soient réellement visibles en ligne — écrites sur son disque mais jamais
+> déployées à ce stade. Et publier l'annonce FR/EN sur les forums/FB comme prévu.
+
+---
+
+## ⏱️ MAJ 07/08 (sept) — version bumpée 0.1.1→0.1.2 (bug évité) ; repo confirmé public ; release à publier
+
+> **Bug évité avant qu'il n'arrive en prod** : Maxime a demandé la commande pour publier la nouvelle
+> version. En vérifiant la release GitHub actuelle (`v0.1.1-alpha`, 30/07 — confirmée par
+> `WebFetch`, l'API `api.github.com` bloque les requêtes non authentifiées depuis ce sandbox), j'ai
+> réalisé que le numéro de version dans le code (`0.1.1`, `PincabToolbox.App.csproj` +
+> `PincabToolbox.Core.csproj` + `MainWindow.xaml.cs CurrentVersion`) était identique au tag de la
+> release déjà publiée. **Si Maxime avait publié la prochaine release sous le même `0.1.1`, le
+> bouton "Check for updates" que j'ai codé aujourd'hui aurait dit "à jour" à tout le monde, même
+> après la mise à jour** — `AppVersionCompare.IsNewer` compare des versions, pas des dates ; deux
+> versions identiques ne sont jamais "plus récentes" l'une que l'autre, par design (§ doctrine
+> "jamais de faux positif" du reste du scanner).
+>
+> **Corrigé avant que ça arrive en prod** : version bumpée à `0.1.2` dans les 2 `.csproj` (App +
+> Core) et dans `MainWindow.xaml.cs`. Pas d'autre changement de code cette entrée.
+>
+> **Repo confirmé public** (question directe de Maxime) — vérifié via la page `/releases` de
+> `github.com/waylo1/pincab-toolbox` (l'API JSON reste bloquée, mais la page web publique répond
+> normalement, sans mur de connexion). 2 releases existantes : `v0.1.0-alpha` (27/07, "Initial
+> commit") et `v0.1.1-alpha` (30/07, "Latest").
+>
+> **Séquence complète donnée à Maxime dans le chat** pour publier `v0.1.2-alpha` : `build.cmd` →
+> `makezip.cmd` → `gh release create` (ou UI web GitHub si `gh` n'est pas installé sur sa machine,
+> pas vérifié). **Pas de build/test exécuté par cette session** — toujours aucun `dotnet`
+> disponible ; le bump de version est un changement mécanique à 3 endroits, risque de régression de
+> compilation nul (littéral de chaîne uniquement).
+
+---
+
+## ⏱️ MAJ 07/08 (six) — 4 retouches landing (voix "je", mockup avec Note, "About"→"à propos", bêta gratuite retirée)
+
+> Retouches demandées par Maxime sur la landing du dessus, toutes faites :
+> - **Mockup de rapport (`.appwin`) mis à jour** — ajout d'une pastille "Note" (violet `#9C6ADE`,
+>   nouvelle classe `.r-note`/`.pill.note`) et de 2 lignes d'exemple réalistes (port COM DMD, audio
+>   par défaut) pour refléter les nouveaux checks Tier B + la sévérité Note, plutôt que de laisser le
+>   mockup montrer un scanner qui n'a pas changé depuis la 1ère version de la landing.
+> - **"Bêta gratuite" retiré** de la liste de confiance sous le hero (Maxime : "enlève bêta
+>   gratuite").
+> - **"About tab" traduit** — les 2 endroits où j'avais laissé "l'onglet About" en FR (section
+>   What's New + FAQ) disent maintenant "l'onglet à propos".
+> - **Voix corrigée en "je"/"moi"** partout où j'avais écrit "nous" (uniquement dans le texte que
+>   j'avais ajouté ce jour — section Repair : "Tell us" → "Tell me", "Dis-le nous" → "Dis-le moi",
+>   FR+EN, y compris le texte de repli hors-JS). Vérifié qu'aucun "we/us/our/nous/notre" ne traîne
+>   ailleurs sur la page (recherche exhaustive) — le reste du site était déjà cohérent en "tu"/"I".
+>
+> Balises `<div>`/`<span>` recomptées équilibrées (101/101, 162/162). Toujours pas de build/rendu
+> réel de la page — écrite sur le disque de Maxime, jamais ouverte dans un navigateur. **Action
+> Maxime** : même commande de déploiement que l'entrée précédente (`vercel --prod` depuis
+> `flipsync-site/landing`, ou double-clic sur `redeploy.cmd`) — regarder le rendu au moins une fois
+> avant de considérer que c'est bon, cette session n'a aucun moyen de le vérifier visuellement.
+
+---
+
+## ⏱️ MAJ 07/08 (cinq) — landing page mise à jour (What's New + Repair preview), prête à déployer
+
+> Build + commit confirmés faits par Maxime pour le bouton de MAJ (entrée précédente). Landing page
+> (`flipsync-site/landing/index.html` — **PAS** `pincab-suite/landing/`, qui est un dossier vide côté
+> repo App, juste la config Vercel ; le vrai contenu déployé vit dans `flipsync-site/landing/`,
+> confirmé par le même `projectId` Vercel dans les deux `.vercel/project.json` et par `redeploy.cmd`
+> qui `cd` explicitement dedans) mise à jour :
+> - **Section "What's New"** ajoutée juste après le hero : les 5 nouveaux checks Tier B, la nouvelle
+>   sévérité "Note", le bouton de vérification manuelle des MAJ — badges "New" (pill orange), datée
+>   7 août 2026, FR+EN.
+> - **Section "Repair — in development"** ajoutée : les 4 actions réellement codées dans
+>   `RepairOfferBuilder`/`RepairActionRegistry` (débloquer fichier Windows, restaurer ROM, quarantaine
+>   médias orphelins, tuer PinUP Display zombie) — pas inventées, lues dans le code. Question ouverte
+>   à la communauté en bas, pas de prix mentionné, comme demandé. **Pas de compteur de temps de dev
+>   ni de date de sortie promise** — volontairement absent.
+> - **FAQ "Is it safe?" corrigée** — l'ancienne réponse affirmait déjà (avant cette session) un appel
+>   réseau vers le "Virtual Pinball Spreadsheet index", ce qui ne correspondait à AUCUN appel réseau
+>   réel dans le code (vérifié : zéro avant aujourd'hui). Réécrite pour décrire le vrai (et seul)
+>   appel réseau — le bouton manuel de check de version — plutôt que de laisser une inexactitude
+>   préexistante à côté d'une nouveauté réelle.
+> - Carte de confiance "Works offline" reformulée dans le même sens (scan = zéro réseau, MAJ = un
+>   clic optionnel).
+>
+> **Pas de build/déploiement fait par cette session** — le HTML est écrit sur le disque de Maxime,
+> balises `<div>`/`<section>` comptées équilibrées à la main (95/95, 8/8), mais jamais ouvert dans un
+> navigateur ni déployé. **Action Maxime** :
+> ```
+> cd "%USERPROFILE%\Desktop\Pincab suite\flipsync-site\landing"
+> npx --yes vercel --prod --yes
+> ```
+> (c'est exactement ce que fait `redeploy.cmd` à la racine de `Pincab suite\` — double-clic dessus
+> marche aussi, il loggue dans `_deploy_log.txt`.) **Le lien de téléchargement de la landing pointe
+> déjà vers `github.com/.../releases/latest/download/PincabToolbox.zip`** — donc dès que Maxime crée
+> une nouvelle release GitHub avec le nouveau `PincabToolbox.zip` (build de ce week-end, action pas
+> encore faite/confirmée), le bouton "Download" sert automatiquement la bonne version, sans autre
+> changement sur la landing.
+>
+> **Pas de git ici** — `flipsync-site/` n'est pas un dépôt Git (`git status` confirme "not a git
+> repository"), c'est un déploiement Vercel direct depuis le dossier local. Rien à committer/pousser
+> pour la landing — juste `vercel --prod` depuis ce dossier.
+
+---
 
 ## ⏱️ MAJ 07/08 (quater) — bouton "Check for updates" codé (feu vert donné) : PREMIER appel réseau du projet
 
@@ -86,7 +324,24 @@
 > Si j'ai répondu à une ou plusieurs de ces décisions, débloque les scanners correspondants (A1
 > Script Doctor si #10 répondu, B3 fiabilisé si #9 répondu). Si aucune réponse, avance sur autre
 > chose d'utile sans redemander (voir « pistes non bloquantes » dans FIELD-LOG) plutôt que
-> d'attendre. Revue CTO + Product avant toute clôture, comme toujours. »
+> d'attendre.
+>
+> **Nouvelle règle permanente posée le 07/08** (en haut de ce fichier) : pour Repair et tout produit
+> hors Scanner, une demande communauté raisonnable = feu vert par défaut, sauf téléchargement
+> illégal. Le Scanner garde sa doctrine stricte inchangée.
+>
+> **Tâche de recherche pour cette session (demandée le 07/08)** : analyser VPin Studio (VPinStudio —
+> cité par un utilisateur forum comme référence pour un "réglage global plugins qui marche
+> vraiment", VP Studio pris comme exemple qui bug chez lui) pour en reprendre le meilleur, dans la
+> mesure du possible, sur ce que Pincab Toolbox pourrait faire de mieux ou de comparable — angle
+> Repair (gestion active de plugins), pas Scanner. Pas de spec précise donnée par Maxime au-delà de
+> ça — commencer par comprendre ce que VPin Studio fait réellement (fonctionnalités, mécanisme de
+> toggle plugins, ce qui marche vs ce qui bug d'après les retours communauté) avant de proposer quoi
+> que ce soit à coder. Rattaché à la demande forum du 07/08 sur le "réglage global plugins actifs"
+> (FIELD-LOG, entrée dix) — déjà feu vert par défaut sous la nouvelle règle, mais encore à cadrer
+> techniquement, ce qui est exactement l'objet de cette recherche.
+>
+> Revue CTO + Product avant toute clôture, comme toujours. »
 
 ---
 
@@ -396,7 +651,8 @@ Détail complet par point : `knowledge/FIELD-LOG.md`, section « DÉCISIONS EN A
 10. **A1 Script Doctor bloqué par l'absence d'un plancher de version en donnée de profil** — débloquable en ajoutant un champ à `profiles/vpx-popper.json` (ex. `sharedScriptFloors`) avec, par script partagé (`core.vbs`, `controller.vbs`, `VPMKeys.vbs`, `nudge.vbs`), la version en-dessous de laquelle le déclarer périmé. Jugement métier que je ne peux pas deviner — une fois les valeurs données, c'est une session courte.
 11. **Bug confirmé (07/08) — énumération paresseuse non protégée dans 2 scanners existants** (`BlockedFileScanner.cs` module `security`, `CompletenessScanner.CollectWheelStems`) — try/catch sur l'appel `Directory.Enumerate*(..., AllDirectories)` mais pas sur le `foreach` de consommation qui suit ; échoue (`SCANNER_ERROR`, contenu par `ScanEngine` — pas un crash d'app) sur une jonction système (`C:\Documents and Settings`). Patron correct déjà dans `LayoutDetector` à répliquer. **Décision requise avant tout correctif** (2 scanners existants) — sans réponse depuis le 06/08.
 12. **KPI #1 toujours ouvert** — les 8 `ROM_MISSING` critical (Blood Machines, hpgf-052-DOF, Jurassic Park, leprechaun, Munsters 2020, Stranger Things SE, The Goonies, Willy Wonka Pro) sont-ils de vrais hacks ROM ou des originales/homebrew ? Même liste stable sur 2 sessions (04/08, 07/08). Un seul cas vérifié tranche pour tous.
-13. **[Basse priorité] Dé-emphase `B2S_MISSING`/`B2S_ORPHAN` pour cabs sans backglass** — constat du cab réel de Maxime (~205 findings structurellement inévitables sans backglass). Idée produit seulement, pas codée, pas urgente.
+13. ✅ **FAIT (MAJ 10/08)** — ~~Dé-emphase `B2S_MISSING`/`B2S_ORPHAN` pour cabs sans backglass~~ — `B2S_MISSING` passe en `Note` quand aucun composant backglass (`b2s`) n'est détecté sur l'install. Voir entrée du 10/08 en haut de ce fichier.
+14. **[NOUVEAU, 10/08] « Le scanner doit lire tout le disque, pas fichier par fichier »** — demande personnelle de Maxime, portée précisée (tous les fichiers du disque, pas juste la racine VPX choisie) mais mécanisme visé encore ambigu : multi-racines en une passe, ou sortir de la racine confinée par ADR-005/006 ? Changement d'architecture de scan, pas un nouveau check — nécessite une décision explicite avant tout code (tension avec le Scanner gelé du 03/08). Voir entrée du 10/08.
 
 ---
 
