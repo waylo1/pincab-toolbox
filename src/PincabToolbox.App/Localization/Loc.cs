@@ -91,6 +91,9 @@ public static class Loc
         ["score.c"] = "Needs fixing",
         ["score.f"] = "Install in bad shape",
         // Bandeau du Scanner (maquette 11/08) — dit le nombre de bloquants plutôt que la seule note.
+        ["diagnosis.conf.high"] = "high",
+        ["diagnosis.conf.mid"] = "medium",
+        ["diagnosis.conf.low"] = "low",
         ["hero.ok"] = "No blocking problem found",
         ["hero.blocking.one"] = "1 blocking problem is stopping a table from starting",
         ["hero.blocking.many"] = "{0} blocking problems are stopping tables from starting",
@@ -245,6 +248,9 @@ public static class Loc
         ["score.c"] = "Installation à corriger",
         ["score.f"] = "Installation en mauvais état",
         // Bandeau du Scanner (maquette 11/08) — dit le nombre de bloquants plutôt que la seule note.
+        ["diagnosis.conf.high"] = "élevée",
+        ["diagnosis.conf.mid"] = "moyenne",
+        ["diagnosis.conf.low"] = "faible",
         ["hero.ok"] = "Aucun problème bloquant détecté",
         ["hero.blocking.one"] = "1 problème bloquant empêche une table de démarrer",
         ["hero.blocking.many"] = "{0} problèmes bloquants empêchent des tables de démarrer",

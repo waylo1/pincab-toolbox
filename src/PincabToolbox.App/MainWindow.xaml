@@ -130,11 +130,22 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock x:Name="LblRoot" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBox x:Name="TxtRoot" Grid.Column="1" VerticalContentAlignment="Center" TextChanged="TxtRoot_TextChanged"/>
                         <Button x:Name="BtnBrowse" Grid.Column="2" Margin="8,0,0,0" Style="{StaticResource BrowseButton}" Click="BtnBrowse_Click"/>
                         <Button x:Name="BtnDemo" Grid.Column="3" Margin="8,0,0,0" Style="{StaticResource DemoButton}" Click="BtnDemo_Click"/>
+                        <!-- La recherche vit dans la barre du haut, pas sur une ligne à elle :
+                             une ligne dédiée coûtait ~40 px pris sur le tableau, pour un champ
+                             qui tient à côté des boutons existants. -->
+                        <Grid Grid.Column="4" Width="230" Margin="14,0,0,0">
+                            <TextBox x:Name="TxtSearch" VerticalContentAlignment="Center" Padding="6,0,0,0"
+                                     Background="{StaticResource Panel}" Foreground="{StaticResource Text}"
+                                     BorderBrush="{StaticResource Border}" TextChanged="TxtSearch_TextChanged"/>
+                            <TextBlock x:Name="SearchHint" IsHitTestVisible="False" Foreground="{StaticResource TextDim}"
+                                       VerticalAlignment="Center" Margin="9,0,0,0"/>
+                        </Grid>
                     </Grid>
 
                     <!-- ══════════════════ BANDEAU (maquette du 11/08) ══════════════════
@@ -149,16 +160,16 @@
                             BorderBrush="{StaticResource Border}" BorderThickness="1">
                         <Border.Background>
                             <!-- décor : illustration originale, jamais un artwork de table réelle -->
-                            <ImageBrush ImageSource="Assets/background.png" Stretch="UniformToFill" AlignmentY="Center"/>
+                            <ImageBrush ImageSource="Assets/background.png" Stretch="UniformToFill" AlignmentY="Center" Opacity="0.95"/>
                         </Border.Background>
                         <Border CornerRadius="13">
                             <Border.Background>
                                 <!-- voile : garde le texte lisible sans noyer l'illustration -->
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#E60D1520" Offset="0"/>
-                                    <GradientStop Color="#BD0D1520" Offset="0.32"/>
-                                    <GradientStop Color="#990D1520" Offset="0.6"/>
-                                    <GradientStop Color="#B80D1520" Offset="1"/>
+                                    <GradientStop Color="#A60D1520" Offset="0"/>
+                                    <GradientStop Color="#730D1520" Offset="0.34"/>
+                                    <GradientStop Color="#590D1520" Offset="0.62"/>
+                                    <GradientStop Color="#8C0D1520" Offset="1"/>
                                 </LinearGradientBrush>
                             </Border.Background>
 
@@ -260,7 +271,11 @@
                                 <Border x:Name="PriorityAccent" Grid.Column="0" Background="{StaticResource Critical}" CornerRadius="10,0,0,10"/>
                                 <StackPanel Grid.Column="1" Margin="14,9">
                                     <TextBlock x:Name="PriorityLabel" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
-                                    <TextBlock x:Name="PriorityText" FontSize="13.5" FontWeight="Bold" Foreground="{StaticResource Text}" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                    <TextBlock x:Name="PriorityText" FontSize="15" FontWeight="Bold" Foreground="{StaticResource Text}" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                    <!-- Titre et explication séparés, comme sur la maquette : un seul
+                                         pavé gras oblige à tout lire pour trouver de quoi il s'agit. -->
+                                    <TextBlock x:Name="PriorityExplain" FontSize="12.5" Foreground="{StaticResource TextDim}"
+                                               TextWrapping="Wrap" Margin="0,4,0,0" Visibility="Collapsed"/>
 
                                     <!-- Chaîne causale (maquette 11/08) : une case par résultat qui a
                                          réellement déclenché la corrélation, dans l'ordre. C'est la
@@ -299,15 +314,6 @@
                         <TextBlock x:Name="RepairSummaryLine" Visibility="Collapsed" Foreground="{StaticResource Accent}"
                                    FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap" Margin="2,0,2,6"/>
 
-                        <!-- La recherche filtre la LISTE : sa place est juste au-dessus d'elle, pas dans
-                             le bandeau, où elle volait de la hauteur au tableau des résultats. -->
-                        <Grid Width="240" Height="27" HorizontalAlignment="Right" Margin="0,0,0,5">
-                            <TextBox x:Name="TxtSearch" VerticalContentAlignment="Center" Padding="6,0,0,0"
-                                     Background="{StaticResource Panel}" Foreground="{StaticResource Text}"
-                                     BorderBrush="{StaticResource Border}" TextChanged="TxtSearch_TextChanged"/>
-                            <TextBlock x:Name="SearchHint" IsHitTestVisible="False" Foreground="{StaticResource TextDim}"
-                                       VerticalAlignment="Center" Margin="9,0,0,0"/>
-                        </Grid>
                         <!-- ADR-006 anti-survente : ce que Repair NE fera jamais, même une fois acheté
                              (RepairOffer.NotAutomatable) — affiché AVANT l'achat, jamais caché. -->
                         <TextBlock x:Name="RepairNotAutomatableLine" Visibility="Collapsed" Foreground="{StaticResource TextDim}"

@@ -664,8 +664,16 @@ public partial class MainWindow : Window
         var scenario = Scenarios.Detect(present);
         if (scenario is not null)
         {
-            PriorityLabel.Text = $"{Loc.Get("diagnosis.label")} · {Loc.Get("diagnosis.confidence")} {scenario.Confidence}%";
-            PriorityText.Text = $"{scenario.Title} — {scenario.Explanation}";
+            // Confiance en mots, pas en pourcentage : le score sort d'une formule volontairement
+            // simple (une base + un bonus par code trouvé), l'afficher au point près prêterait à
+            // ce calcul une précision qu'il n'a pas — doctrine ADR-010.
+            var conf = Loc.Get(scenario.Confidence >= 85 ? "diagnosis.conf.high"
+                             : scenario.Confidence >= 65 ? "diagnosis.conf.mid"
+                             : "diagnosis.conf.low");
+            PriorityLabel.Text = $"{Loc.Get("diagnosis.label")} · {Loc.Get("diagnosis.confidence")} {conf}";
+            PriorityText.Text = scenario.Title;
+            PriorityExplain.Text = scenario.Explanation;
+            PriorityExplain.Visibility = Visibility.Visible;
             PriorityFix.Visibility = Visibility.Collapsed;
             PriorityAccent.Background = BrushCritical;
             // transparency — show which findings triggered this correlation (never a black box)
@@ -707,6 +715,7 @@ public partial class MainWindow : Window
         else
         {
             ChainNodes.Visibility = Visibility.Collapsed;
+            PriorityExplain.Visibility = Visibility.Collapsed;
             PriorityTriggers.Visibility = Visibility.Collapsed;
             var top = _report.Ordered().FirstOrDefault(f => f.Severity == Severity.Critical)
                       ?? _report.Ordered().FirstOrDefault(f => f.Severity == Severity.Warning);
