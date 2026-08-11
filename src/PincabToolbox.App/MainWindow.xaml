@@ -120,69 +120,131 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock x:Name="LblRoot" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBox x:Name="TxtRoot" Grid.Column="1" VerticalContentAlignment="Center" TextChanged="TxtRoot_TextChanged"/>
                         <Button x:Name="BtnBrowse" Grid.Column="2" Margin="8,0,0,0" Style="{StaticResource BrowseButton}" Click="BtnBrowse_Click"/>
                         <Button x:Name="BtnDemo" Grid.Column="3" Margin="8,0,0,0" Style="{StaticResource DemoButton}" Click="BtnDemo_Click"/>
-                        <Button x:Name="BtnScan" Grid.Column="4" Margin="8,0,0,0" Style="{StaticResource AccentButton}" Click="BtnScan_Click"/>
                     </Grid>
 
-                    <!-- summary chips are clickable filter pills (dim = filtered out); search box docked right -->
-                    <DockPanel Grid.Row="1" Margin="0,2,0,8">
-                        <Grid DockPanel.Dock="Right" Width="240" Margin="12,0,0,0" VerticalAlignment="Center" Height="38">
-                            <TextBox x:Name="TxtSearch" VerticalContentAlignment="Center" Padding="6,0,0,0"
-                                     Background="{StaticResource Panel}" Foreground="{StaticResource Text}"
-                                     BorderBrush="{StaticResource Border}" TextChanged="TxtSearch_TextChanged"/>
-                            <TextBlock x:Name="SearchHint" IsHitTestVisible="False" Foreground="{StaticResource TextDim}"
-                                       VerticalAlignment="Center" Margin="9,0,0,0"/>
-                        </Grid>
-                        <StackPanel Orientation="Horizontal">
-                            <Border x:Name="ScoreChip" Visibility="Collapsed" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="14" Padding="18,10" Margin="0,0,18,0" VerticalAlignment="Center">
-                                <StackPanel>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock x:Name="ScoreValue" FontWeight="Black" FontSize="30" VerticalAlignment="Center"/>
-                                        <TextBlock Text="/100" Foreground="{StaticResource TextDim}" FontSize="13" VerticalAlignment="Bottom" Margin="2,0,0,5"/>
-                                        <TextBlock x:Name="ScoreGrade" FontWeight="Bold" FontSize="16" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    <!-- ══════════════════ BANDEAU (maquette du 11/08) ══════════════════
+                         Jauge + accroche + pastilles de gravité + actions, sur la scène d'arcade.
+                         Les pastilles restent des FILTRES cliquables comme avant : mêmes x:Name,
+                         mêmes gestionnaires, seule la mise en forme change. -->
+                    <!-- Deux Border imbriqués de MÊME CornerRadius : un Border WPF ne rogne pas son
+                         contenu aux coins arrondis, donc l'image de fond passe par son Background
+                         (ImageBrush, qui suit le rayon) et le voile par le Background du Border
+                         intérieur. Un Rectangle superposé laisserait 4 angles carrés visibles. -->
+                    <Border Grid.Row="1" Margin="0,2,0,10" CornerRadius="14"
+                            BorderBrush="{StaticResource Border}" BorderThickness="1">
+                        <Border.Background>
+                            <!-- décor : illustration originale, jamais un artwork de table réelle -->
+                            <ImageBrush ImageSource="Assets/arcade-band.png" Stretch="UniformToFill" AlignmentY="Top"/>
+                        </Border.Background>
+                        <Border CornerRadius="13">
+                            <Border.Background>
+                                <!-- voile : garde le texte lisible sans noyer l'illustration -->
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#E60D1520" Offset="0"/>
+                                    <GradientStop Color="#BD0D1520" Offset="0.32"/>
+                                    <GradientStop Color="#990D1520" Offset="0.6"/>
+                                    <GradientStop Color="#B80D1520" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+
+                            <Grid Margin="20,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- ─── jauge ─── -->
+                                <Grid x:Name="ScoreChip" Grid.Column="0" Width="124" Height="124"
+                                      Visibility="Collapsed" Margin="0,0,20,0" VerticalAlignment="Center">
+                                    <Ellipse Width="106" Height="106" Stroke="#1E2B3C" StrokeThickness="9"/>
+                                    <!-- L'arc de progression est un cercle dont le tiret est calculé en
+                                         code-behind (RefreshList) : circonférence / épaisseur = 37.0 unités
+                                         pour 100 %. Pas de géométrie d'arc à recalculer à la main. -->
+                                    <Ellipse x:Name="ScoreArc" Width="106" Height="106" StrokeThickness="9"
+                                             Stroke="{StaticResource Critical}" StrokeDashCap="Round"
+                                             StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                             RenderTransformOrigin="0.5,0.5">
+                                        <Ellipse.RenderTransform>
+                                            <RotateTransform Angle="-90"/>
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock x:Name="ScoreValue" FontWeight="Black" FontSize="34"
+                                                   HorizontalAlignment="Center"/>
+                                        <TextBlock Text="/100" Foreground="{StaticResource TextDim}" FontSize="11"
+                                                   HorizontalAlignment="Center" Margin="0,-2,0,0"/>
+                                        <Border BorderBrush="{StaticResource Border}" BorderThickness="1"
+                                                CornerRadius="4" Padding="6,1" Margin="0,5,0,0"
+                                                HorizontalAlignment="Center">
+                                            <TextBlock x:Name="ScoreGrade" FontWeight="Bold" FontSize="11"/>
+                                        </Border>
                                     </StackPanel>
-                                    <TextBlock x:Name="ScoreStatus" Foreground="{StaticResource TextDim}" FontSize="12.5" Margin="1,3,0,0"/>
+                                </Grid>
+
+                                <!-- ─── accroche + pastilles ─── -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock x:Name="HeroHeadline" FontSize="20" FontWeight="Bold"
+                                               Foreground="{StaticResource Text}" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="ScoreStatus" Foreground="{StaticResource TextDim}"
+                                               FontSize="13" TextWrapping="Wrap" Margin="0,4,0,0"/>
+
+                                    <WrapPanel Margin="0,12,0,0">
+                                        <Border x:Name="PillCritical" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,7" Margin="0,0,8,6" Cursor="Hand" MouseLeftButtonUp="PillCritical_Click">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Rectangle Width="3" Height="22" RadiusX="1.5" RadiusY="1.5" Fill="{StaticResource Critical}" Margin="0,0,8,0"/>
+                                                <TextBlock x:Name="ChipCritical" Text="0" Foreground="{StaticResource Critical}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border x:Name="PillWarning" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,7" Margin="0,0,8,6" Cursor="Hand" MouseLeftButtonUp="PillWarning_Click">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Rectangle Width="3" Height="22" RadiusX="1.5" RadiusY="1.5" Fill="{StaticResource Warning}" Margin="0,0,8,0"/>
+                                                <TextBlock x:Name="ChipWarning" Text="0" Foreground="{StaticResource Warning}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border x:Name="PillNote" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,7" Margin="0,0,8,6" Cursor="Hand" MouseLeftButtonUp="PillNote_Click">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Rectangle Width="3" Height="22" RadiusX="1.5" RadiusY="1.5" Fill="{StaticResource NoteSev}" Margin="0,0,8,0"/>
+                                                <TextBlock x:Name="ChipNote" Text="0" Foreground="{StaticResource NoteSev}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border x:Name="PillInfo" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,7" Margin="0,0,8,6" Cursor="Hand" MouseLeftButtonUp="PillInfo_Click">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Rectangle Width="3" Height="22" RadiusX="1.5" RadiusY="1.5" Fill="{StaticResource InfoSev}" Margin="0,0,8,0"/>
+                                                <TextBlock x:Name="ChipInfo" Text="0" Foreground="{StaticResource InfoSev}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border x:Name="PillOk" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,7" Margin="0,0,8,6" Cursor="Hand" Opacity="0.4" MouseLeftButtonUp="PillOk_Click">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Rectangle Width="3" Height="22" RadiusX="1.5" RadiusY="1.5" Fill="{StaticResource OkSev}" Margin="0,0,8,0"/>
+                                                <TextBlock x:Name="ChipOk" Text="0" Foreground="{StaticResource OkSev}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </WrapPanel>
                                 </StackPanel>
-                            </Border>
-                            <Border x:Name="PillCritical" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="11,7" Margin="0,0,8,0" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="PillCritical_Click">
-                                <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="8" Height="8" Fill="{StaticResource Critical}" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                                    <TextBlock x:Name="ChipCritical" Text="0" Foreground="{StaticResource Critical}" FontWeight="Bold"/>
+
+                                <!-- ─── actions ─── -->
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Width="212" Margin="18,0,0,0">
+                                    <Button x:Name="BtnScan" Style="{StaticResource AccentButton}" Click="BtnScan_Click"
+                                            Padding="14,11" FontSize="14" FontWeight="Bold"/>
+                                    <Button x:Name="BtnExport" Margin="0,8,0,0" Click="BtnExport_Click" IsEnabled="False" Padding="10,8"/>
+                                    <Button x:Name="BtnCopyForum" Margin="0,8,0,0" Click="BtnCopyForum_Click" IsEnabled="False" Padding="10,8"/>
+                                    <Grid Height="34" Margin="0,8,0,0">
+                                        <TextBox x:Name="TxtSearch" VerticalContentAlignment="Center" Padding="6,0,0,0"
+                                                 Background="{StaticResource Panel}" Foreground="{StaticResource Text}"
+                                                 BorderBrush="{StaticResource Border}" TextChanged="TxtSearch_TextChanged"/>
+                                        <TextBlock x:Name="SearchHint" IsHitTestVisible="False" Foreground="{StaticResource TextDim}"
+                                                   VerticalAlignment="Center" Margin="9,0,0,0"/>
+                                    </Grid>
                                 </StackPanel>
-                            </Border>
-                            <Border x:Name="PillWarning" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="11,7" Margin="0,0,8,0" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="PillWarning_Click">
-                                <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="8" Height="8" Fill="{StaticResource Warning}" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                                    <TextBlock x:Name="ChipWarning" Text="0" Foreground="{StaticResource Warning}" FontWeight="Bold"/>
-                                </StackPanel>
-                            </Border>
-                            <Border x:Name="PillNote" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="11,7" Margin="0,0,8,0" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="PillNote_Click">
-                                <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="8" Height="8" Fill="{StaticResource NoteSev}" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                                    <TextBlock x:Name="ChipNote" Text="0" Foreground="{StaticResource NoteSev}" FontWeight="Bold"/>
-                                </StackPanel>
-                            </Border>
-                            <Border x:Name="PillInfo" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="11,7" Margin="0,0,8,0" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="PillInfo_Click">
-                                <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="8" Height="8" Fill="{StaticResource InfoSev}" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                                    <TextBlock x:Name="ChipInfo" Text="0" Foreground="{StaticResource InfoSev}" FontWeight="Bold"/>
-                                </StackPanel>
-                            </Border>
-                            <Border x:Name="PillOk" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="11,7" Margin="0,0,18,0" Cursor="Hand" VerticalAlignment="Center" Opacity="0.4" MouseLeftButtonUp="PillOk_Click">
-                                <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="8" Height="8" Fill="{StaticResource OkSev}" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                                    <TextBlock x:Name="ChipOk" Text="0" Foreground="{StaticResource OkSev}" FontWeight="Bold"/>
-                                </StackPanel>
-                            </Border>
-                            <Button x:Name="BtnExport" Margin="10,0,0,0" VerticalAlignment="Center" Click="BtnExport_Click" IsEnabled="False"/>
-                            <Button x:Name="BtnCopyForum" Margin="8,0,0,0" VerticalAlignment="Center" Click="BtnCopyForum_Click" IsEnabled="False"/>
-                        </StackPanel>
-                    </DockPanel>
+                            </Grid>
+                        </Border>
+                    </Border>
 
                     <StackPanel Grid.Row="2">
                         <Border x:Name="PriorityBanner" Visibility="Collapsed" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Margin="0,0,0,10">

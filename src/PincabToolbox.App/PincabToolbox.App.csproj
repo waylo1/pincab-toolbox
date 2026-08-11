@@ -26,6 +26,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Bandeau décoratif de l'écran Scanner. Build action Resource (et non Content) : l'image est
+         embarquée DANS l'assembly, donc elle survit au publish single-file et ne peut pas être
+         oubliée sur une clé USB à côté de l'exe. Illustration originale, aucun artwork de table
+         réelle (droits Bally/Williams) — voir docs/maquette-scanner-2026-08-11.html. -->
+    <Resource Include="Assets\arcade-band.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\..\profiles\vpx-popper.json" Link="profiles\vpx-popper.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\knowledge\pack-2026.08.json" Link="knowledge\pack-2026.08.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="DemoData\**\*" CopyToOutputDirectory="PreserveNewest" />

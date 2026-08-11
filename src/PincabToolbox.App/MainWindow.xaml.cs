@@ -624,6 +624,24 @@ public partial class MainWindow : Window
         ScoreValue.Foreground = scoreBrush;
         ScoreGrade.Foreground = scoreBrush;
 
+        // Arc de la jauge (bandeau, maquette 11/08). StrokeDashArray se compte en MULTIPLES de
+        // l'épaisseur du trait, pas en pixels : circonférence (2·π·53) ÷ épaisseur (9) = 37.0
+        // unités pour un tour complet. Le second segment, volontairement énorme, garantit qu'il
+        // n'y a jamais de second tiret visible.
+        ScoreArc.Stroke = scoreBrush;
+        ScoreArc.StrokeDashArray = new DoubleCollection { 37.0 * Math.Max(0, Math.Min(100, _report.Score)) / 100.0, 1000 };
+
+        // Accroche : ce que l'utilisateur doit retenir en une ligne. Le nombre de bloquants informe,
+        // là où la seule note "F" juge — voir docs/REVUE-maquettes-scanner-2026-08-11.md.
+        var blocking = _report.Count(Severity.Critical);
+        HeroHeadline.Text = blocking switch
+        {
+            0 => Loc.Get("hero.ok"),
+            1 => Loc.Get("hero.blocking.one"),
+            _ => string.Format(Loc.Get("hero.blocking.many"), blocking),
+        };
+        HeroHeadline.Foreground = blocking > 0 ? BrushCritical : BrushOk;
+
         // primary insight — a correlated scenario if detectable, else the single most severe issue
         var present = new HashSet<string>(_report.Findings.Select(f => f.Code));
         var scenario = Scenarios.Detect(present);

@@ -90,6 +90,10 @@ public static class Loc
         ["score.b"] = "A few things to watch",
         ["score.c"] = "Needs fixing",
         ["score.f"] = "Install in bad shape",
+        // Bandeau du Scanner (maquette 11/08) — dit le nombre de bloquants plutôt que la seule note.
+        ["hero.ok"] = "No blocking problem found",
+        ["hero.blocking.one"] = "1 blocking problem is stopping a table from starting",
+        ["hero.blocking.many"] = "{0} blocking problems are stopping tables from starting",
         ["priority.label"] = "FIX THIS FIRST",
         ["priority.watch"] = "WORTH A LOOK",
         ["diagnosis.label"] = "MAIN DIAGNOSIS",
@@ -240,6 +244,10 @@ public static class Loc
         ["score.b"] = "Quelques points à surveiller",
         ["score.c"] = "Installation à corriger",
         ["score.f"] = "Installation en mauvais état",
+        // Bandeau du Scanner (maquette 11/08) — dit le nombre de bloquants plutôt que la seule note.
+        ["hero.ok"] = "Aucun problème bloquant détecté",
+        ["hero.blocking.one"] = "1 problème bloquant empêche une table de démarrer",
+        ["hero.blocking.many"] = "{0} problèmes bloquants empêchent des tables de démarrer",
         ["priority.label"] = "À CORRIGER EN PRIORITÉ",
         ["priority.watch"] = "À VÉRIFIER",
         ["diagnosis.label"] = "DIAGNOSTIC PRINCIPAL",
