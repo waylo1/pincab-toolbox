@@ -1,5 +1,40 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 11/08/2026
 
+## 🔑 MAJ 11/08 (ter) — clé de licence RÉELLE déployée, `Apply` n'est plus un no-op prouvé
+
+> **Suite directe de l'entrée juste en dessous, même journée, changement matériel de posture de
+> sécurité.** Lire `docs/adr/ADR-012-chemin-ecriture-repair.md` (section "Suite — 11/08/2026") avant
+> toute reprise sur Repair ou toute distribution du build.
+>
+> Maxime a exécuté `license-tool init` sur sa propre machine (hors ligne — la clé privée n'a jamais
+> transité par un repo ni une session cloud) et a transmis la clé **publique** résultante.
+> `LicenseVerifier.EmbeddedPublicKeyBase64` n'est **plus** le `PLACEHOLDER` littéral décrit dans
+> l'entrée précédente : c'est maintenant une vraie clé P-256, embarquée et committée.
+>
+> **Conséquence directe, à ne pas manquer** : la phrase "Apply est un no-op prouvé en production tant
+> que la vraie clé n'est pas déployée" de l'entrée précédente **ne tient plus**. N'importe quelle
+> licence signée par la clé privée de Maxime rend maintenant `VerifyLicense` valide, donc active pour
+> de vrai les quatre actions déjà câblées du LOT H (`UnblockFileAction`, `RestoreRomArchiveAction`,
+> `QuarantineOrphanedMediaAction`, `KillZombiePinUpDisplayAction`). Le filet de sécurité qui rendait
+> raisonnable de câbler l'onglet Repair sans jamais l'avoir exécuté sur Windows n'existe plus tel quel.
+>
+> Ce qui protège encore : aucun parcours d'achat public n'existe (ADR-009 non câblé) — seul Maxime,
+> via `license-tool issue` sur sa machine, peut émettre une licence valide aujourd'hui. Toutes les
+> autres garanties de code (sélection opt-in stricte, confirmation obligatoire, échec de backup =
+> aucune écriture, journal persistant) sont inchangées et indépendantes de la validité de la clé.
+>
+> **Fait cette session, sur ce changement précis** : `LicenseVerifier.cs` mis à jour + commenté avec
+> la date et la provenance de la clé ; nouveau test de non-régression
+> `Test_EmbeddedPublicKey_IsARealKey_NotThePlaceholder` (verrouille contre un retour accidentel au
+> placeholder) ; `RepairSessionTests` renommé/reclarifié en conséquence ; **Core 412/412, Repair
+> 140/140, tous verts** (139→140). ADR-012 complété d'une section "Suite" documentant ce changement
+> de posture plutôt que de réécrire silencieusement le raisonnement d'origine.
+>
+> **Recommandation avant toute distribution plus large** : que Maxime valide lui-même, sur sa
+> machine, au moins un cycle complet Preflight → Apply → Undo avec une licence qu'il a émise pour
+> lui-même, sur les quatre actions déjà câblées, avant de partager ce build ou cette clé publique
+> avec qui que ce soit d'autre.
+
 ## ✅ MAJ 11/08 — Lot communauté 10/08 codé et câblé de bout en bout (LOTs A→H), LOT I codé mais délibérément non câblé, ADR-012 écrit
 
 > **Suite directe de l'entrée du 10/08 (bis) ci-dessous — spec exécutée intégralement.** Lire

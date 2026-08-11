@@ -27,15 +27,13 @@ public sealed class LicenseVerifier : ILicenseVerifier
     /// with `dotnet run --project tools/PincabToolbox.LicenseTool -- init`, printed to stdout by
     /// that command, and pasted here.
     ///
-    /// PLACEHOLDER — this is NOT a real key (audit 2026-08-04: caught before shipping — an earlier
-    /// version of this placeholder was not even valid DER and crashed the parameterless
-    /// constructor outright). Left as an obviously-fake string on purpose: the constructor below
-    /// degrades to "verification unavailable" rather than throwing, precisely so a forgotten
-    /// placeholder cannot crash the App — but it will still refuse every license, which is the
-    /// loud, safe failure mode until Maxime runs `license-tool init` for real and pastes the
-    /// actual public key here.
+    /// Real key, generated 11/08/2026 by Maxime via `license-tool init` (offline, on his own
+    /// machine — the matching private key never touched this repo or any session). From this
+    /// commit on, only that private key can produce a license this build will accept; anything
+    /// signed against the old placeholder (i.e. nothing — the placeholder was never valid DER)
+    /// stays invalid, as it always was.
     /// </summary>
-    public const string EmbeddedPublicKeyBase64 = "PLACEHOLDER_RUN_LICENSETOOL_INIT_AND_PASTE_THE_REAL_PUBLIC_KEY_HERE";
+    public const string EmbeddedPublicKeyBase64 = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE8qb8OJHM7lWNIxcukDWFf0dWRsrTZ7uYEXFQFNmmvmd0+ujpB5CNisNXE92UadFJSiE09LN9Kf0n2leYQ7tC/A==";
 
     private readonly ECDsa? _publicKey;
     private readonly string? _keyError;

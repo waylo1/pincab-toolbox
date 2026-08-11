@@ -110,6 +110,51 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
   détail : risques restants, valeur utilisateur, améliorations à faible coût proposées sans être
   codées).
 
+## 2026-08-11 (bis) · Clé de licence RÉELLE déployée — `Apply` n'est plus un no-op prouvé en production
+- code:        `src/PincabToolbox.Repair/Licensing/LicenseVerifier.cs` (constante
+  `EmbeddedPublicKeyBase64`, remplace le `PLACEHOLDER` littéral décrit dans l'entrée du dessus par la
+  vraie clé publique P-256 générée par Maxime) + `tests/PincabToolbox.Repair.Tests/RepairSessionTests.cs`
+  (renommage/reclarification d'un test, ajout de `Test_EmbeddedPublicKey_IsARealKey_NotThePlaceholder`)
+- bac:          SECURITY (rotation de clé, changement de posture de production)
+- contexte:     Suite directe de l'entrée du dessus, même journée. Maxime a demandé comment générer
+  "la clé" et où la mettre ; réponse donnée sur `license-tool init`, exécuté par lui hors ligne sur sa
+  propre machine (la clé privée n'a jamais transité par un repo ni une session cloud, conformément à
+  la contrainte de sécurité posée dès le départ). Il a transmis la clé **publique** résultante dans la
+  conversation, safe à partager par construction (ECDSA — la clé publique ne peut que vérifier, jamais
+  signer).
+- analyse :
+
+  **Ce qui change concrètement.** `LicenseVerifier.EmbeddedPublicKeyBase64` valait un
+  `PLACEHOLDER_RUN_LICENSETOOL_INIT_...` littéral depuis le début du projet — jamais un DER valide,
+  donc `Verify()` retournait `Invalid` pour absolument toute entrée. C'est cette propriété précise qui
+  rendait sûr de câbler tout l'onglet Repair (LOT H, entrée du dessus) sans jamais l'avoir exécuté sur
+  Windows : quel que soit un bug côté WPF non détectable dans ce sandbox, `licensed` restait `false`
+  en dur, donc tout item retombait en `RepairMode.Locked`, jamais appliqué. Avec la vraie clé, ce
+  filet n'existe plus une fois ce build distribué : une licence signée par la clé privée de Maxime
+  active pour de vrai les 4 actions déjà câblées (`UnblockFileAction`, `RestoreRomArchiveAction`,
+  `QuarantineOrphanedMediaAction`, `KillZombiePinUpDisplayAction`).
+
+  **Ce qui protège encore.** ADR-009 (achat automatisé de licence) reste non câblé — aujourd'hui,
+  seul Maxime peut émettre une licence valide, via `license-tool issue` sur sa machine. Toutes les
+  garanties de code de l'entrée du dessus (sélection opt-in stricte jamais groupée, confirmation
+  obligatoire pour l'irréversible, échec de backup = aucune écriture, journal persistant) sont des
+  propriétés du code indépendantes de la validité de la clé — inchangées par cette rotation.
+
+  **Vérification faite avant embarquement.** La clé fournie a été décodée et confirmée comme un
+  SubjectPublicKeyInfo P-256 bien formé (91 octets, DER X.509) avant d'être collée dans le code —
+  exactement le contrôle que l'audit du 2026-08-04 avait trouvé absent sur le placeholder. Nouveau
+  test de non-régression ajouté dans le même esprit inverse : verrouille contre un retour accidentel
+  au placeholder.
+
+  **Tests et build.** Core 412/412, Repair 140/140 (139→140 pour le nouveau test), tous verts.
+  `PincabToolbox.App` toujours pas compilable dans ce sandbox (fait déjà documenté) — cette rotation
+  ne touche aucun fichier App.
+- disposition: `docs/adr/ADR-012-chemin-ecriture-repair.md` complété d'une section "Suite — 11/08/2026"
+  documentant ce changement de posture (pas de réécriture silencieuse du raisonnement d'origine).
+  TRANSMISSION.md (bloc du haut) mis à jour avec une entrée dédiée. Recommandation transmise à Maxime :
+  valider lui-même, sur sa machine, un cycle complet Preflight → Apply → Undo avec une licence qu'il a
+  émise pour lui-même, avant toute distribution plus large du build ou de la clé publique.
+
 ## 2026-08-07 (treize) · Gregg — nouveau rapport post-lancement, confus sur FlexDMD + comment lire le rapport complet
 - code:        à préciser (dépend de ce que Gregg trouve confus sur FlexDMD — pas encore clair)
 - bac:         WORDING potentiel (rapport pas assez lisible/actionnable) + question d'usage pure

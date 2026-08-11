@@ -147,3 +147,39 @@ LOT A (câblée, testée) reste la valeur livrée cette session sur ce thème.
   `license-tool` peut voir le chemin d'écriture s'activer.
 - Aucun test d'intégration bout-en-bout de l'onglet Repair (WPF non exécutable ici) — seule la
   logique qu'il appelle (`RepairSession`) est testée directement.
+
+## Suite — 11/08/2026 : clé de licence réelle déployée, le no-op de production prend fin
+
+Le paragraphe "Licence jamais assumée" de la section 2 ci-dessus décrit un état qui n'est plus
+d'actualité : `LicenseVerifier.EmbeddedPublicKeyBase64` n'est **plus** le `PLACEHOLDER` littéral.
+Le même jour, Maxime a exécuté `license-tool init` sur sa propre machine (hors ligne, clé privée
+jamais transmise ni générée dans une session cloud — voir l'en-tête de `LicenseVerifier.cs`) et a
+transmis la clé **publique** résultante, qui est maintenant celle embarquée dans l'App.
+
+Conséquence directe sur le raisonnement de sécurité de cet ADR : **`Apply()` n'est plus un no-op
+prouvé en production.** N'importe quelle licence signée par la clé privée correspondante (celle que
+seul Maxime détient, sur sa machine, hors de tout repo) fera passer `VerifyLicense` à `Valid`, donc
+`licensed:true` dans `RepairSession.Plan`, donc de vrais items en `RepairMode.Automatic` ou
+`ConfirmationRequired` plutôt que systématiquement `Locked`. Le filet qui restait pour la session du
+10-11/08 (« même si l'onglet Repair a un bug WPF non détecté ici, aucune écriture réelle n'est
+possible ») n'existe donc plus une fois cette clé publique effectivement déployée dans un build
+distribué.
+
+Ce qui reste vrai, inchangé par cette mise à jour :
+- Toutes les autres garanties de la section 2 (sélection explicite jamais groupée, confirmation
+  obligatoire pour l'irréversible, échec de backup = aucune écriture, journal persistant) sont des
+  propriétés du code, indépendantes de la validité de la clé — elles s'appliquent identiquement
+  qu'une licence soit valide ou non.
+- ADR-009 (achat automatisé) reste non câblé : aujourd'hui, la seule façon d'obtenir une licence
+  valide est que Maxime en émette une lui-même via `license-tool issue`, sur sa machine. Aucun
+  chemin d'achat public n'expose donc encore ce risque à un utilisateur non choisi par Maxime.
+- LOT I (`RegisterComComponentAction`) reste inerte, clé réelle ou non — sa désactivation tient à
+  l'absence de `RepairRule` dans le pack, un mécanisme entièrement indépendant de la licence.
+
+Ce que ce changement demande concrètement avant toute distribution plus large : que Maxime valide
+lui-même, sur sa machine, au moins un cycle complet Preflight → Apply → Undo avec une vraie licence
+émise par lui, sur les quatre actions déjà câblées (`UnblockFileAction`, `RestoreRomArchiveAction`,
+`QuarantineOrphanedMediaAction`, `KillZombiePinUpDisplayAction`) — la couverture de test de cette
+session (140 tests Repair, tous verts, y compris `Test_EmbeddedPublicKey_IsARealKey_NotThePlaceholder`
+qui verrouille contre un retour accidentel au placeholder) donne une haute confiance dans la logique,
+mais aucune de ces exécutions n'a eu lieu sur une vraie installation Windows dans cette session.

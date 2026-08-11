@@ -31,21 +31,34 @@ public static class RepairSessionTests
 
     // ───────────────────────── License wiring (H.4) ─────────────────────────
 
-    public static void Test_VerifyLicense_RealEmbeddedKey_IsInvalidToday()
+    public static void Test_VerifyLicense_RealEmbeddedKey_GarbageInputStaysInvalid()
     {
-        // Honest current-state test: the embedded public key is still the LicenseVerifier
-        // placeholder (see its own header comment), so a real RepairSession can never grant
-        // licensed:true today — Apply() is safe by construction until Maxime runs
-        // `license-tool init` for real. This test exists to catch the day someone accidentally
-        // ships a real key here without meaning to license anything by surprise.
+        // 11/08/2026: EmbeddedPublicKeyBase64 is now a REAL key (Maxime ran `license-tool init`
+        // for real, see LicenseVerifier's own header) — Apply() is no longer a guaranteed no-op
+        // the way it was before this date, see ADR-012's follow-up note. What this test still
+        // locks in: an arbitrary string is not a validly-signed license under ANY key, real or
+        // placeholder, so it must stay Invalid regardless of which key is embedded.
         var root = NewTempRoot();
         try
         {
             var session = new RepairSession(KnowledgePack.Empty, new[] { root }, appDataRoot: root);
             var result = session.VerifyLicense("anything-at-all");
-            A.False(result.IsValid, "placeholder public key must never validate any key");
+            A.False(result.IsValid, "an arbitrary string is never a validly-signed license");
         }
         finally { TryDelete(root); }
+    }
+
+    public static void Test_EmbeddedPublicKey_IsARealKey_NotThePlaceholder()
+    {
+        // Regression guard: catches an accidental revert to the placeholder string just as surely
+        // as it caught the placeholder being forgotten before — same spirit, opposite direction.
+        A.False(LicenseVerifier.EmbeddedPublicKeyBase64.Contains("PLACEHOLDER", StringComparison.Ordinal),
+            "EmbeddedPublicKeyBase64 must be the real key, not the placeholder string");
+
+        // Must parse as a well-formed P-256 SubjectPublicKeyInfo — exactly the check the
+        // 2026-08-04 audit found broken on the placeholder. Throws (test failure) if malformed.
+        using var key = System.Security.Cryptography.ECDsa.Create();
+        key.ImportSubjectPublicKeyInfo(Convert.FromBase64String(LicenseVerifier.EmbeddedPublicKeyBase64), out _);
     }
 
     public static void Test_VerifyLicense_DelegatesToInjectedVerifier()
