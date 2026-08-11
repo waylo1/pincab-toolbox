@@ -72,4 +72,38 @@ public sealed class ScanEngine
         report.FinishedAt = DateTimeOffset.Now;
         return report;
     }
+
+    /// <summary>
+    /// Scans every pincab install found under a drive (or any starting folder) instead of a
+    /// single manually-chosen root — <see cref="DriveInstallFinder"/> locates each install via
+    /// the same signals <see cref="LayoutDetector"/> already trusts (Tables/VPinMAME/Popper
+    /// database), then this runs the normal single-root <see cref="Run"/> against each one and
+    /// merges the results into a <see cref="DriveScanReport"/>. No scanner, no
+    /// <see cref="InstallLayout"/>, no single-root <see cref="ScanReport"/> shape is touched by
+    /// this — it is a thin orchestration layer on top of the existing pipeline.
+    /// (TRANSMISSION #14, 10/08 — feu vert explicite de Maxime pour rouvrir ce point du Scanner
+    /// gelé du 03/08 : "faut scanner tout le disque corrige les adr si il le faut, code le
+    /// cablage, code".)
+    /// </summary>
+    public DriveScanReport RunAcrossDrive(string driveRoot, Profile profile,
+        IProgress<string>? progress = null, CancellationToken ct = default)
+    {
+        var report = new DriveScanReport { DriveRoot = driveRoot, StartedAt = DateTimeOffset.Now };
+
+        progress?.Report($"Looking for pincab installs under {driveRoot}…");
+        var roots = DriveInstallFinder.FindCandidateRoots(driveRoot, profile, ct).ToList();
+        progress?.Report(roots.Count == 0
+            ? $"No pincab install found under {driveRoot}."
+            : $"Found {roots.Count} install(s) under {driveRoot}.");
+
+        foreach (var root in roots)
+        {
+            ct.ThrowIfCancellationRequested();
+            progress?.Report($"Scanning {root}…");
+            report.Reports.Add(Run(root, profile, progress, ct));
+        }
+
+        report.FinishedAt = DateTimeOffset.Now;
+        return report;
+    }
 }

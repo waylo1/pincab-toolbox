@@ -10,7 +10,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AssemblyName>PincabToolbox</AssemblyName>
     <RootNamespace>PincabToolbox.App</RootNamespace>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <Company>MC Automation</Company>
     <Product>Pincab Toolbox</Product>
     <AssemblyTitle>Pincab Toolbox — Free Scanner</AssemblyTitle>

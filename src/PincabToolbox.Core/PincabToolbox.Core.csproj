@@ -7,7 +7,7 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>PincabToolbox.Core</AssemblyName>
     <RootNamespace>PincabToolbox.Core</RootNamespace>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <Company>MC Automation</Company>
     <Product>Pincab Toolbox</Product>
     <!-- Zero external dependencies by design: smaller exe, no supply chain, AV-friendly. -->

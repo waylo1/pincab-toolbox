@@ -52,13 +52,17 @@ public partial class MainWindow : Window
     // Écran 1 only (free "Repair available" offer) — see RepairOfferBuilder. Always recomputed
     // together with _report so the two never point at different scans.
     private RepairOfferBuilder.Result? _repairResult;
+    // Set only when the last scan was a whole-drive scan (TRANSMISSION #14, 10/08) — the real
+    // per-install roots found, used to confine Repair correctly (ADR-005/ADR-011) instead of the
+    // merged report's synthesized drive-wide RootPath.
+    private List<string>? _lastDriveScanRoots;
     private CancellationTokenSource? _cts;
     private readonly Settings _settings = Settings.Load();
 
     // Keep in sync with AssemblyInfo/csproj version — same literal ApplyTexts already displayed
     // in the About tab before this change, just named now so BtnCheckUpdate_Click can compare
     // against it too.
-    private const string CurrentVersion = "0.1.1";
+    private const string CurrentVersion = "0.1.2";
     private readonly IUpdateChecker _updateChecker = new GitHubUpdateChecker();
 
     private bool _showCritical = true, _showWarning = true, _showNote = true, _showInfo = true, _showOk = false;
@@ -343,6 +347,14 @@ public partial class MainWindow : Window
         BtnScan_Click(sender, e);
     }
 
+    /// <summary>True for a bare drive root ("C:\", "D:\"), false for any folder under it — the
+    /// same test Windows itself uses (a drive root is the only DirectoryInfo with no Parent).</summary>
+    private static bool IsDriveRoot(string path)
+    {
+        try { return new DirectoryInfo(path).Parent is null; }
+        catch { return false; }
+    }
+
     private async void BtnScan_Click(object sender, RoutedEventArgs e)
     {
         if (_cts is not null) return;
@@ -373,6 +385,13 @@ public partial class MainWindow : Window
         BtnExport.IsEnabled = false;
         BtnCopyForum.IsEnabled = false;
         LblPlaceholder.Text = "";
+
+        // TRANSMISSION #14 (10/08) — "le scanner doit lire tout le disque, pas fichier par
+        // fichier". If the user pointed the picker at a bare drive root (e.g. "C:\") instead of a
+        // specific pincab folder, that means every install on that drive, not one. No new UI: the
+        // existing root textbox is the only entry point, this just recognizes a drive root the
+        // same way Windows does (DirectoryInfo.Parent is null only for a drive root).
+        var isWholeDrive = IsDriveRoot(root);
 
         var progress = new Progress<string>(msg => LblStatus.Text = msg);
         try
@@ -409,13 +428,22 @@ public partial class MainWindow : Window
                     .Add(new DmdComPortScanner())
                     .Add(new LocaleSeparatorScanner())
                     .Add(new ConfigPhantomScanner());
-                return engine.Run(root, profile, progress, ct);
+                if (!isWholeDrive) return engine.Run(root, profile, progress, ct);
+
+                var driveReport = engine.RunAcrossDrive(root, profile, progress, ct);
+                _lastDriveScanRoots = driveReport.Reports.Select(r => r.Layout.RootPath).ToList();
+                return driveReport.ToMergedScanReport();
             }, ct);
 
             _report = report;
             // Bonus surface on top of the free scan — RepairOfferBuilder.Build never throws
             // (returns null on any failure), so it can never take the scan report down with it.
-            _repairResult = await Task.Run(() => RepairOfferBuilder.Build(report));
+            // Whole-drive scans MUST pass the real per-install roots (ADR-005/ADR-011, 10/08) —
+            // report.Layout.RootPath there is the synthesized drive root ("C:\"), and confining
+            // Repair to that would let it validate a write target anywhere on the whole drive.
+            _repairResult = isWholeDrive
+                ? await Task.Run(() => RepairOfferBuilder.Build(report, _lastDriveScanRoots ?? Enumerable.Empty<string>()))
+                : await Task.Run(() => RepairOfferBuilder.Build(report));
             RefreshList();
             LblStatus.Text = string.Format(Loc.Get("status.done"), report.Findings.Count,
                 report.Count(Severity.Critical), report.Count(Severity.Warning), report.Count(Severity.Info),

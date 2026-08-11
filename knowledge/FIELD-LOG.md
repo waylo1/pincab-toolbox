@@ -26,6 +26,121 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-07 (treize) · Gregg — nouveau rapport post-lancement, confus sur FlexDMD + comment lire le rapport complet
+- code:        à préciser (dépend de ce que Gregg trouve confus sur FlexDMD — pas encore clair)
+- bac:         WORDING potentiel (rapport pas assez lisible/actionnable) + question d'usage pure
+- contexte:    Gregg (déjà croisé le 07/08 pour BKSOR/R&B/Spiderman) a testé la nouvelle version,
+  joint un nouveau rapport, dit que certains findings "ne font pas sens" pour lui, en particulier
+  celui sur FlexDMD. Demande aussi comment ouvrir le rapport complet pour tout voir en détail, et
+  redemande le nom de Maxime (jamais donné jusqu'ici).
+- analyse: pas assez d'info pour diagnostiquer le point FlexDMD — Gregg n'a pas précisé ce qui ne
+  fait pas sens (le libellé du finding ? la sévérité ? le fix suggéré ?). Le rapport HTML est un
+  fichier autonome (`pincabtoolboxreportYYYYMMDDHHMM.html`) qui s'ouvre avec n'importe quel
+  navigateur — question d'usage simple, pas un bug.
+- disposition: réponse envoyée dans le chat demandant à Gregg de préciser ce qui le perturbe sur
+  FlexDMD (capture ou citation exacte) avant de pouvoir dire si c'est un vrai wording à corriger.
+  Rien à coder tant que le détail n'est pas là.
+
+## 2026-08-07 (douze) · Commentaire FB hors périmètre — demande de patcher le moteur VPX (C++) directement
+- code:        aucun — hors périmètre du produit, pas un finding
+- bac:         FEATURE mal dirigée / hors scope
+- contexte:    Commentaire (compte "bizarre" d'après Maxime) décrivant un bug de physique VPX
+  (slingshots qui n'éjectent pas toujours la bille correctement, bille qui traverse le PF jusqu'au
+  drain opposé, pire sur certaines tables) et demandant si Pincab Toolbox peut lire le code source
+  C++ de Visual Pinball, corriger le bug de gameplay, puis produire un installeur unique appliquant
+  le correctif à toutes les versions de VP présentes dans le dossier.
+- analyse: **hors périmètre par nature, pas juste "pas encore fait".** Pincab Toolbox scanne/répare
+  des fichiers de configuration et d'installation (ROMs, DLLs, .ini, registre) — il ne touche jamais
+  au moteur Visual Pinball X lui-même (projet C++ séparé, maintenu ailleurs, sur GitHub). Patcher le
+  moteur physique et redistribuer un binaire modifié en "installeur toutes versions" serait un
+  changement d'une tout autre nature : ça sort du principe du projet (jamais de modification du
+  cœur VPX, seulement des fichiers d'install/config autour), et republier un moteur physique modifié
+  pour tout le monde sans tests d'engine réels serait un risque bien plus grave qu'un faux positif
+  scanner. Le symptôme décrit (slings qui n'éjectent pas toujours pareil, bille qui traverse tout le
+  PF) ressemble à un réglage de physique/rubber strength propre à chaque table, pas à un bug
+  générique du moteur — donc même sur le fond, la vraie réponse est probablement "table par table",
+  pas "un patch moteur global".
+- disposition: **refusé poliment, périmètre clarifié** dans la réponse envoyée (chat). Rien à
+  qualifier ni prioriser — ce n'est pas une feature en attente, c'est en dehors de ce que ce produit
+  fait et fera.
+
+## 2026-08-07 (onze) · Commentaires FB post lancement — DOF (nouvelle piste), musique/playlists (renforce #7), ball manquante (à clarifier)
+- code:        aucun encore — 3 idées, pas des findings
+- bac:         FEATURE ×3
+- contexte:    Commentaires sous le post d'annonce Facebook (groupe Pincab Toolbox), plusieurs
+  retours le même jour. Réponses envoyées dans le chat, à poster par Maxime.
+- analyse:
+  1. **Steve Toneatti Sr. — "check DOF settings to confirm aligned with your toys"** : nouvelle
+     piste, pas encore dans les décisions en attente. DOF (Direct Output Framework) pilote les toys
+     physiques du cab — un mismatch config (toy déclaré mais pas câblé, ou câblé mais qui ne se
+     déclenche jamais) est exactement le genre de défaut invisible tant qu'on n'a pas testé
+     physiquement. À qualifier (quel fichier DOF lire, quelle validation possible sans accès
+     matériel réel) avant de coder quoi que ce soit.
+  2. **Jld Davis — "help place the music file in the right order"** : rejoint la question déjà
+     ouverte **#7** (sémantique `isFav=2` sur `PlayListDetails`, nom de colonne "titre" sur
+     `Playlists` non confirmés) — pas une nouvelle piste, un signal de plus que ça vaut le coup.
+  3. **Jld Davis — "fix missing ball"** : **pas assez clair pour agir.** Peut vouloir dire une bille
+     qui disparaît en jeu sur une table précise (bug VPX/physique/scripting, hors périmètre
+     diagnostic) ou un souci de trough/matériel réel sur son cab (encore plus hors périmètre). Réponse
+     envoyée demandant de préciser — rien à noter tant qu'il n'a pas répondu.
+- disposition: rien codé. DOF et musique/playlists ajoutés informellement aux pistes non
+  bloquantes ; "missing ball" en attente de clarification avant même de savoir si c'est une piste.
+
+## 2026-08-07 (dix) · Commentaire forum — B2S_MISSING sur tables PUP-Pack, cas déterministe (renforce #13)
+- code:        `B2S_MISSING` (module Install Auditor)
+- bac:         FP confirmé sur une sous-catégorie précise de tables (PUP-Pack)
+- contexte:    Commentaire forum : « it doesn't report an error if the table is missing a
+  backglass... all my pup tables were showing errors because of course there is no backglass file
+  for them. Can it either suppress these error reports or can we show its attached to pups? »
+- analyse: **plus solide que la décision #13 existante** (dé-emphase backglass pour cabs sans
+  2ᵉ écran) — celle-ci suppose la config écran de l'utilisateur (heuristique). Ici c'est un fait sur
+  la table elle-même : **une table avec PUP-Pack associé n'a structurellement jamais de fichier
+  `.directb2s`**, ce n'est pas une install cassée, c'est le fonctionnement normal du format. Le
+  module Install Auditor croise déjà tables/Popper/PUP-Packs (confirmé sur la landing, section
+  modules) — donc l'info "cette table a un PUP-Pack" est déjà lue quelque part dans le scanner,
+  juste pas recroisée avec le check backglass. **Piste concrète** : ne pas lever `B2S_MISSING` (ou
+  le redescendre en Info/Note) pour une table qui a un PUP-Pack associé.
+- disposition: **signalé à Maxime, pas codé** — c'est un scanner EXISTANT (Install Auditor / check
+  backglass), aucun changement sans feu vert explicite (règle inchangée, contrairement à la nouvelle
+  règle Repair du 07/08). Réponse de remerciement envoyée au commentaire, en attente de décision.
+
+## 2026-08-07 (neuf) · 2 idées communauté — DMD/B2S 2 vs 3 écrans (FB) + position DMD/plugins (forum)
+- code:        NOUVEAU (aucun code existant concerné) — idées, pas des findings
+- bac:         FEATURE (2 demandes distinctes, communauté)
+- contexte:    Maxime a repéré un fil Facebook (groupe World of Virtual Pinball) et reçu un nouveau
+  commentaire forum le même jour — les deux touchent au DMD, angle différent à chaque fois.
+- analyse:
+  1. **Facebook — Tony Truong, table Mass Effect** : son DMD n'affiche pas le bon thème. Diagnostic
+     du modérateur (Tim Waugh) + confirmation communauté (Ryan Wadsworth, lien vpuniverse.com) :
+     `.directb2s` installé est une **version 2 écrans sans image DMD intégrée**, alors qu'il lui
+     fallait la version **3 écrans** (backglass + DMD) du même fichier. Différent des checks B2S
+     existants (`B2S_MISSING`/`B2S_MALFORMED` regardent présence/validité du fichier, pas s'il
+     contient une image DMD). Piste : nouveau check qui ouvre le `.directb2s` et signale l'absence
+     d'image DMD intégrée quand la cab a un DMD configuré — même famille de signal que B3
+     (`DMD_COM_PORT_NOT_FOUND`, livré le 06/08). Un "Repair" resterait un lien suggéré, jamais un
+     téléchargement automatique (principe du projet).
+  2. **Forum, nouveau commentaire — 3 demandes concrètes** (verbatim : "I would love for it to
+     check DMD position, a global setting for plugins being on that actually works (looking at you
+     VP Studio), that the elements will stack right so my DMD is actually over my art") :
+     - **Position DMD** — recoupe exactement la **DÉCISIONS EN ATTENTE #5** déjà notée le 06/08
+       ("Position DMD non vérifiée par ScreenTopologyScanner — seul le backglass l'est, deux
+       lectures possibles de la doc officielle, jamais recoupées"). Deuxième demande indépendante
+       pour la même idée → renforce la priorité, ne la tranche toujours pas (le blocage reste le
+       même : ambiguïté de doc, pas de deuxième source).
+     - **Réglage global "plugins actifs" fiable, VP Studio cité comme exemple qui bug** — nouvelle
+       demande. **Sous la nouvelle règle permanente du 07/08 (voir TRANSMISSION), c'est du
+       périmètre Repair → feu vert par défaut**, plus besoin de redemander. Reste à cadrer
+       techniquement avant de coder (quel registre/mécanisme exact, quels plugins visés,
+       "actifs" au sens de quoi précisément) — la règle autorise la construction, elle ne dispense
+       pas de clarifier une demande encore vague.
+     - **"Les éléments s'empilent bien, mon DMD est vraiment au-dessus de mon art"** — même famille
+       que la position DMD (#5), probablement le même chantier vu du côté utilisateur plutôt qu'un
+       item séparé.
+- disposition: **rien codé, les deux sont des pistes.** L'idée Facebook (DMD sans image dans un B2S
+  2 écrans) est nouvelle, pas dans la liste actuelle — à ajouter si Maxime veut la prioriser. La
+  demande forum sur la position DMD renforce #5 sans la débloquer (toujours pas de deuxième source
+  pour trancher l'ambiguïté de doc). Le réglage plugins global est noté mais pas qualifié.
+
 ## 2026-08-07 (quater) · Bouton "Check for updates" codé — premier appel réseau du projet
 - code:        transverse (infra App/Core) — pas un finding de scan
 - bac:         FEATURE (demande directe de Maxime : « fais le bouton »)

@@ -55,8 +55,21 @@ public static class RepairOfferBuilder
     /// <summary>
     /// Returns null on any failure — Repair is a bonus surface on top of the free scan, and a
     /// probe/COM/IO error while building the offer must never take the scan report down with it.
+    /// Confines every planned action to <c>report.Layout.RootPath</c> (ADR-005) — the normal,
+    /// single-install case.
     /// </summary>
-    public static Result? Build(ScanReport report)
+    public static Result? Build(ScanReport report) => Build(report, new[] { report.Layout.RootPath });
+
+    /// <summary>
+    /// Same as <see cref="Build(ScanReport)"/>, but with an explicit confinement root list
+    /// (ADR-005/ADR-011, 10/08). <b>Required</b> when <paramref name="report"/> was produced by
+    /// <see cref="Scanning.DriveScanReport.ToMergedScanReport"/> — its synthesized
+    /// <c>Layout.RootPath</c> is the whole drive (e.g. "C:\"), and passing that as the sole
+    /// confinement root would let Repair validate a write target anywhere on the entire drive,
+    /// defeating ADR-005's purpose. Callers scanning a whole drive must pass the REAL per-install
+    /// roots (each <c>ScanReport.Layout.RootPath</c> from <c>DriveScanReport.Reports</c>) instead.
+    /// </summary>
+    public static Result? Build(ScanReport report, IEnumerable<string> confinementRoots)
     {
         try
         {
@@ -80,7 +93,7 @@ public static class RepairOfferBuilder
                 new FileBackupService(fs, backupRoot),
                 new RealEnvironmentProbe(backupRoot),
                 new SystemClock(),
-                new[] { report.Layout.RootPath },
+                confinementRoots.ToArray(),
                 report.Layout);
 
             var scanReportId = $"scan-{report.StartedAt:yyyyMMdd-HHmmss}";

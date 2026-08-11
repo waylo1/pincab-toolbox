@@ -1,4 +1,55 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 10/08/2026
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 10/08/2026 (bis)
+
+## 🧭 MAJ 10/08 (bis) — recherche communauté externe analysée → spec de lot écrite, 4 décisions tranchées
+
+> **Entrée la plus importante de la journée. Lire `docs/SPEC-lot-communaute-2026-08-10.md` avant toute
+> reprise de code.**
+>
+> Maxime a fourni un document de recherche produit par GPT+Gemini (~90 « besoins » relevés sur VPForums,
+> VPUniverse, Reddit, Pincab Passion, GitHub). Consigne : ne pas refaire la recherche, en extraire les
+> bonnes idées pour le Scanner et Repair, et produire un plan + specs pour une session Sonnet.
+>
+> **Fait** : les ~90 items ont été passés au filtre (déjà codé ? déterministe ? signal réel ? dans le
+> périmètre ?) et croisés avec un inventaire complet des 26 scanners existants. Résultat dans la spec :
+> 7 lots de détection (A→G), le câblage du chemin d'écriture Repair (H), une nouvelle action Repair (I),
+> un backlog de 6 items specifiés, et une liste explicite de ce qui est **rejeté avec la raison** (pour
+> ne pas re-débattre dans six semaines).
+>
+> **⚠️ CORRECTION FACTUELLE IMPORTANTE — `FLEXDMD_MISSING` n'est PAS une chaîne morte.** Les handoffs
+> précédents (dont le prompt de reprise du 10/08) affirmaient « vérifié par lecture du code » qu'il
+> existait dans `Loc.cs` sans être câblé. **C'est faux** : `DependencyScanner.cs` ligne 80 l'émet en
+> `Warning`, sur un signal composite déjà correct. Le « chantier FlexDMD » de Gregg est donc déjà fait à
+> moitié, et la moitié faite est la bonne. Ce qui manque réellement sur FlexDMD, c'est l'**enregistrement
+> COM** et la cohérence de version/architecture — objet du LOT A de la spec. La « spec du 08/08 »
+> introuvable n'a plus besoin d'être retrouvée.
+>
+> **Le trou dominant trouvé** : sur 26 scanners, **aucun ne lit un seul enregistrement COM**. Or c'est le
+> thème n°1 de toute la recherche (P0 dans les 5 tableaux de synthèse du document, présent sur 3
+> communautés, occurrences continues de 2021 à janvier 2026 : « ActiveX component can't create object »,
+> « Library not registered », « Registered FlexDMD does not match your install path », « I had multiple
+> instances from old installs »). Détection 100 % déterministe. Point technique clé identifié : il faut
+> lire **les deux vues du registre** (32 et 64 bits) séparément — un composant enregistré en 64 et absent
+> en 32 est précisément la cause racine du P0 « 64 bit and 32 bit are different ecosystems ».
+>
+> **4 décisions Maxime tranchées le 10/08** (détail en §4 de la spec) :
+> 1. **Chemin d'écriture Repair (Preflight/Apply/Undo) : À CÂBLER**, dans la même session. En attente
+>    depuis le 27/07. C'est le changement le plus risqué de l'histoire du projet — première écriture
+>    réelle sur la machine d'un utilisateur. Spec dédiée + garde-fous en LOT H. **Bloqueur n°1 identifié :
+>    le journal est aujourd'hui `InMemoryRepairJournal`, donc `Undo` mourrait à la fermeture de l'app.**
+> 2. **Ré-enregistrement COM : via les outils du composant** (`FlexDMDUI.exe`,
+>    `B2SBackglassServerRegisterApp.exe`, `Setup.exe`), jamais par écriture registre directe. Reste dans
+>    la racine confinée ADR-005. Mais exécuter un processus externe est une **classe de capacité
+>    nouvelle** → règles de confinement dédiées en LOT I.
+> 3. **`VPINMAME_NOT_REGISTERED` en `Critical`** — premier `Critical` ajouté depuis le gel du 03/08.
+>    Contrepartie : les 4 conditions doivent être mesurées, jamais supposées ; registre illisible =
+>    silence total, jamais un `Critical` de repli.
+> 4. **Périmètre : tout le sprint (A→I).** Ordre d'abandon si le temps manque : G, F, E, D, C.
+>    **Jamais H à moitié.**
+>
+> **Rien codé cette entrée** (analyse + spec, pas un chantier). **ADR-012 attendu** de la session Sonnet
+> pour le chemin d'écriture. Prompt de passation prêt en §9 de la spec.
+
+---
 
 ## ✅ MAJ 10/08 — règle « feu vert par défaut » étendue à tout produit hors Scanner ; #13 codé (dé-emphase B2S) ; scope disque à clarifier davantage
 
@@ -78,6 +129,39 @@
 > retrouver/recoller la spec du 08/08 (chat de cette date-là), soit la redonner en quelques lignes
 > — la partie recherche (ce texte) est acquise et ne sera pas refaite.
 >
+> **#14 CODÉ (10/08, après feu vert explicite « corrige les adr si il le faut, code le câblage,
+> code »).** Voir `docs/adr/ADR-011-scan-multi-racines-disque-entier.md` pour le détail complet.
+> Résumé : `DriveInstallFinder` (nouveau) trouve tous les dossiers pincab sur un disque via une
+> marche bornée réutilisant les candidats du profil (`Profile.Locations`, pas un nouveau motif
+> inventé) ; `ScanEngine.RunAcrossDrive` (nouveau) relance le pipeline existant, inchangé, sur
+> chaque install trouvé et agrège dans `DriveScanReport` ; `ToMergedScanReport()` fusionne en un
+> `ScanReport` normal pour que le reste de l'app (export, UI) n'ait rien à changer. **Aucune
+> couleur/logique de scanner existant modifiée.** `ScanScoring` extrait (pur refactor) le calcul
+> de score/tri hors de `ScanReport` pour que le rapport fusionné réutilise la même formule.
+> **Câblage App minimal, zéro nouvel élément XAML** : taper `C:\` dans le champ racine existant
+> au lieu d'un dossier précis déclenche automatiquement le scan multi-racines
+> (`DirectoryInfo.Parent is null` reconnaît une racine de lecteur).
+>
+> **Garde-fou trouvé et corrigé avant livraison, pas après** : `RepairOfferBuilder.Build`
+> confinait déjà Repair via `report.Layout.RootPath` (ADR-005) — sur un rapport fusionné, ce
+> `RootPath` synthétique vaut le DISQUE ENTIER, ce qui aurait autorisé Repair sur n'importe quelle
+> cible de tout `C:\`. Corrigé par un second paramètre explicite (`confinementRoots`) : en mode
+> disque entier, l'App passe la vraie liste des racines d'install trouvées, jamais la racine
+> synthétique. Le cas mono-racine existant est bit-à-bit inchangé. **C'est le genre d'erreur que
+> je n'aurais découverte qu'en lisant `RepairOfferBuilder.cs` avant de livrer — je l'ai fait avant
+> de committer, pas après un incident.**
+>
+> **Pas de build/test exécuté** — toujours aucun `dotnet` disponible. Relu à la main (accolades
+> équilibrées, signatures cohérentes, aucun scanner touché). **Non fait** : pas de nouvel élément
+> d'UI dédié (juste la détection automatique), pas de test unitaire pour `DriveInstallFinder`/le
+> nouveau paramètre de confinement — à ajouter dès que `dotnet` est disponible. Coût du scan disque
+> entier jamais mesuré en conditions réelles (borné en profondeur, dossiers système ignorés, mais
+> potentiellement plusieurs minutes sur une grosse machine) — à observer au premier scan réel.
+>
+> **Action Maxime** : lancer `build.cmd`, vérifier Core/Repair/App verts, puis un vrai scan sur
+> `C:\` sur ta cab pour voir si tous tes dossiers pincab sont bien trouvés et si le temps de scan
+> reste raisonnable.
+
 > **Repair "config audio stable au boot" (Jarr3, item #2) — pas commencée cette session.**
 > Portée confirmée trop large pour un feu vert automatique même sous la règle étendue du 10/08
 > (déclenchement au démarrage hors VPX/Popper, UI overlay flipper, préférences persistantes,
