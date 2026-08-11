@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Pincab Toolbox"
+        Icon="Assets/logo.png"
         Width="1180" Height="780" MinWidth="900" MinHeight="480"
         Background="{StaticResource Bg}"
         WindowStartupLocation="CenterScreen">
@@ -89,10 +90,15 @@
         <Border Grid.Row="0" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="18,12">
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <TextBlock Text="PINCAB" FontSize="22" FontWeight="Black" Foreground="{StaticResource Accent}"/>
-                    <TextBlock Text=" TOOLBOX" FontSize="22" FontWeight="Black"/>
+                    <!-- Logo MC Automation, fond détouré pour se poser sur le bleu nuit du bandeau.
+                         L'emblème seul : le nom du produit reste du texte juste à côté, donc net à
+                         toutes les résolutions et sélectionnable, plutôt que pixellisé dans l'image. -->
+                    <Image Source="Assets/logo.png" Height="40" Margin="0,0,12,0"
+                           VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <TextBlock Text="PINCAB" FontSize="22" FontWeight="Black" Foreground="{StaticResource Accent}" VerticalAlignment="Center"/>
+                    <TextBlock Text=" TOOLBOX" FontSize="22" FontWeight="Black" VerticalAlignment="Center"/>
                     <TextBlock x:Name="HeaderTagline" Text="" FontSize="13" Foreground="{StaticResource TextDim}"
-                               VerticalAlignment="Bottom" Margin="14,0,0,3"/>
+                               VerticalAlignment="Center" Margin="14,4,0,0"/>
                 </StackPanel>
                 <Button x:Name="BtnLang" DockPanel.Dock="Right" HorizontalAlignment="Right" Content="FR / EN" Click="BtnLang_Click"/>
             </DockPanel>
