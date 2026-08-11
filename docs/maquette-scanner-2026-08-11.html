@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Pincab Toolbox — maquette Scanner (données réelles)</title>
+<style>
+:root{
+  --bg:#0b111a; --surface:#101823; --panel:#16202e; --panel-2:#1b2735;
+  --line:#233145; --line-soft:#1c2838;
+  --ink:#eaf1fb; --ink-2:#a9b8cc; --ink-3:#7c8ca3;
+  --accent:#ff8a1f; --accent-soft:rgba(255,138,31,.14);
+  /* Palette de statut validée (scripts/validate_palette.js, mode dark, surface #101823) :
+     paires adjacentes CVD OK, plancher vision normale OK, contraste >= 3:1 OK.
+     Rouge vs vert reste indissociable en deutéranopie : c'est inhérent à toute échelle
+     de gravité, la parade est l'icône + le mot, jamais la couleur seule. */
+  --crit:#ff5a5a; --warn:#fab219; --note:#c084fc; --info:#22d3ee; --ok:#22c55e;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:14px/1.5 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+
+/* ─────────── NAV ─────────── */
+.nav{
+  background:linear-gradient(180deg,#111a26 0%,#0d1520 100%);
+  border-right:1px solid var(--line);display:flex;flex-direction:column;
+}
+.brand{display:flex;gap:11px;align-items:center;padding:18px 16px 16px}
+.hex{
+  width:38px;height:38px;flex:none;display:grid;place-items:center;
+  background:linear-gradient(145deg,var(--accent),#ff6a00);
+  clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+  color:#1a0e00;font-size:19px;
+}
+.brand b{display:block;font-size:15px;letter-spacing:.11em;line-height:1.15}
+.brand span{display:block;font-size:9.5px;color:var(--ink-3);letter-spacing:.12em;margin-top:3px}
+.navgroup{padding:8px 10px 4px;font-size:10px;letter-spacing:.13em;color:var(--ink-3);margin-top:10px}
+.navitem{
+  display:flex;align-items:center;gap:10px;margin:2px 8px;padding:9px 11px;
+  border-radius:9px;color:var(--ink-2);cursor:pointer;font-size:13.5px;
+  border-left:3px solid transparent;
+}
+.navitem:hover{background:#1a2432;color:var(--ink)}
+.navitem.on{background:var(--accent-soft);color:#ffd7ac;border-left-color:var(--accent);font-weight:600}
+.navitem.off{color:#5c6b80;cursor:default}
+.navitem.off:hover{background:none;color:#5c6b80}
+.navitem .ico{width:17px;text-align:center;opacity:.9}
+.soon{margin-left:auto;font-size:9px;color:#5c6b80;border:1px solid #2a3a4e;border-radius:5px;padding:1px 5px}
+.navfoot{margin-top:auto;padding:14px 16px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--ink-3)}
+.navfoot .local{display:flex;align-items:center;gap:7px;color:#8fd6a8;margin-bottom:8px;font-size:11.5px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none}
+
+/* ─────────── TOPBAR ─────────── */
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{
+  display:flex;align-items:center;gap:12px;padding:11px 20px;
+  border-bottom:1px solid var(--line);background:var(--surface);
+}
+.picker{
+  display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);
+  border-radius:9px;padding:7px 13px;min-width:290px;color:var(--ink-2);font-size:13px;
+}
+.picker b{color:var(--ink);font-weight:600}
+.iconbtn{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--panel);
+  color:var(--ink-2);display:grid;place-items:center;cursor:pointer;font-size:14px;
+}
+.iconbtn:hover{background:var(--panel-2);color:var(--ink)}
+.lang{margin-left:auto;color:var(--ink-2);font-size:12.5px}
+.lang b{color:var(--accent)}
+
+/* ─────────── HERO ─────────── */
+.wrap{padding:18px 20px 0;overflow:auto}
+.hero{
+  display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;
+  background:linear-gradient(135deg,#16202e 0%,#141d2a 60%,#1a1a24 100%);
+  border:1px solid var(--line);border-radius:var(--radius);padding:18px 22px;
+}
+.gauge{position:relative;width:132px;height:132px;flex:none}
+.gauge .val{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.gauge .num{font-size:38px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.gauge .den{font-size:11px;color:var(--ink-3);margin-top:3px}
+.gauge .grade{
+  font-size:10px;letter-spacing:.1em;color:var(--crit);border:1px solid rgba(255,90,90,.4);
+  border-radius:5px;padding:1px 7px;margin-top:7px;
+}
+.headline{min-width:0}
+.headline h1{font-size:21px;font-weight:650;letter-spacing:-.01em;margin-bottom:5px}
+.headline h1 em{color:var(--crit);font-style:normal}
+.headline p{color:var(--ink-2);font-size:13.5px;max-width:62ch}
+.tiles{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.tile{
+  display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:8px 12px 8px 10px;min-width:104px;
+}
+.tile .bar{width:3px;height:26px;border-radius:2px;flex:none}
+.tile .n{font-size:18px;font-weight:700;line-height:1}
+.tile .l{font-size:10.5px;color:var(--ink-2);letter-spacing:.02em;display:flex;align-items:center;gap:4px}
+.cta{display:flex;flex-direction:column;gap:9px;flex:none;width:212px}
+.btn{
+  background:linear-gradient(180deg,#ff9c3d,#f97706);color:#241000;border:0;border-radius:10px;
+  padding:13px 16px;font-size:14px;font-weight:700;letter-spacing:.03em;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  box-shadow:0 6px 18px rgba(249,119,6,.22);
+}
+.btn.ghost{
+  background:var(--panel);color:var(--ink-2);border:1px solid var(--line);box-shadow:none;
+  font-weight:500;font-size:13px;padding:10px 14px;
+}
+.btn.ghost:hover{background:var(--panel-2);color:var(--ink)}
+.meta{
+  display:flex;gap:26px;flex-wrap:wrap;padding:12px 4px 0;color:var(--ink-3);font-size:12px;
+}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ─────────── TABS ─────────── */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:18px 0 0}
+.tab{
+  padding:10px 15px;color:var(--ink-3);font-size:13px;cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+}
+.tab:hover{color:var(--ink-2)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tab .c{color:var(--ink-3);font-size:11.5px;margin-left:4px}
+
+.cols{display:grid;grid-template-columns:1fr 372px;gap:16px;padding:16px 0 20px}
+
+/* ─────────── CAUSE CARDS ─────────── */
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  margin-bottom:12px;overflow:hidden;position:relative;
+}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px}
+.card.c-crit::before{background:var(--crit)}
+.card.c-warn::before{background:var(--warn)}
+.card-in{padding:16px 18px 16px 20px}
+.card-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:9px}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:.08em;
+  border-radius:5px;padding:3px 7px;flex:none;
+}
+.b-crit{background:rgba(255,90,90,.15);color:var(--crit);border:1px solid rgba(255,90,90,.3)}
+.b-warn{background:rgba(250,178,25,.13);color:var(--warn);border:1px solid rgba(250,178,25,.28)}
+.b-note{background:rgba(192,132,252,.13);color:var(--note);border:1px solid rgba(192,132,252,.28)}
+.card h3{font-size:16px;font-weight:640;letter-spacing:-.01em;flex:1}
+.conf{font-size:11px;color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:2px 8px;flex:none}
+.conf b{color:#9fd3a8;font-weight:600}
+.card p.player{color:var(--ink);font-size:13.5px;margin-bottom:5px}
+.card p.impact{color:var(--ink-2);font-size:13px;max-width:74ch}
+
+/* chaîne causale */
+.chain{display:flex;align-items:center;gap:0;margin:15px 0 4px;flex-wrap:wrap}
+.node{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+  padding:9px 13px;min-width:96px;
+}
+.node .nl{font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap}
+.node .ns{font-size:10px;display:flex;align-items:center;gap:3px;white-space:nowrap}
+.node.good{border-color:rgba(34,197,94,.32)} .node.good .ns{color:var(--ok)}
+.node.bad{border-color:rgba(255,90,90,.4);background:rgba(255,90,90,.07)} .node.bad .ns{color:var(--crit)}
+.node.warn{border-color:rgba(250,178,25,.36);background:rgba(250,178,25,.06)} .node.warn .ns{color:var(--warn)}
+.arrow{color:#3b4c63;font-size:15px;padding:0 9px;flex:none}
+.arrow.cut{color:var(--crit)}
+
+.card-foot{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  border-top:1px solid var(--line-soft);background:#131c28;padding:11px 18px 11px 20px;
+}
+.aff{display:flex;align-items:center;gap:7px;color:var(--ink-2);font-size:12.5px}
+.aff b{color:var(--ink);font-weight:600}
+.sep{width:1px;height:16px;background:var(--line)}
+.manual{
+  margin-left:auto;display:flex;align-items:center;gap:8px;
+  color:var(--warn);font-size:12.5px;
+}
+.btn-sm{
+  background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;
+  padding:7px 13px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:6px;
+}
+.btn-sm:hover{border-color:#31435c;background:#22303f}
+.btn-sm.primary{border-color:rgba(255,138,31,.45);color:#ffc78a;background:rgba(255,138,31,.1)}
+
+/* ─────────── SIDE ─────────── */
+.side .box{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  margin-bottom:14px;overflow:hidden;
+}
+.box-h{
+  display:flex;align-items:center;gap:8px;padding:12px 15px;border-bottom:1px solid var(--line-soft);
+  font-size:11px;letter-spacing:.1em;color:var(--ink-2);font-weight:600;
+}
+.box-h .n{margin-left:auto;color:var(--ink-3);letter-spacing:0;font-weight:400}
+.row{display:flex;gap:10px;padding:11px 15px;border-bottom:1px solid var(--line-soft);align-items:flex-start}
+.row:last-child{border-bottom:0}
+.row:hover{background:#141e2b}
+.pill{width:7px;height:7px;border-radius:50%;margin-top:6px;flex:none}
+.row .t{font-size:12.8px;color:var(--ink);line-height:1.45}
+.row .s{font-size:11px;color:var(--ink-3);margin-top:3px}
+.chev{margin-left:auto;color:#3f5169;font-size:13px;flex:none;padding-top:2px}
+
+.comp{display:flex;align-items:center;gap:10px;padding:9.5px 15px;border-bottom:1px solid var(--line-soft)}
+.comp:last-child{border-bottom:0}
+.comp .cn{font-size:12.8px;color:var(--ink);flex:1}
+.comp .cv{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.st{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;
+  min-width:94px;justify-content:flex-end;white-space:nowrap;flex:none}
+.st.ok{color:var(--ok)} .st.crit{color:var(--crit)} .st.warn{color:var(--warn)} .st.unk{color:var(--ink-3)}
+.boxnote{padding:10px 15px;color:var(--ink-3);font-size:11.5px;line-height:1.5;background:#131c28}
+
+/* ─────────── TABLE ─────────── */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{
+  text-align:left;font-size:10px;letter-spacing:.09em;color:var(--ink-3);font-weight:600;
+  padding:9px 14px;border-bottom:1px solid var(--line-soft);background:#131c28;
+}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--line-soft);font-size:12.5px;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr:hover td{background:#141e2b}
+.tbl .nm{color:var(--ink);font-weight:500}
+.mini{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;white-space:nowrap}
+.mini.ok{color:var(--ok)} .mini.crit{color:var(--crit)}
+.mini.warn{color:var(--warn)} .mini.note{color:var(--note)}
+
+/* ─────────── STATUS BAR ─────────── */
+.statusbar{
+  display:flex;align-items:center;gap:22px;padding:9px 20px;border-top:1px solid var(--line);
+  background:#0d1520;color:var(--ink-3);font-size:11.5px;margin-top:auto;flex-wrap:wrap;
+}
+.statusbar .i{display:flex;align-items:center;gap:6px}
+.statusbar .r{margin-left:auto;color:var(--ink-2)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══════════ NAVIGATION ══════════ -->
+  <aside class="nav">
+    <div class="brand">
+      <div class="hex">◆</div>
+      <div><b>PINCAB<br>TOOLBOX</b><span>MC AUTOMATION</span></div>
+    </div>
+
+    <div class="navgroup">DIAGNOSTIC</div>
+    <div class="navitem on"><span class="ico">◎</span>Scanner</div>
+    <div class="navitem"><span class="ico">⚒</span>Repair</div>
+    <div class="navitem"><span class="ico">‹›</span>Script Diff</div>
+    <div class="navitem"><span class="ico">ⓘ</span>À propos</div>
+
+    <div class="navgroup">À VENIR</div>
+    <div class="navitem off"><span class="ico">↺</span>Historique<span class="soon">v1.2</span></div>
+    <div class="navitem off"><span class="ico">▤</span>Sauvegardes<span class="soon">v1.2</span></div>
+
+    <div class="navfoot">
+      <div class="local"><span class="dot"></span>100 % local, aucun envoi</div>
+      Pincab Toolbox v1.1.0<br>Pack de règles 2026.08
+    </div>
+  </aside>
+
+  <!-- ══════════ MAIN ══════════ -->
+  <div class="main">
+
+    <div class="topbar">
+      <div class="picker"><span style="color:var(--ink-3)">📁</span><b>Démo</b> — installation d'exemple</div>
+      <button class="iconbtn" title="Relancer">↻</button>
+      <button class="iconbtn" title="Réglages">⚙</button>
+      <button class="iconbtn" title="Aide">?</button>
+      <div class="lang"><b>FR</b> / EN</div>
+    </div>
+
+    <div class="wrap">
+
+      <!-- ── HERO ── -->
+      <section class="hero">
+        <div class="gauge">
+          <svg width="132" height="132" viewBox="0 0 132 132">
+            <circle cx="66" cy="66" r="56" fill="none" stroke="#1e2b3c" stroke-width="10"/>
+            <circle cx="66" cy="66" r="56" fill="none" stroke="url(#g)" stroke-width="10"
+                    stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="218"
+                    transform="rotate(-90 66 66)"/>
+            <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#ff5a5a"/><stop offset="100%" stop-color="#fab219"/>
+            </linearGradient></defs>
+          </svg>
+          <div class="val">
+            <div class="num">38</div>
+            <div class="den">sur 100</div>
+            <div class="grade">NOTE F</div>
+          </div>
+        </div>
+
+        <div class="headline">
+          <h1><em>3 problèmes bloquants</em> empêchent des tables de démarrer</h1>
+          <p>Ils se ramènent à <b style="color:var(--ink)">2 causes de fond</b>. Corrige les causes,
+             les 27 résultats du scan se règlent en cascade.</p>
+          <div class="tiles">
+            <div class="tile"><span class="bar" style="background:var(--crit)"></span>
+              <div><div class="n" style="color:var(--crit)">3</div>
+                   <div class="l">✕ Critiques</div></div></div>
+            <div class="tile"><span class="bar" style="background:var(--warn)"></span>
+              <div><div class="n" style="color:var(--warn)">3</div>
+                   <div class="l">▲ Avertissements</div></div></div>
+            <div class="tile"><span class="bar" style="background:var(--note)"></span>
+              <div><div class="n" style="color:var(--note)">5</div>
+                   <div class="l">✎ Remarques</div></div></div>
+            <div class="tile"><span class="bar" style="background:var(--info)"></span>
+              <div><div class="n" style="color:var(--info)">12</div>
+                   <div class="l">ⓘ Informations</div></div></div>
+            <div class="tile"><span class="bar" style="background:var(--ok)"></span>
+              <div><div class="n" style="color:var(--ok)">4</div>
+                   <div class="l">✓ Conformes</div></div></div>
+          </div>
+        </div>
+
+        <div class="cta">
+          <button class="btn">▶ SCANNER MON PINCAB</button>
+          <button class="btn ghost">⤓ Exporter le rapport ▾</button>
+          <button class="btn ghost">💬 Copier pour le forum</button>
+        </div>
+      </section>
+
+      <div class="meta">
+        <span>Mode <b>Démonstration</b></span>
+        <span>Lancé le <b>11/08/2026 19:42</b></span>
+        <span>Durée <b>00:02:18</b></span>
+        <span>Contrôles <b>27 / 27</b></span>
+        <span>Tables analysées <b>4</b></span>
+      </div>
+
+      <!-- ── TABS ── -->
+      <div class="tabs">
+        <div class="tab on">Causes racines<span class="c">2</span></div>
+        <div class="tab">Tous les résultats<span class="c">27</span></div>
+        <div class="tab">Composants<span class="c">6</span></div>
+        <div class="tab">Tables<span class="c">4</span></div>
+        <div class="tab">Système</div>
+      </div>
+
+      <div class="cols">
+        <!-- ══ CAUSES RACINES ══ -->
+        <div>
+
+          <!-- CAUSE 1 -->
+          <article class="card c-crit">
+            <div class="card-in">
+              <div class="card-head">
+                <span class="badge b-crit">✕ CRITIQUE</span>
+                <h3>Migration 32→64 incomplète</h3>
+                <span class="conf" title="Score interne : 90 / 96">Confiance&nbsp;<b>élevée</b></span>
+              </div>
+              <p class="player">Deux morceaux de ton installation ne sont pas de la même génération.</p>
+              <p class="impact">Toutes les tables à ROM échoueront au démarrage : le VPX 64-bit ne peut pas
+                 charger le serveur COM VPinMAME 32-bit. Les DMD externes ne s'afficheront pas non plus,
+                 le moteur de rendu 64-bit est absent.</p>
+
+              <div class="chain">
+                <div class="node good"><span class="nl">VPinballX64.exe</span><span class="ns">✓ 64-bit</span></div>
+                <span class="arrow cut">✕→</span>
+                <div class="node bad"><span class="nl">VPinMAME.dll</span><span class="ns">✕ 32-bit</span></div>
+                <span class="arrow">→</span>
+                <div class="node warn"><span class="nl">dmddevice64.dll</span><span class="ns">▲ absent</span></div>
+                <span class="arrow">→</span>
+                <div class="node bad"><span class="nl">Tables à ROM</span><span class="ns">✕ ne démarrent pas</span></div>
+              </div>
+            </div>
+            <div class="card-foot">
+              <span class="aff">🧩 <b>2</b> composants</span>
+              <span class="sep"></span>
+              <span class="aff">🎰 <b>2</b> tables sur 4</span>
+              <span class="sep"></span>
+              <span class="aff">🔎 BITNESS_MISMATCH_VPM · BITNESS_DMD64_MISSING</span>
+              <span class="manual">⚑ Réparation manuelle</span>
+              <button class="btn-sm primary">Voir les étapes →</button>
+            </div>
+          </article>
+
+          <!-- CAUSE 2 -->
+          <article class="card c-warn">
+            <div class="card-in">
+              <div class="card-head">
+                <span class="badge b-warn">▲ AVERTISSEMENT</span>
+                <h3>Intégration frontend incomplète</h3>
+                <span class="conf" title="Score interne : 86 / 96">Confiance&nbsp;<b>élevée</b></span>
+              </div>
+              <p class="player">Ces tables sont installées mais n'apparaîtront pas dans ton menu.</p>
+              <p class="impact">Les tables sont sur le disque mais aucune ligne correspondante n'existe dans
+                 la base PinUP Popper, et il leur manque leur backglass .directb2s.</p>
+
+              <div class="chain">
+                <div class="node good"><span class="nl">Fichier .vpx</span><span class="ns">✓ présent</span></div>
+                <span class="arrow cut">✕→</span>
+                <div class="node bad"><span class="nl">Base Popper</span><span class="ns">✕ non enregistrée</span></div>
+                <span class="arrow">→</span>
+                <div class="node warn"><span class="nl">Backglass</span><span class="ns">▲ absent</span></div>
+                <span class="arrow">→</span>
+                <div class="node bad"><span class="nl">Menu frontend</span><span class="ns">✕ invisible</span></div>
+              </div>
+            </div>
+            <div class="card-foot">
+              <span class="aff">🎰 <b>3</b> tables sur 4</span>
+              <span class="sep"></span>
+              <span class="aff">🔎 POPPER_NOT_REGISTERED · B2S_MISSING</span>
+              <span class="manual">⚑ Réparation manuelle</span>
+              <button class="btn-sm primary">Voir les étapes →</button>
+            </div>
+          </article>
+
+          <!-- ÉTAT RÉPARABLE — honnête -->
+          <article class="card">
+            <div class="card-in" style="display:flex;gap:13px;align-items:flex-start">
+              <span style="font-size:17px;color:var(--ink-3);line-height:1.3">⚒</span>
+              <div>
+                <h3 style="font-size:14.5px;margin-bottom:5px">Aucune réparation automatique disponible sur ce scan</h3>
+                <p class="impact">Repair sait corriger 4 types de problèmes aujourd'hui (fichier bloqué par
+                  Windows, ROM décompressée, média orphelin, processus d'affichage bloqué). Aucun n'est présent
+                  ici : ces deux causes demandent d'installer ou d'enregistrer un composant, ce qu'un outil ne
+                  doit pas faire à ta place sans que tu voies exactement quoi.</p>
+              </div>
+              <button class="btn-sm" style="margin-left:auto;flex:none">Ouvrir Repair</button>
+            </div>
+          </article>
+
+          <!-- TABLEAU DES TABLES — données réelles du scan de démo -->
+          <article class="card">
+            <div class="box-h" style="padding:13px 18px 13px 20px">🎰 TABLES ANALYSÉES<span class="n">4</span></div>
+            <table class="tbl">
+              <thead><tr><th>Table</th><th>ROM</th><th>Backglass</th><th>Frontend</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td class="nm">Attack From Mars (Bally 1995)</td>
+                  <td><span class="mini ok">✓ afm_113b</span></td>
+                  <td><span class="mini ok">✓ présent</span></td>
+                  <td><span class="mini ok">✓ enregistrée</span></td>
+                </tr>
+                <tr>
+                  <td class="nm">Medieval Madness (Williams 1997)</td>
+                  <td><span class="mini crit">✕ mm_109c.zip absente</span></td>
+                  <td><span class="mini note">✎ absent</span></td>
+                  <td><span class="mini warn">▲ non enregistrée</span></td>
+                </tr>
+                <tr>
+                  <td class="nm">Aliased Table (Test 2020)</td>
+                  <td><span class="mini ok">✓ afm_mod → afm_113</span></td>
+                  <td><span class="mini note">✎ absent</span></td>
+                  <td><span class="mini warn">▲ non enregistrée</span></td>
+                </tr>
+                <tr>
+                  <td class="nm">Original Gem (Homebrew 2024)</td>
+                  <td><span class="mini ok">✓ aucune requise</span></td>
+                  <td><span class="mini note">✎ absent</span></td>
+                  <td><span class="mini warn">▲ non enregistrée</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+        </div>
+
+        <!-- ══ COLONNE DROITE ══ -->
+        <aside class="side">
+
+          <div class="box">
+            <div class="box-h">✕ RÉSULTATS CRITIQUES<span class="n">3</span></div>
+            <div class="row">
+              <span class="pill" style="background:var(--crit)"></span>
+              <div><div class="t">Un Visual Pinball 64-bit est installé mais seul un VPinMAME.dll 32-bit
+                   a été trouvé.</div>
+                   <div class="s">VPinMAME · Compatibilité</div></div>
+              <span class="chev">›</span>
+            </div>
+            <div class="row">
+              <span class="pill" style="background:var(--crit)"></span>
+              <div><div class="t">« Medieval Madness (Williams 1997) » ne démarrera pas : la ROM
+                   « mm_109c.zip » est absente du dossier roms.</div>
+                   <div class="s">ROMs · Medieval Madness (Williams 1997)</div></div>
+              <span class="chev">›</span>
+            </div>
+            <div class="row">
+              <span class="pill" style="background:var(--crit)"></span>
+              <div><div class="t">VPinMAME.dll est présent mais VPinMAME.Controller n'est enregistré dans
+                   aucune des deux vues du registre COM.</div>
+                   <div class="s">Enregistrement COM · VPinMAME</div></div>
+              <span class="chev">›</span>
+            </div>
+          </div>
+
+          <div class="box">
+            <div class="box-h">SANTÉ DES COMPOSANTS<span class="n">6</span></div>
+            <div class="comp"><span class="cn">Visual Pinball X</span><span class="cv">64-bit</span>
+              <span class="st ok">✓ OK</span></div>
+            <div class="comp"><span class="cn">VPinMAME</span><span class="cv">32-bit</span>
+              <span class="st crit">✕ Critique</span></div>
+            <div class="comp"><span class="cn">B2S Backglass Server</span><span class="cv">absent</span>
+              <span class="st warn">▲ Manquant</span></div>
+            <div class="comp"><span class="cn">dmddevice</span><span class="cv">32-bit</span>
+              <span class="st warn">▲ 64-bit absent</span></div>
+            <div class="comp"><span class="cn">FlexDMD</span><span class="cv">—</span>
+              <span class="st unk">◦ Non requis</span></div>
+            <div class="comp"><span class="cn">PinUP Popper</span><span class="cv">base lue</span>
+              <span class="st ok">✓ OK</span></div>
+            <div class="boxnote">Un composant qu'aucune table n'utilise n'est jamais compté comme un
+              problème. Rien n'est déduit d'une lecture qui a échoué : dans ce cas Pincab Toolbox se tait.</div>
+          </div>
+
+          <div class="box">
+            <div class="box-h">✎ REMARQUES<span class="n">5</span></div>
+            <div class="row">
+              <span class="pill" style="background:var(--note)"></span>
+              <div><div class="t">3 tables n'ont pas de fichier backglass .directb2s à côté d'elles.</div>
+                   <div class="s">Backglass · sans conséquence si tu n'as pas d'écran backglass</div></div>
+              <span class="chev">›</span>
+            </div>
+            <div class="row">
+              <span class="pill" style="background:var(--note)"></span>
+              <div><div class="t">Une configuration VPinMAME existe à la fois dans le registre et dans
+                   un VPinMAME.ini.</div>
+                   <div class="s">Configuration · les deux coexistent, laquelle prime n'est pas vérifié</div></div>
+              <span class="chev">›</span>
+            </div>
+          </div>
+
+        </aside>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <span class="i">🪟 Windows 11 Pro 64-bit (22631)</span>
+      <span class="i">⚙ Intel Core i7-8700K</span>
+      <span class="i">▤ 32 Go RAM</span>
+      <span class="i">🖵 NVIDIA GeForce RTX 3080</span>
+      <span class="i">🖥 3 écrans (5760 × 1080)</span>
+      <span class="r">Scan terminé · 27 contrôles</span>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
