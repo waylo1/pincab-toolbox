@@ -336,112 +336,160 @@ body{
              Silhouettes génériques : aucune machine réelle, aucun artwork sous copyright. -->
         <svg class="scene" viewBox="0 0 1650 250" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="room" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#20344f"/><stop offset="58%" stop-color="#132038"/>
-      <stop offset="100%" stop-color="#0c1320"/>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#0a1420"/>
+      <stop offset="35%" stop-color="#152a45"/>
+      <stop offset="72%" stop-color="#12203a"/>
+      <stop offset="100%" stop-color="#0a1320"/>
     </linearGradient>
-    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#1b2c42"/><stop offset="100%" stop-color="#0b111a"/>
+    <linearGradient id="floorG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1d3350"/>
+      <stop offset="100%" stop-color="#070c14"/>
     </linearGradient>
-    <radialGradient id="neonO" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#ff8a1f" stop-opacity=".5"/><stop offset="100%" stop-color="#ff8a1f" stop-opacity="0"/>
+    <linearGradient id="reflFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff" stop-opacity=".38"/>
+      <stop offset="55%" stop-color="#fff" stop-opacity=".08"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="reflMask"><rect x="0" y="196" width="1650" height="70" fill="url(#reflFade)"/></mask>
+
+    <radialGradient id="gO" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff8a1f" stop-opacity=".62"/><stop offset="100%" stop-color="#ff8a1f" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="neonC" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#22d3ee" stop-opacity=".42"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    <radialGradient id="gC" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity=".55"/><stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="neonP" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#c084fc" stop-opacity=".4"/><stop offset="100%" stop-color="#c084fc" stop-opacity="0"/>
+    <radialGradient id="gP" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c084fc" stop-opacity=".5"/><stop offset="100%" stop-color="#c084fc" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="neonG" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#22c55e" stop-opacity=".36"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+    <radialGradient id="gG" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22c55e" stop-opacity=".45"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vign" cx="50%" cy="45%" r="72%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000" stop-opacity=".55"/>
     </radialGradient>
 
     <linearGradient id="bgA" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ff9d2f"/><stop offset="52%" stop-color="#e0424b"/><stop offset="100%" stop-color="#7b2bd6"/>
+      <stop offset="0%" stop-color="#ffb347"/><stop offset="48%" stop-color="#f2453d"/><stop offset="100%" stop-color="#8b2fd6"/>
     </linearGradient>
     <linearGradient id="bgB" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#2158d0"/>
+      <stop offset="0%" stop-color="#5ee7f7"/><stop offset="100%" stop-color="#2158d0"/>
     </linearGradient>
     <linearGradient id="bgC" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#3ee07f"/><stop offset="100%" stop-color="#0b7a52"/>
+      <stop offset="0%" stop-color="#5cf08f"/><stop offset="100%" stop-color="#0a7a56"/>
     </linearGradient>
     <linearGradient id="bgD" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#5b2ea8"/>
+      <stop offset="0%" stop-color="#e0a5ff"/><stop offset="100%" stop-color="#5b2ea8"/>
     </linearGradient>
-    <!-- verre du plateau : reflet en diagonale -->
     <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity=".16"/>
-      <stop offset="45%" stop-color="#ffffff" stop-opacity=".04"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity=".10"/>
+      <stop offset="0%" stop-color="#cfe6ff" stop-opacity=".22"/>
+      <stop offset="42%" stop-color="#cfe6ff" stop-opacity=".05"/>
+      <stop offset="100%" stop-color="#cfe6ff" stop-opacity=".13"/>
+    </linearGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0d1826" stop-opacity=".0"/>
+      <stop offset="100%" stop-color="#000" stop-opacity=".45"/>
     </linearGradient>
 
-    <!-- UN FLIPPER : fronton vertical, panneau haut-parleurs, plateau vitré en fuite,
-         fronton de caisse avec monnayeur, et surtout QUATRE PIEDS — c'est le pied qui
-         fait lire "flipper" plutôt qu'"écran sur socle". -->
+    <filter id="soft"><feGaussianBlur stdDeviation="1.6"/></filter>
+    <filter id="softer"><feGaussianBlur stdDeviation="3.4"/></filter>
+    <filter id="bloom" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- UN FLIPPER : fronton, panneau haut-parleurs + DMD, plateau vitré en fuite,
+         barre de verrouillage, monnayeur, et quatre pieds boulonnés. -->
     <symbol id="cab" viewBox="0 0 150 250">
-      <!-- pieds arrière (derrière la caisse) -->
-      <rect x="30" y="168" width="11" height="70" rx="2" fill="#0a1017"/>
-      <rect x="109" y="168" width="11" height="70" rx="2" fill="#0a1017"/>
-      <!-- fronton -->
-      <rect x="18" y="0" width="114" height="88" rx="6" fill="#131f30" stroke="#31486a" stroke-width="1.5"/>
-      <rect x="25" y="6" width="100" height="66" rx="3" fill="var(--bg,#22344e)"/>
-      <g fill="#0a111a" opacity=".28">
+      <rect x="30" y="168" width="11" height="72" rx="2" fill="#070c14"/>
+      <rect x="109" y="168" width="11" height="72" rx="2" fill="#070c14"/>
+
+      <rect x="18" y="0" width="114" height="88" rx="6" fill="#16243a" stroke="#3d5a86" stroke-width="0"/>
+      <rect x="18" y="0" width="114" height="88" rx="6" fill="#16243a" stroke="#3d5a86" stroke-width="1.6"/>
+      <rect x="25" y="6" width="100" height="66" rx="3" fill="var(--bg,#243a58)"/>
+      <g fill="#080f1a" opacity=".3">
         <circle cx="52" cy="30" r="13"/><rect x="74" y="18" width="28" height="24" rx="5"/>
         <rect x="36" y="52" width="52" height="7" rx="3.5"/>
       </g>
-      <!-- panneau haut-parleurs + afficheur -->
-      <rect x="24" y="90" width="102" height="16" rx="3" fill="#0f1a28" stroke="#31486a"/>
+      <rect x="25" y="6" width="100" height="66" rx="3" fill="url(#glass)"/>
+
+      <rect x="24" y="90" width="102" height="16" rx="3" fill="#101c2c" stroke="#3d5a86"/>
       <circle cx="35" cy="98" r="4.5" fill="#0a1119"/><circle cx="115" cy="98" r="4.5" fill="#0a1119"/>
       <rect x="47" y="94" width="56" height="8" rx="2" fill="var(--dmd,#0a1119)"/>
-      <!-- plateau vitré, en fuite vers le joueur -->
-      <path d="M22 108 L128 108 L144 182 L6 182 Z" fill="#101b2a" stroke="#31486a" stroke-width="1.5"/>
+
+      <path d="M22 108 L128 108 L144 182 L6 182 Z" fill="#121f31" stroke="#3d5a86" stroke-width="1.6"/>
       <path d="M22 108 L128 108 L144 182 L6 182 Z" fill="url(#glass)"/>
-      <path d="M40 116 L110 116 L120 150 L30 150 Z" fill="#0a121d" opacity=".55"/>
-      <g fill="#0a121d" opacity=".5">
+      <path d="M40 116 L110 116 L120 150 L30 150 Z" fill="#0a121d" opacity=".5"/>
+      <g fill="#0a121d" opacity=".55">
         <circle cx="60" cy="128" r="6"/><circle cx="92" cy="128" r="6"/><circle cx="76" cy="142" r="6"/>
       </g>
-      <g fill="var(--rail,#2a3d5a)" opacity=".55">
+      <g fill="var(--rail,#2a3d5a)" opacity=".6">
         <path d="M52 166 L64 172 L60 176 L48 170 Z"/><path d="M100 166 L88 172 L92 176 L104 170 Z"/>
       </g>
-      <!-- fronton de caisse + monnayeur -->
-      <path d="M6 182 L144 182 L144 200 L6 200 Z" fill="#0d1725" stroke="#31486a" stroke-width="1.5"/>
+      <path d="M22 108 L128 108 L144 182 L6 182 Z" fill="url(#side)" opacity=".5"/>
+
+      <path d="M6 182 L144 182 L144 200 L6 200 Z" fill="#0f1c2d" stroke="#3d5a86" stroke-width="1.6"/>
       <rect x="10" y="184" width="130" height="4" rx="2" fill="var(--rail,#2a3d5a)"/>
-      <rect x="58" y="188" width="34" height="11" rx="2" fill="#16233a" stroke="#31486a"/>
-      <!-- pieds avant + boulons -->
-      <path d="M8 200 L22 200 L26 250 L10 250 Z" fill="#16233a" stroke="#31486a" stroke-width="1.2"/>
-      <path d="M128 200 L142 200 L140 250 L124 250 Z" fill="#16233a" stroke="#31486a" stroke-width="1.2"/>
-      <circle cx="15" cy="206" r="1.8" fill="#4a668f"/><circle cx="135" cy="206" r="1.8" fill="#4a668f"/>
+      <rect x="58" y="188" width="34" height="11" rx="2" fill="#18273e" stroke="#3d5a86"/>
+
+      <path d="M8 200 L22 200 L26 250 L10 250 Z" fill="#18273e" stroke="#3d5a86" stroke-width="1.2"/>
+      <path d="M128 200 L142 200 L140 250 L124 250 Z" fill="#18273e" stroke="#3d5a86" stroke-width="1.2"/>
+      <circle cx="15" cy="206" r="1.8" fill="#5b7ba8"/><circle cx="135" cy="206" r="1.8" fill="#5b7ba8"/>
     </symbol>
+
+    <g id="row">
+      <g style="--bg:url(#bgA);--dmd:#d0641a;--rail:#b85a12"><use href="#cab" x="118" y="26" width="152" height="253"/></g>
+      <g style="--bg:url(#bgB);--dmd:#1a9cb4;--rail:#13839a"><use href="#cab" x="612" y="18" width="166" height="277"/></g>
+      <g style="--bg:url(#bgC);--dmd:#1f9d66;--rail:#188455"><use href="#cab" x="1064" y="28" width="150" height="250"/></g>
+      <g style="--bg:url(#bgD);--dmd:#8a54d1;--rail:#7446b4"><use href="#cab" x="1424" y="30" width="148" height="246"/></g>
+    </g>
   </defs>
 
-  <rect width="1650" height="250" fill="url(#room)"/>
-  <ellipse cx="230" cy="110" rx="250" ry="150" fill="url(#neonO)"/>
-  <ellipse cx="700" cy="95"  rx="240" ry="145" fill="url(#neonC)"/>
-  <ellipse cx="1120" cy="115" rx="240" ry="150" fill="url(#neonP)"/>
-  <ellipse cx="1500" cy="120" rx="230" ry="145" fill="url(#neonG)"/>
+  <!-- salle -->
+  <rect width="1650" height="250" fill="url(#wall)"/>
+  <g filter="url(#bloom)">
+    <ellipse cx="215" cy="112" rx="235" ry="140" fill="url(#gO)"/>
+    <ellipse cx="690" cy="96"  rx="230" ry="135" fill="url(#gC)"/>
+    <ellipse cx="1130" cy="112" rx="225" ry="138" fill="url(#gP)"/>
+    <ellipse cx="1495" cy="118" rx="215" ry="132" fill="url(#gG)"/>
+  </g>
 
-  <!-- sol -->
-  <rect y="198" width="1650" height="52" fill="url(#floor)"/>
-  <g stroke="#3a5f8c" stroke-opacity=".5" stroke-width="1">
+  <!-- rangée lointaine, très floue -->
+  <g opacity=".3" filter="url(#softer)">
+    <use href="#cab" x="392" y="74" width="96" height="160"/>
+    <use href="#cab" x="900"  y="76" width="92" height="153"/>
+    <use href="#cab" x="1276" y="74" width="96" height="160"/>
+  </g>
+  <!-- rangée intermédiaire, légèrement floue -->
+  <g opacity=".5" filter="url(#soft)">
+    <g style="--bg:#2a4468;--rail:#2a3d5a"><use href="#cab" x="300" y="56" width="118" height="197"/></g>
+    <g style="--bg:#2a4468;--rail:#2a3d5a"><use href="#cab" x="1200" y="58" width="116" height="193"/></g>
+  </g>
+
+  <!-- sol + reflets -->
+  <rect y="198" width="1650" height="52" fill="url(#floorG)"/>
+  <g mask="url(#reflMask)" opacity=".55" filter="url(#soft)">
+    <use href="#row" transform="translate(0,396) scale(1,-1)"/>
+  </g>
+  <g stroke="#4a76ab" stroke-opacity=".35" stroke-width="1">
     <line x1="0" y1="198" x2="1650" y2="198"/>
     <line x1="820" y1="198" x2="-200" y2="250"/><line x1="820" y1="198" x2="240" y2="250"/>
-    <line x1="820" y1="198" x2="580" y2="250"/><line x1="820" y1="198" x2="820" y2="250"/>
-    <line x1="820" y1="198" x2="1060" y2="250"/><line x1="820" y1="198" x2="1400" y2="250"/>
-    <line x1="820" y1="198" x2="1840" y2="250"/>
+    <line x1="820" y1="198" x2="580" y2="250"/><line x1="820" y1="198" x2="1060" y2="250"/>
+    <line x1="820" y1="198" x2="1400" y2="250"/><line x1="820" y1="198" x2="1840" y2="250"/>
+  </g>
+  <!-- flaques de lumière au sol -->
+  <g opacity=".5">
+    <ellipse cx="215" cy="212" rx="130" ry="16" fill="url(#gO)"/>
+    <ellipse cx="690" cy="214" rx="140" ry="17" fill="url(#gC)"/>
+    <ellipse cx="1130" cy="212" rx="128" ry="16" fill="url(#gP)"/>
+    <ellipse cx="1495" cy="212" rx="120" ry="15" fill="url(#gG)"/>
   </g>
 
-  <!-- rangée du fond, valeur écrasée pour la profondeur -->
-  <g opacity=".38">
-    <use href="#cab" x="330" y="60" width="112" height="187"/>
-    <use href="#cab" x="880" y="62" width="108" height="180"/>
-    <use href="#cab" x="1290" y="60" width="112" height="187"/>
-  </g>
+  <!-- rangée principale, nette -->
+  <use href="#row"/>
 
-  <!-- rangée principale -->
-  <g style="--bg:url(#bgA);--dmd:#c25a12;--rail:#a8500f"><use href="#cab" x="120" y="30" width="150" height="250"/></g>
-  <g style="--bg:url(#bgB);--dmd:#158ba1;--rail:#12768a"><use href="#cab" x="620" y="22" width="162" height="270"/></g>
-  <g style="--bg:url(#bgC);--dmd:#1d8f5c;--rail:#177a4e"><use href="#cab" x="1070" y="32" width="146" height="243"/></g>
-  <g style="--bg:url(#bgD);--dmd:#7c4bbf;--rail:#6a3fa5"><use href="#cab" x="1430" y="34" width="144" height="240"/></g>
+  <rect width="1650" height="250" fill="url(#vign)"/>
 </svg>
         <div class="scene-veil"></div>
         <div class="scanlines"></div>

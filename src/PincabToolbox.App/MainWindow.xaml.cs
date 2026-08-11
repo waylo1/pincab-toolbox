@@ -37,6 +37,21 @@ public sealed class FindingRow
     public required Severity Severity { get; init; }
 }
 
+/// <summary>
+/// Une case de la chaîne causale affichée sous le diagnostic principal (maquette 11/08).
+/// Chaque case est un résultat RÉELLEMENT mesuré qui a déclenché la corrélation — jamais une
+/// étape décorative ajoutée pour faire joli, sinon la chaîne raconterait une histoire que le
+/// scan n'a pas vérifiée.
+/// </summary>
+public sealed class ChainNode
+{
+    /// <summary>Vide pour la première case, la flèche pour les suivantes — évite un convertisseur d'index.</summary>
+    public required string Arrow { get; init; }
+    public required string Label { get; init; }
+    public required string Status { get; init; }
+    public required Brush Accent { get; init; }
+}
+
 public sealed class DiffRow
 {
     public string OldNum { get; init; } = "";
@@ -659,10 +674,34 @@ public partial class MainWindow : Window
                 .Select(f => f.Subject).Distinct().ToList();
             PriorityTriggers.Text = triggers.Count > 0 ? $"{Loc.Get("priority.basedon")} {string.Join(", ", triggers)}" : "";
             PriorityTriggers.Visibility = triggers.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+            // Chaîne causale : une case par résultat déclencheur, dans l'ordre de gravité déjà
+            // établi par Ordered(). Le libellé de gravité est celui de la liste (Loc.SeverityLabel),
+            // donc la case dit la même chose que la ligne du tableau, jamais une reformulation.
+            var chain = _report.Ordered()
+                .Where(f => scenario.TriggeredBy.Contains(f.Code) && !string.IsNullOrEmpty(f.Subject))
+                .GroupBy(f => f.Subject).Select(g => g.First())
+                .Select((f, i) => new ChainNode
+                {
+                    Arrow = i == 0 ? "" : "→",
+                    Label = f.Subject,
+                    Status = Loc.SeverityLabel(f.Severity),
+                    Accent = f.Severity switch
+                    {
+                        Severity.Critical => BrushCritical,
+                        Severity.Warning => BrushWarning,
+                        _ => BrushOk,
+                    },
+                })
+                .ToList();
+            ChainNodes.ItemsSource = chain;
+            ChainNodes.Visibility = chain.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+
             PriorityBanner.Visibility = Visibility.Visible;
         }
         else
         {
+            ChainNodes.Visibility = Visibility.Collapsed;
             PriorityTriggers.Visibility = Visibility.Collapsed;
             var top = _report.Ordered().FirstOrDefault(f => f.Severity == Severity.Critical)
                       ?? _report.Ordered().FirstOrDefault(f => f.Severity == Severity.Warning);
