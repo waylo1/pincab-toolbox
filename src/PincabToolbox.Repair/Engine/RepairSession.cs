@@ -142,12 +142,24 @@ public sealed class RepairSession
         {
             // Deliberately never touches _engine at all — not "call Apply but no-op inside it",
             // an actual skipped call. That is the whole guarantee: no registered action, no
-            // backup service, no journal write for the change itself can run, no matter what a
-            // future bug in any of them might do. Selection is still honored so the reported
-            // counts match what a real Apply would have attempted.
+            // backup service, no per-change journal write can run, no matter what a future bug in
+            // any of them might do. Selection is still honored so the reported counts match what a
+            // real Apply would have attempted.
             var outcomes = plan.Items
                 .Where(i => selectedItemIds.Contains(i.ItemId))
                 .ToDictionary(i => i.ItemId, _ => true);
+
+            // The ONE journal write this path makes, and it exists specifically so this event is
+            // never mistaken for a real one when read back later, by Undo or by a forum bug
+            // report — see JournalEvent.ForcedDryRunApplied.
+            _journal.Write(new JournalEntry
+            {
+                AtUtc = DateTimeOffset.UtcNow,
+                Event = JournalEvent.ForcedDryRunApplied,
+                PlanId = plan.PlanId,
+                Detail = $"{outcomes.Count} item(s) would have been applied — forced dry-run, nothing written",
+            });
+
             return new ApplyResult
             {
                 PlanId = plan.PlanId,

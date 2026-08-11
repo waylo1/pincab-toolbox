@@ -151,6 +151,13 @@ public static class RepairSessionTests
             A.True(result.ItemOutcomes.TryGetValue("i1", out var ok) && ok, "selected item reports as ok");
             A.False(result.RecoveryRequired, "a forced dry-run never needs recovery");
             A.Equal("untouched", File.ReadAllText(target), "forced dry-run must never touch the real file");
+
+            // The journal is the same file Undo and a forum bug-report export both read later —
+            // it must be impossible to mistake this Apply for a real one from that record alone.
+            var journal = new FileRepairJournal(Path.Combine(root, "repair-journal"));
+            var entries = journal.Read(plan.PlanId);
+            A.True(entries.Any(e => e.Event == JournalEvent.ForcedDryRunApplied),
+                "a forced dry-run Apply must leave an unambiguous journal trace");
         }
         finally { TryDelete(root); }
     }

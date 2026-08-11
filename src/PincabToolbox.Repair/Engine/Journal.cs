@@ -48,6 +48,16 @@ public enum JournalEvent
     RecoveryRequired,
 
     PlanCompleted,
+
+    /// <summary>
+    /// 11/08/2026, ADR-012 "Suite" — <see cref="RepairSession"/>'s forced-dry-run kill switch
+    /// (<c>PINCAB_REPAIR_FORCE_DRYRUN</c>) was active for this Apply call: nothing was actually
+    /// written, <see cref="ApplyResult.ItemOutcomes"/> reports what WOULD have happened. Exists so
+    /// the journal — the same file a future Undo screen or a forum bug report reads — can never be
+    /// mistaken for a record of real writes. <see cref="JournalEntry.Detail"/> carries the count of
+    /// items that would have been applied.
+    /// </summary>
+    ForcedDryRunApplied,
 }
 
 public sealed record JournalEntry
