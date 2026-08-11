@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Pincab Toolbox"
         Icon="Assets/logo.png"
-        Width="1180" Height="780" MinWidth="900" MinHeight="480"
+        Width="1180" Height="820" MinWidth="900" MinHeight="660"
         Background="{StaticResource Bg}"
         WindowStartupLocation="CenterScreen">
 
@@ -87,16 +87,16 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="18,12">
+        <Border Grid.Row="0" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="18,7">
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                     <!-- Logo MC Automation, fond détouré pour se poser sur le bleu nuit du bandeau.
                          L'emblème seul : le nom du produit reste du texte juste à côté, donc net à
                          toutes les résolutions et sélectionnable, plutôt que pixellisé dans l'image. -->
-                    <Image Source="Assets/logo.png" Height="40" Margin="0,0,12,0"
+                    <Image Source="Assets/logo.png" Height="30" Margin="0,0,10,0"
                            VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
-                    <TextBlock Text="PINCAB" FontSize="22" FontWeight="Black" Foreground="{StaticResource Accent}" VerticalAlignment="Center"/>
-                    <TextBlock Text=" TOOLBOX" FontSize="22" FontWeight="Black" VerticalAlignment="Center"/>
+                    <TextBlock Text="PINCAB" FontSize="19" FontWeight="Black" Foreground="{StaticResource Accent}" VerticalAlignment="Center"/>
+                    <TextBlock Text=" TOOLBOX" FontSize="19" FontWeight="Black" VerticalAlignment="Center"/>
                     <TextBlock x:Name="HeaderTagline" Text="" FontSize="13" Foreground="{StaticResource TextDim}"
                                VerticalAlignment="Center" Margin="14,4,0,0"/>
                 </StackPanel>
@@ -115,7 +115,11 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <!-- Plancher garanti pour la liste : c'est le contenu principal de l'écran,
+                             il ne doit jamais être écrasé par ce qu'on ajoute au-dessus (bandeau,
+                             diagnostic, chaîne causale). Sans ce MinHeight, chaque bloc décoratif
+                             ajouté lui volait des pixels — c'est exactement ce qui s'est produit. -->
+                        <RowDefinition Height="*" MinHeight="240"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
@@ -145,7 +149,7 @@
                             BorderBrush="{StaticResource Border}" BorderThickness="1">
                         <Border.Background>
                             <!-- décor : illustration originale, jamais un artwork de table réelle -->
-                            <ImageBrush ImageSource="Assets/arcade-band.png" Stretch="UniformToFill" AlignmentY="Top"/>
+                            <ImageBrush ImageSource="Assets/background.png" Stretch="UniformToFill" AlignmentY="Center"/>
                         </Border.Background>
                         <Border CornerRadius="13">
                             <Border.Background>
@@ -158,7 +162,7 @@
                                 </LinearGradientBrush>
                             </Border.Background>
 
-                            <Grid Margin="18,11">
+                            <Grid Margin="16,9">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
@@ -166,14 +170,14 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!-- ─── jauge ─── -->
-                                <Grid x:Name="ScoreChip" Grid.Column="0" Width="102" Height="102"
+                                <Grid x:Name="ScoreChip" Grid.Column="0" Width="92" Height="92"
                                       Visibility="Collapsed" Margin="0,0,18,0" VerticalAlignment="Center">
-                                    <Ellipse Width="90" Height="90" Stroke="#1E2B3C" StrokeThickness="8"/>
+                                    <Ellipse Width="80" Height="80" Stroke="#1E2B3C" StrokeThickness="7"/>
                                     <!-- L'arc de progression est un cercle dont le tiret est calculé en
                                          code-behind (RefreshList) : circonférence / épaisseur = 35.34
                                          unités pour 100 %. Pas de géométrie d'arc à recalculer à la main.
                                          Si le diamètre ou l'épaisseur changent ici, ce nombre change aussi. -->
-                                    <Ellipse x:Name="ScoreArc" Width="90" Height="90" StrokeThickness="8"
+                                    <Ellipse x:Name="ScoreArc" Width="80" Height="80" StrokeThickness="7"
                                              Stroke="{StaticResource Critical}" StrokeDashCap="Round"
                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                              RenderTransformOrigin="0.5,0.5">
@@ -182,7 +186,7 @@
                                         </Ellipse.RenderTransform>
                                     </Ellipse>
                                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <TextBlock x:Name="ScoreValue" FontWeight="Black" FontSize="27"
+                                        <TextBlock x:Name="ScoreValue" FontWeight="Black" FontSize="24"
                                                    HorizontalAlignment="Center"/>
                                         <TextBlock x:Name="ScoreGrade" FontWeight="Bold" FontSize="10"
                                                    HorizontalAlignment="Center" Margin="0,-1,0,0"/>
@@ -231,34 +235,39 @@
                                 </StackPanel>
 
                                 <!-- ─── actions ─── -->
-                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Width="206" Margin="16,0,0,0">
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Width="240" Margin="14,0,0,0">
                                     <Button x:Name="BtnScan" Style="{StaticResource AccentButton}" Click="BtnScan_Click"
-                                            Padding="14,10" FontSize="14" FontWeight="Bold"/>
-                                    <Button x:Name="BtnExport" Margin="0,7,0,0" Click="BtnExport_Click" IsEnabled="False" Padding="10,7"/>
-                                    <Button x:Name="BtnCopyForum" Margin="0,7,0,0" Click="BtnCopyForum_Click" IsEnabled="False" Padding="10,7"/>
+                                            Padding="14,9" FontSize="13.5" FontWeight="Bold"/>
+                                    <Grid Margin="0,7,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/><ColumnDefinition Width="7"/><ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="BtnExport" Grid.Column="0" Click="BtnExport_Click" IsEnabled="False" Padding="4,7"/>
+                                        <Button x:Name="BtnCopyForum" Grid.Column="2" Click="BtnCopyForum_Click" IsEnabled="False" Padding="4,7"/>
+                                    </Grid>
                                 </StackPanel>
                             </Grid>
                         </Border>
                     </Border>
 
                     <StackPanel Grid.Row="2">
-                        <Border x:Name="PriorityBanner" Visibility="Collapsed" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Margin="0,0,0,10">
+                        <Border x:Name="PriorityBanner" Visibility="Collapsed" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Margin="0,0,0,8">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="4"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Border x:Name="PriorityAccent" Grid.Column="0" Background="{StaticResource Critical}" CornerRadius="10,0,0,10"/>
-                                <StackPanel Grid.Column="1" Margin="16,11">
+                                <StackPanel Grid.Column="1" Margin="14,9">
                                     <TextBlock x:Name="PriorityLabel" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
-                                    <TextBlock x:Name="PriorityText" FontSize="14.5" FontWeight="Bold" Foreground="{StaticResource Text}" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                    <TextBlock x:Name="PriorityText" FontSize="13.5" FontWeight="Bold" Foreground="{StaticResource Text}" TextWrapping="Wrap" Margin="0,3,0,0"/>
 
                                     <!-- Chaîne causale (maquette 11/08) : une case par résultat qui a
                                          réellement déclenché la corrélation, dans l'ordre. C'est la
                                          meilleure idée des maquettes — un pincabiste ne lit pas
                                          « BITNESS_MISMATCH_VPM », il lit trois cases dont une est rouge.
                                          Alimentée en code-behind, jamais écrite en dur. -->
-                                    <ItemsControl x:Name="ChainNodes" Visibility="Collapsed" Margin="0,10,0,2">
+                                    <ItemsControl x:Name="ChainNodes" Visibility="Collapsed" Margin="0,8,0,0">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
@@ -268,7 +277,7 @@
                                                     <TextBlock Text="{Binding Arrow}" Foreground="{StaticResource TextDim}"
                                                                FontSize="15" VerticalAlignment="Center" Margin="7,0,7,0"/>
                                                     <Border Background="{StaticResource PanelAlt}" BorderBrush="{Binding Accent}"
-                                                            BorderThickness="1" CornerRadius="9" Padding="11,7">
+                                                            BorderThickness="1" CornerRadius="8" Padding="9,5">
                                                         <StackPanel>
                                                             <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="12.5"
                                                                        Foreground="{StaticResource Text}"/>
@@ -292,7 +301,7 @@
 
                         <!-- La recherche filtre la LISTE : sa place est juste au-dessus d'elle, pas dans
                              le bandeau, où elle volait de la hauteur au tableau des résultats. -->
-                        <Grid Width="260" Height="30" HorizontalAlignment="Right" Margin="0,0,0,6">
+                        <Grid Width="240" Height="27" HorizontalAlignment="Right" Margin="0,0,0,5">
                             <TextBox x:Name="TxtSearch" VerticalContentAlignment="Center" Padding="6,0,0,0"
                                      Background="{StaticResource Panel}" Foreground="{StaticResource Text}"
                                      BorderBrush="{StaticResource Border}" TextChanged="TxtSearch_TextChanged"/>

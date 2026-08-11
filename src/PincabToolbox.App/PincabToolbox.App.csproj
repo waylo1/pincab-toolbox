@@ -30,7 +30,7 @@
          embarquée DANS l'assembly, donc elle survit au publish single-file et ne peut pas être
          oubliée sur une clé USB à côté de l'exe. Illustration originale, aucun artwork de table
          réelle (droits Bally/Williams) — voir docs/maquette-scanner-2026-08-11.html. -->
-    <Resource Include="Assets\arcade-band.png" />
+    <Resource Include="Assets\background.png" />
     <!-- Logo MC Automation fourni par Maxime, fond noir détouré pour se poser sur le bleu nuit.
          logo.png = emblème seul (en-tête + icône de fenêtre) ; logo-full.png = emblème + nom,
          gardé pour l'écran À propos et les visuels marketing. -->

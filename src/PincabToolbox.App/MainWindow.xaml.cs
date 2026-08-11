@@ -673,7 +673,6 @@ public partial class MainWindow : Window
                 .Where(f => scenario.TriggeredBy.Contains(f.Code) && !string.IsNullOrEmpty(f.Subject))
                 .Select(f => f.Subject).Distinct().ToList();
             PriorityTriggers.Text = triggers.Count > 0 ? $"{Loc.Get("priority.basedon")} {string.Join(", ", triggers)}" : "";
-            PriorityTriggers.Visibility = triggers.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
             // Chaîne causale : une case par résultat déclencheur, dans l'ordre de gravité déjà
             // établi par Ordered(). Le libellé de gravité est celui de la liste (Loc.SeverityLabel),
@@ -695,7 +694,13 @@ public partial class MainWindow : Window
                 })
                 .ToList();
             ChainNodes.ItemsSource = chain;
-            ChainNodes.Visibility = chain.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+            var showChain = chain.Count > 1;
+            ChainNodes.Visibility = showChain ? Visibility.Visible : Visibility.Collapsed;
+
+            // « Basé sur : VPinMAME, dmddevice » dit EXACTEMENT ce que les cases de la chaîne
+            // montrent déjà. Les afficher tous les deux, c'était deux fois la même information et
+            // une ligne de hauteur volée à la liste des résultats.
+            PriorityTriggers.Visibility = (!showChain && triggers.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
 
             PriorityBanner.Visibility = Visibility.Visible;
         }
