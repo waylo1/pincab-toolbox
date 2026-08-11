@@ -1,4 +1,59 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 10/08/2026 (bis)
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 11/08/2026
+
+## ✅ MAJ 11/08 — Lot communauté 10/08 codé et câblé de bout en bout (LOTs A→H), LOT I codé mais délibérément non câblé, ADR-012 écrit
+
+> **Suite directe de l'entrée du 10/08 (bis) ci-dessous — spec exécutée intégralement.** Lire
+> `docs/adr/ADR-012-chemin-ecriture-repair.md` avant toute reprise sur Repair.
+>
+> **Codé et câblé, tous les scanners jusqu'au bout (Loc.cs FR+EN, Knowledge.cs, `.Add(...)`)** :
+> LOT A (`ComHealthScanner` — `COM_NOT_REGISTERED`, `COM_STALE_PATH`, `COM_PATH_OUTSIDE_INSTALL`,
+> `COM_OK`, `COM_BITNESS_GAP`, et `VPINMAME_NOT_REGISTERED` en `Critical`, ses 4 conditions toutes
+> mesurées — jamais de repli en `Warning` sur un échec de lecture registre), LOT B
+> (`ChainBitnessScanner`), LOT C (`DmdConfigScanner`, format `[VirtualDMD]` confirmé par lecture
+> directe du `DmdDevice.ini` de freezy/dmd-extensions sur GitHub), LOT D (`FeatureEnabledScanner` +
+> `AltFeatureRegistry`, confiance de source documentée honnêtement en commentaire), LOT E
+> (`BlockedFileScanner` étendu à `.exe`/`.ocx`, seul scanner existant touché), LOT F
+> (`ScreenResUnparsedScanner`), LOT G (`NvramWritabilityScanner`, sonde d'écriture réelle). Ordre
+> d'abandon (G, F, E, D, C) **non utilisé** — tout livré, rien coupé.
+>
+> **LOT H — chemin d'écriture Repair câblé pour la première fois, entièrement (jamais à moitié,
+> comme exigé).** H.1 (journal persistant `FileRepairJournal`) fait en premier. Nouvelle classe
+> `RepairSession` dans `PincabToolbox.Repair` (pas `PincabToolbox.App` — voir ADR-012 pour la
+> justification : c'est la seule partie du projet que ce sandbox peut compiler ET tester, donc la
+> logique de décision la plus critique du projet y vit entièrement). Licence revérifiée à chaque
+> appel, sélection opt-in stricte, confirmation explicite obligatoire pour tout item irréversible.
+> **Bug réel trouvé et corrigé** : `RepairEngine.Apply` ne protégeait pas un échec de sauvegarde —
+> corrigé, testé (`Test_Apply_BackupFailure_NeverWrites`). Onglet "Repair" ajouté à l'App. Textes
+> "à venir" retirés (`about.body`/`about.roadmap`, H.5). **La clé de licence embarquée reste un
+> PLACEHOLDER** → `Apply` est un no-op prouvé en production tant que `license-tool init` n'a pas
+> tourné pour de vrai — c'est ce qui a rendu raisonnable de câbler l'UI sans pouvoir la tester sur
+> une vraie machine Windows.
+>
+> **LOT I — codé et testé, délibérément NON câblé.** `RegisterComComponentAction` implémente les 7
+> règles de confinement de la spec (liste blanche en dur, chemin canonique, zéro argument,
+> PE+bitness, timeout, vérification d'élévation au moment de l'usage, jamais réversible) — mais
+> aucune `RepairRule` du pack ne la référence, donc elle est inerte en production (même précédent
+> que `SetDefaultAudioDeviceAction`). Deux inconnues non validables sans machine Windows réelle :
+> l'outil de ré-enregistrement vit-il vraiment à côté de la DLL du composant sur une vraie install,
+> et comment chaque outil se comporte-t-il lancé sans argument (`Setup.exe` de VPinMAME est un
+> installeur graphique interactif connu). Application directe de la clause de sortie de la spec
+> elle-même : "si l'un de ces points ne peut pas être tenu proprement, ne pas livrer le LOT I."
+>
+> **Build/tests** : `dotnet` disponible dans ce sandbox cette fois — **Core 412/412, Repair 139/139,
+> tous verts** (122→139 pour les 17 nouveaux tests LOT I). `PincabToolbox.App` **toujours pas
+> compilable ici** (`NU1100`, SDK Windows Desktop absent hors Windows — fait déjà documenté, pas une
+> régression) : l'onglet Repair XAML/code-behind n'a été vérifié qu'à la main (XML bien formé, `csc`
+> sans les références WPF confirmant l'absence d'erreur de syntaxe malgré l'impossibilité de
+> résoudre les types WPF) — **jamais compilé ni exécuté réellement, à vérifier en premier sur la
+> machine de Maxime.**
+>
+> **Non fait** : la `RepairRule` de pack qui activerait le LOT I (bloquée sur validation réelle),
+> tout parcours d'achat de licence (ADR-009 toujours pas câblé — la licence reste aujourd'hui
+> injoignable pour un utilisateur normal), tests d'intégration WPF de l'onglet Repair (irréalisable
+> sans Windows). Détail complet du raisonnement : `docs/adr/ADR-012-chemin-ecriture-repair.md`,
+> `knowledge/FIELD-LOG.md` (entrée du 11/08).
+
+---
 
 ## 🧭 MAJ 10/08 (bis) — recherche communauté externe analysée → spec de lot écrite, 4 décisions tranchées
 

@@ -24,7 +24,14 @@ public static class RepairOfferBuilder
 {
     private static IKnowledgePack? _pack;
 
-    private static IKnowledgePack LoadPack()
+    /// <summary>
+    /// Made <c>public</c> for LOT H (spec 10/08): <c>RepairSession</c>'s App-side caller needs the
+    /// exact same knowledge pack Écran 1 already loads — duplicating this cache/degrade logic in
+    /// MainWindow would risk the two screens silently disagreeing about which pack version is in
+    /// effect. Behavior unchanged: still caches after the first call, still degrades to
+    /// <see cref="KnowledgePack.Empty"/> on any failure (ADR-005).
+    /// </summary>
+    public static IKnowledgePack LoadPack()
     {
         if (_pack is not null) return _pack;
         try

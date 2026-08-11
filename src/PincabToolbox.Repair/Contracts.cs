@@ -18,6 +18,16 @@ public enum ChangeKind
     /// <summary>The Windows default playback device is changed. Reversible — the previous
     /// default is captured as <see cref="PlannedChange.Before"/>.</summary>
     AudioDeviceDefault,
+
+    /// <summary>
+    /// A component's own registration tool is launched to re-register it with Windows COM
+    /// (LOT I, spec 10/08). Never reversible by nature — see
+    /// <see cref="PincabToolbox.Repair.Actions.RegisterComComponentAction"/>: the previous
+    /// registration (often already broken/stale, that is usually WHY the finding fired) cannot be
+    /// reliably restored, so <see cref="PlannedChange.Before"/> is a trace of the observed
+    /// pre-operation state, not restore data.
+    /// </summary>
+    ComReregistration,
 }
 
 /// <summary>

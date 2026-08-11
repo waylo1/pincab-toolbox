@@ -155,6 +155,105 @@ public sealed class RealProcessControl : IProcessControl
 }
 
 /// <summary>
+/// Real process launcher for LOT I (<see cref="Actions.RegisterComComponentAction"/>). The ONLY
+/// place in this codebase that starts a foreign executable — direct <c>Process.Start</c>, no
+/// shell, no arguments, ever. Deliberately does NOT kill the child on timeout: the three
+/// whitelisted registration tools (VPinMAME's <c>Setup.exe</c> in particular) are ordinary GUI
+/// installers, not silent CLI utilities — a user may need to click something inside the tool's own
+/// window, and killing that window out from under them would be actively harmful, not safe. A
+/// timeout here means only "this call stops waiting", never "the process is terminated" — the
+/// app's own UI thread is what rule 5 protects from freezing, not the child process's lifetime.
+/// </summary>
+public sealed class RealProcessLauncher : IProcessLauncher
+{
+    public ProcessLaunchResult Launch(string exePath, TimeSpan timeout)
+    {
+        Process? process = null;
+        try
+        {
+            process = Process.Start(new ProcessStartInfo
+            {
+                FileName = exePath,
+                UseShellExecute = false,   // no shell, no interpolation — direct process creation
+                WorkingDirectory = Path.GetDirectoryName(exePath) ?? "",
+                // Deliberately no Arguments/ArgumentList set — rule 3: zero arguments, ever.
+            });
+            if (process is null) return ProcessLaunchResult.Failed("process failed to start");
+
+            var exited = process.WaitForExit((int)Math.Clamp(timeout.TotalMilliseconds, 0, int.MaxValue));
+            return exited ? ProcessLaunchResult.Ok(process.ExitCode) : ProcessLaunchResult.TimedOutResult();
+        }
+        catch (System.ComponentModel.Win32Exception win32)
+        {
+            // ERROR_ELEVATION_REQUIRED (740): the tool's own manifest demands admin and Windows
+            // refused to start it at all — a clean signal, distinct from every other failure.
+            return ProcessLaunchResult.Failed(
+                win32.NativeErrorCode == 740 ? "elevation required" : win32.Message);
+        }
+        catch (Exception e)
+        {
+            return ProcessLaunchResult.Failed(e.Message);
+        }
+        finally
+        {
+            process?.Dispose();
+        }
+    }
+}
+
+/// <summary>
+/// Real elevation check via the process's own security token — not the static
+/// <c>app.manifest</c> (which only controls whether Windows AUTO-elevates on launch; a user can
+/// still right-click "Run as administrator" by hand, which this DOES see). Hand-rolled P/Invoke
+/// against <c>advapi32.dll</c>, same posture as every other native call in this codebase (zero
+/// external dependency — see <c>RegistryReader</c> in Core for the precedent).
+/// </summary>
+[SupportedOSPlatform("windows")]
+public sealed class RealElevationProbe : IElevationProbe
+{
+    private const uint TOKEN_QUERY = 0x0008;
+    private const int TokenElevation = 20;
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool OpenProcessToken(IntPtr processHandle, uint desiredAccess, out IntPtr tokenHandle);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool GetTokenInformation(
+        IntPtr tokenHandle, int tokenInformationClass,
+        out int tokenInformation, int tokenInformationLength, out int returnLength);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentProcess();
+
+    [DllImport("kernel32.dll")]
+    private static extern bool CloseHandle(IntPtr handle);
+
+    public bool IsCurrentProcessElevated()
+    {
+        if (!OperatingSystem.IsWindows()) return false;
+
+        IntPtr token = IntPtr.Zero;
+        try
+        {
+            if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, out token)) return false;
+            if (!GetTokenInformation(token, TokenElevation, out var elevation, sizeof(int), out _)) return false;
+            return elevation != 0;
+        }
+        catch
+        {
+            // Unknown must never be reported as elevated — the whole point of this check is to
+            // avoid a false "you have admin rights" that leads the caller to attempt a write that
+            // then fails confusingly deep inside a third-party tool.
+            return false;
+        }
+        finally
+        {
+            if (token != IntPtr.Zero) CloseHandle(token);
+        }
+    }
+}
+
+/// <summary>
 /// Real default-playback-device control, for <see cref="Actions.SetDefaultAudioDeviceAction"/>.
 ///
 /// Windows has no PUBLIC API to change the default audio endpoint — every tool that does it

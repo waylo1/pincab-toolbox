@@ -26,6 +26,90 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-11 (session Sonnet 5, autonome, effort élevé) · Lot communauté 10/08 — LOTs A→H codés et câblés, LOT I codé mais délibérément non câblé, ADR-012
+- code:        transverse — LOT A (COM_NOT_REGISTERED, COM_STALE_PATH, COM_PATH_OUTSIDE_INSTALL,
+  COM_OK, COM_BITNESS_GAP, VPINMAME_NOT_REGISTERED), LOT B (CHAIN_BITNESS_GAP), LOT C
+  (DMD_VIRTUAL_DISABLED, DMD_POSITION_OFFSCREEN), LOT D (ALTSOUND_PRESENT_NOT_ENABLED,
+  ALTCOLOR_PRESENT_NOT_ENABLED), LOT E (extension BlockedFileScanner à .exe/.ocx), LOT F
+  (SCREENRES_UNPARSED), LOT G (NVRAM_FOLDER_NOT_WRITABLE), LOT H (chemin d'écriture Repair, aucun
+  nouveau code de finding), LOT I (`register_com_component`, codé et testé, pas câblé)
+- bac:         FIX (7 lots de détection) + FEATURE (chemin d'écriture Repair câblé pour la première fois)
+- contexte:    Reprise de `docs/SPEC-lot-communaute-2026-08-10.md` (lue intégralement) +
+  TRANSMISSION.md + ADR-005/006/010/011, sur mandat explicite de Maxime : coder et câbler les lots
+  A→I, LOT H livré entièrement ou pas du tout (H.1 journal persistant en premier), LOT A.3
+  (`VPINMAME_NOT_REGISTERED`) avec les 4 conditions mesurées et jamais supposées, ne pas
+  re-coder ce qui existe déjà (`FLEXDMD_MISSING` était déjà câblé, cf. correction ci-dessous).
+  Ordre d'abandon en cas de manque de temps : G, F, E, D, C — non utilisé, tout a été livré.
+- analyse (journal par thème) :
+
+  **Correction factuelle reportée depuis TRANSMISSION.md 10/08 (bis), maintenant actée ici** :
+  `FLEXDMD_MISSING` n'est pas une chaîne morte — `DependencyScanner.cs:80` l'émet déjà en `Warning`
+  sur un signal composite correct. Ce qui manquait réellement sur FlexDMD était l'enregistrement COM
+  et la cohérence bitness, objet du LOT A ci-dessous. Aucune "spec du 08/08" introuvable à retrouver.
+
+  **LOT A — `ComHealthScanner` (nouveau scanner).** Lit les deux vues du registre COM (32/64 bits,
+  via le `ComRegistrationProbe` déjà présent) pour VPinMAME.Controller, B2S.Server, FlexDMD.FlexDMD
+  (+ PinUpPlayer.PinDisplay plafonné à `Note`, identifiant non recoupé). `VPINMAME_NOT_REGISTERED`
+  (premier `Critical` depuis le gel du 03/08) exige ses 4 conditions **toutes mesurées** : DLL
+  présente sous la racine, LES DEUX lectures registre ont réussi (un échec de lecture = silence
+  total, jamais un `Critical` de repli), le ProgID absent des deux vues, et au moins une table
+  l'exige réellement. Testé en écrivant le test d'échec de lecture EN PREMIER, comme demandé.
+
+  **LOTs B→G — 6 scanners neufs, un scanner existant étendu.** `ChainBitnessScanner` (LOT B),
+  `DmdConfigScanner` + extension de `DmdDeviceIniParser` pour le format `[VirtualDMD]` de
+  dmd-extensions, confirmé par lecture directe de son `DmdDevice.ini` sur GitHub (LOT C),
+  `FeatureEnabledScanner` + `AltFeatureRegistry` (clés `sound_mode`/`dmd_colorize` sous
+  `HKCU\...\Visual PinMame\<rom>`, confiance de source documentée honnêtement en commentaire — même
+  posture que le caveat déjà existant sur la clé de port COM DMD) (LOT D), extension de
+  `BlockedFileScanner` à `*.exe`/`*.ocx` en plus de `*.dll`, `CriticalNames` inchangé (LOT E),
+  `ScreenResUnparsedScanner`, mutuellement exclusif avec `ScreenTopologyScanner` par construction
+  (LOT F), `NvramWritabilityScanner`, sonde d'écriture réelle (créer+supprimer) (LOT G). **Aucun
+  scanner existant modifié hors `BlockedFileScanner`** (règle explicite du lot). `.Add(...)` câblés
+  dans `MainWindow.xaml.cs`, `Loc.cs` FR+EN et `Knowledge.cs` complétés pour les 13 nouveaux codes.
+
+  **LOT H — chemin d'écriture Repair, câblé pour la première fois.** H.1 (journal persistant,
+  `FileRepairJournal`, JSONL sur disque) fait en premier comme exigé — prérequis dur du reste.
+  Nouvelle classe `RepairSession` (`PincabToolbox.Repair`, pas `PincabToolbox.App` — voir ADR-012
+  pour la justification complète) qui compose Preflight/Apply/Undo avec licence revérifiée à chaque
+  appel (jamais assumée) et sélection d'items strictement opt-in (jamais un "tout réparer"
+  silencieux). **Bug réel trouvé et corrigé pendant ce chantier** : `RepairEngine.Apply` ne
+  protégeait pas l'échec de `IBackupService.Backup` — corrigé par un `try/catch` qui journalise
+  `JournalEvent.BackupFailed` et n'écrit jamais si la sauvegarde échoue (règle H.2 n°4, test
+  `Test_Apply_BackupFailure_NeverWrites`). Onglet "Repair" ajouté à `MainWindow.xaml`/`.xaml.cs`
+  (licence, construction de plan, liste d'items à cocher avec confirmation explicite obligatoire
+  pour tout item irréversible, historique Undo visible dès l'ouverture de l'app). Textes
+  `about.body`/`about.roadmap` mis à jour (H.5) pour ne plus annoncer Repair comme "à venir".
+  **La licence embarquée est toujours un PLACEHOLDER** (`LicenseVerifier.EmbeddedPublicKeyBase64`)
+  → `Apply` est un no-op prouvé en production tant que `license-tool init` n'a pas tourné pour de
+  vrai — c'est ce qui rend raisonnable d'avoir câblé l'UI sans pouvoir la tester sur une vraie
+  machine Windows cette session.
+
+  **LOT I — `RegisterComComponentAction`, codé et testé, délibérément PAS câblé.** Les sept règles
+  de confinement de la spec (liste blanche en dur, chemin canonique avant vérification, zéro
+  argument dérivé du scan, PE+bitness via `PeInspector`, timeout, vérification d'élévation au
+  moment de l'usage via un P/Invoke `advapi32` neuf, `IsReversibleByNature=false`) sont toutes
+  implémentées et testées sans machine Windows réelle. **Aucune `RepairRule` ne la référence dans le
+  pack** — donc inerte en production quel que soit le registre de capacités (même précédent que
+  `SetDefaultAudioDeviceAction`, jamais câblé non plus). Deux inconnues non validées documentées
+  dans l'en-tête de la classe et dans ADR-012 : l'outil vit-il vraiment à côté de la DLL du
+  composant sur une install réelle, et comment chaque outil se comporte-t-il lancé sans argument
+  (`Setup.exe` de VPinMAME est un installeur graphique interactif connu, pas un enregistreur
+  silencieux). Application directe de la clause de sortie de la spec elle-même : "si l'un de ces
+  points ne peut pas être tenu proprement, ne pas livrer le LOT I."
+
+  **Tests et build.** Core 412/412, Repair 139/139 (122 avant cette session + 17 nouveaux pour le
+  LOT I), tous verts, `dotnet` disponible dans ce sandbox cette fois (confirmé, contrairement aux
+  sessions précédentes). `PincabToolbox.App` **toujours pas compilable dans ce sandbox**
+  (`NU1100 : Microsoft.WindowsDesktop.App.Ref` introuvable — SDK Windows Desktop absent hors
+  Windows, fait déjà documenté, pas une régression) : le XAML/code-behind de l'onglet Repair n'a pu
+  être vérifié qu'à la main (XML bien formé, `csc` sans les références WPF confirmant l'absence
+  d'erreur de syntaxe CSxxxx malgré l'impossibilité de résoudre les types WPF eux-mêmes) — jamais
+  compilé ni exécuté réellement. **À vérifier en premier sur la machine de Maxime.**
+- disposition: ADR-012 écrit (chemin d'écriture Repair + décision LOT I). TRANSMISSION.md (bloc du
+  haut) mis à jour. Revue CTO+Produit faite en clôture de session (voir TRANSMISSION.md pour le
+  détail : risques restants, valeur utilisateur, améliorations à faible coût proposées sans être
+  codées).
+
 ## 2026-08-07 (treize) · Gregg — nouveau rapport post-lancement, confus sur FlexDMD + comment lire le rapport complet
 - code:        à préciser (dépend de ce que Gregg trouve confus sur FlexDMD — pas encore clair)
 - bac:         WORDING potentiel (rapport pas assez lisible/actionnable) + question d'usage pure

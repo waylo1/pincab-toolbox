@@ -142,6 +142,26 @@ public sealed class FakeProcessControl : IProcessControl
     }
 }
 
+/// <summary>LOT I — records every launch attempt; never actually starts a process.</summary>
+public sealed class FakeProcessLauncher : IProcessLauncher
+{
+    public List<(string Path, TimeSpan Timeout)> Calls { get; } = new();
+    public ProcessLaunchResult Result { get; set; } = ProcessLaunchResult.Ok(0);
+
+    public ProcessLaunchResult Launch(string exePath, TimeSpan timeout)
+    {
+        Calls.Add((exePath, timeout));
+        return Result;
+    }
+}
+
+/// <summary>LOT I — a settable elevation state, so the gate can be tested both ways without a real admin token.</summary>
+public sealed class FakeElevationProbe : IElevationProbe
+{
+    public bool Elevated { get; set; }
+    public bool IsCurrentProcessElevated() => Elevated;
+}
+
 public sealed class FakeAudioDeviceControl : IAudioDeviceControl
 {
     public string? DefaultId { get; set; }
@@ -170,8 +190,12 @@ public sealed class FakeBackup : IBackupService
     public List<string> Calls { get; } = new();
     public int PruneKeep { get; private set; } = -1;
 
+    /// <summary>When true, every <see cref="Backup"/> call throws — drives the LOT H.2 rule 4 path ("no write without a backup").</summary>
+    public bool RefuseBackup { get; set; }
+
     public string Backup(string planId, RepairPlanItem item)
     {
+        if (RefuseBackup) throw new Exception("simulated backup failure");
         Calls.Add($"{planId}/{item.ItemId}");
         return $"/backups/{planId}/{item.ItemId}";
     }

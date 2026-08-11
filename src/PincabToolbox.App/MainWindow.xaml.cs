@@ -16,6 +16,7 @@ using PincabToolbox.Core.Profiles;
 using PincabToolbox.Core.Scanning;
 using PincabToolbox.Core.Services;
 using PincabToolbox.Repair;
+using PincabToolbox.Repair.Licensing;
 
 namespace PincabToolbox.App;
 
@@ -46,6 +47,19 @@ public sealed class DiffRow
     public Brush NewBrush { get; init; } = Brushes.Transparent;
 }
 
+/// <summary>
+/// LOT H (spec 10/08) — one row of the Repair tab's checklist. Plain/mutable on purpose: WPF's
+/// default TwoWay binding on <c>CheckBox.IsChecked</c> writes straight back to
+/// <see cref="IsSelected"/>, and the row is only ever read at Apply-click time (not observed live),
+/// so <c>INotifyPropertyChanged</c> would be pure ceremony here — same posture as <see cref="FindingRow"/>.
+/// </summary>
+public sealed class RepairItemRow
+{
+    public required string ItemId { get; init; }
+    public required string Description { get; init; }
+    public bool IsSelected { get; set; }
+}
+
 public partial class MainWindow : Window
 {
     private ScanReport? _report;
@@ -58,6 +72,17 @@ public partial class MainWindow : Window
     private List<string>? _lastDriveScanRoots;
     private CancellationTokenSource? _cts;
     private readonly Settings _settings = Settings.Load();
+
+    // ───────── LOT H (spec 10/08) — Écran 2, the write path. All decision logic lives in
+    // RepairSession (PincabToolbox.Repair, fully unit-tested); this window only calls into it and
+    // renders what it returns. See RepairSession's own header comment for why it lives there. ─────────
+    private RepairSession? _repairSession;
+    private RepairPlan? _repairPlan;
+    private PreflightResult? _repairPreflight;
+    private List<RepairItemRow> _repairItemRows = new();
+    // Re-verified against the embedded key every time the user clicks "Verify" (BtnRepairVerifyLicense_Click)
+    // — never trusted just because it was true on a previous click (H.4: never assumed).
+    private bool _licensed;
 
     // Keep in sync with AssemblyInfo/csproj version — same literal ApplyTexts already displayed
     // in the About tab before this change, just named now so BtnCheckUpdate_Click can compare
@@ -103,6 +128,9 @@ public partial class MainWindow : Window
         ApplyTexts();
 
         // restore last scanned folder, or auto-detect a common VPX install on first run
+        if (!string.IsNullOrEmpty(_settings.RepairLicenseKey))
+            TxtRepairLicense.Text = _settings.RepairLicenseKey!;   // re-verified on click, never assumed valid just because it was saved
+
         if (!string.IsNullOrEmpty(_settings.LastRoot) && Directory.Exists(_settings.LastRoot))
             TxtRoot.Text = _settings.LastRoot!;
         else if (string.IsNullOrWhiteSpace(TxtRoot.Text))
@@ -132,6 +160,11 @@ public partial class MainWindow : Window
 
         if (!_settings.OnboardingSeen)
             OnboardingOverlay.Visibility = Visibility.Visible;
+
+        // H.2 rule 5 — the Undo history must be visible even before any scan/plan this session
+        // (it is read from the on-disk journal, which survives closing the app). Best-effort: a
+        // fresh install has no journal yet, and any disk issue here must never block startup.
+        try { RefreshRepairUndoList(); } catch { /* the Repair tab will just show an empty list */ }
     }
 
     private void OnbStart_Click(object sender, RoutedEventArgs e)
@@ -220,6 +253,7 @@ public partial class MainWindow : Window
         TabScannerHeader.Text = Loc.Get("tab.scanner");
         TabDiffHeader.Text = Loc.Get("tab.diff");
         TabAboutHeader.Text = Loc.Get("tab.about");
+        TabRepairHeader.Text = Loc.Get("tab.repair");
         LblRoot.Text = Loc.Get("scan.root");
         BtnBrowse.Content = Loc.Get("scan.browse");
         BtnDemo.Content = Loc.Get("scan.demo");
@@ -251,6 +285,17 @@ public partial class MainWindow : Window
         AboutRoadmap.Text = Loc.Get("about.roadmap");
         AboutVersion.Text = Loc.Get("about.version") + " " + CurrentVersion;
         BtnCheckUpdate.Content = Loc.Get("about.checkupdate");
+        BtnGotoRepair.Content = Loc.Get("repair.goto");
+
+        RepairIntro.Text = Loc.Get("repair.intro");
+        LblRepairLicense.Text = Loc.Get("repair.license.label");
+        TxtRepairLicense.ToolTip = Loc.Get("repair.license.hint");
+        BtnRepairVerifyLicense.Content = Loc.Get("repair.license.verify");
+        BtnRepairBuildPlan.Content = Loc.Get("repair.plan.build");
+        BtnRepairApply.Content = Loc.Get("repair.apply.button");
+        LblRepairUndo.Text = Loc.Get("repair.undo.label");
+        BtnRepairUndo.Content = Loc.Get("repair.undo.button");
+        if (string.IsNullOrEmpty(RepairPlanStatus.Text)) RepairPlanStatus.Text = Loc.Get("repair.needscan");
         OnbTitle.Text = Loc.Get("onb.title");
         OnbLead.Text = Loc.Get("onb.lead");
         OnbP1.Text = Loc.Get("onb.p1");
@@ -427,7 +472,14 @@ public partial class MainWindow : Window
                     .Add(new DpiScalingScanner())
                     .Add(new DmdComPortScanner())
                     .Add(new LocaleSeparatorScanner())
-                    .Add(new ConfigPhantomScanner());
+                    .Add(new ConfigPhantomScanner())
+                    // Lot communauté 10/08 (LOT A→G) — voir docs/SPEC-lot-communaute-2026-08-10.md.
+                    .Add(new ComHealthScanner())
+                    .Add(new ChainBitnessScanner())
+                    .Add(new DmdConfigScanner())
+                    .Add(new FeatureEnabledScanner())
+                    .Add(new ScreenResUnparsedScanner())
+                    .Add(new NvramWritabilityScanner());
                 if (!isWholeDrive) return engine.Run(root, profile, progress, ct);
 
                 var driveReport = engine.RunAcrossDrive(root, profile, progress, ct);
@@ -827,6 +879,223 @@ public partial class MainWindow : Window
     private void BtnCloseDetail_Click(object sender, RoutedEventArgs e)
     {
         ListFindings.SelectedItem = null; // clears selection → SelectionChanged hides the panel
+    }
+
+    // ═════════════════════════ LOT H (spec 10/08) — Écran 2, the write path ═════════════════════════
+    // Every decision (license check, plan, preflight, apply, undo) is made by RepairSession
+    // (PincabToolbox.Repair — cross-platform, fully unit-tested, 122/122 green). This window only
+    // calls into it, holds the results, and renders them: no write-path decision is made here.
+
+    private void BtnGotoRepair_Click(object sender, RoutedEventArgs e) => MainTabs.SelectedItem = TabRepair;
+
+    /// <summary>
+    /// Builds a fresh <see cref="RepairSession"/> confined to the roots of the CURRENT scan — never
+    /// reused stale roots from a previous, possibly different, scan. Single-install scans confine to
+    /// that one root; a whole-drive scan confines to the real per-install roots found
+    /// (<see cref="_lastDriveScanRoots"/>), same rule <see cref="RepairOfferBuilder"/> already
+    /// follows for Écran 1 (ADR-005/ADR-011) — Repair must never validate a write target anywhere on
+    /// an entire drive.
+    /// </summary>
+    private RepairSession NewRepairSessionForCurrentScan()
+    {
+        IReadOnlyList<string> roots = _lastDriveScanRoots is { Count: > 0 }
+            ? _lastDriveScanRoots
+            : new[] { _report!.Layout.RootPath };
+        return new RepairSession(RepairOfferBuilder.LoadPack(), roots, _report!.Layout);
+    }
+
+    /// <summary>
+    /// Used only to read the on-disk Undo history before any scan has happened this session (H.2
+    /// rule 5). No real containment check is ever performed with these roots — <c>Undo()</c> reverts
+    /// strictly from the journal's own recorded changes and never re-validates against
+    /// confinement roots (see <see cref="PincabToolbox.Repair.Engine.RepairEngine.Undo"/>) — so an
+    /// empty root list here is safe.
+    /// </summary>
+    private RepairSession NewRepairSessionForBrowsing()
+    {
+        IReadOnlyList<string> roots = _report is not null
+            ? (_lastDriveScanRoots is { Count: > 0 } ? _lastDriveScanRoots : new[] { _report.Layout.RootPath })
+            : Array.Empty<string>();
+        return new RepairSession(RepairOfferBuilder.LoadPack(), roots, _report?.Layout);
+    }
+
+    /// <summary>H.4 — always re-verified against the embedded key here, never trusted from a previous click.</summary>
+    private void BtnRepairVerifyLicense_Click(object sender, RoutedEventArgs e)
+    {
+        var key = TxtRepairLicense.Text.Trim();
+        var result = new LicenseVerifier().Verify(string.IsNullOrEmpty(key) ? null : key);
+        _licensed = result.IsValid;
+
+        _settings.RepairLicenseKey = key;
+        _settings.Save();
+
+        LblRepairLicenseStatus.Text = _licensed ? Loc.Get("repair.license.valid") : Loc.Get("repair.license.invalid");
+    }
+
+    /// <summary>H.2 steps 1-3 — Plan then Preflight, then render exactly what Preflight retained (never the raw plan).</summary>
+    private void BtnRepairBuildPlan_Click(object sender, RoutedEventArgs e)
+    {
+        if (_report is null)
+        {
+            RepairPlanStatus.Text = Loc.Get("repair.needscan");
+            return;
+        }
+
+        _repairSession = NewRepairSessionForCurrentScan();
+
+        var scanReportId = $"scan-{_report.StartedAt:yyyyMMdd-HHmmss}";
+        _repairPlan = _repairSession.Plan(scanReportId, _report.Findings, licensed: _licensed);
+        _repairPreflight = _repairSession.Preflight(_repairPlan);
+
+        if (_repairPreflight.Blockers.Count > 0)
+        {
+            var fr = Loc.Lang == "fr";
+            RepairBlockers.Text = string.Join("\n", _repairPreflight.Blockers.Select(b => "• " + (fr ? b.MessageFr : b.MessageEn)));
+            RepairBlockers.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            RepairBlockers.Visibility = Visibility.Collapsed;
+        }
+
+        RefreshRepairItemsList();
+        RefreshRepairUndoList();
+
+        RepairPlanStatus.Text = _repairItemRows.Count > 0
+            ? string.Format(Loc.Get("repair.plan.status"), _repairItemRows.Count)
+            : Loc.Get("repair.plan.empty");
+    }
+
+    /// <summary>
+    /// Only the items actually appliable (<c>Changes.Count > 0</c> — i.e. licensed AND not
+    /// ManualOnly/Locked) are shown as checkable rows; Locked/ManualOnly items have nothing a click
+    /// here could ever do. Text comes from <see cref="RepairSession.Describe"/>, the same pure facts
+    /// the confirmation screen must show per H.2 rule 3 — never re-derived by hand here.
+    /// </summary>
+    private void RefreshRepairItemsList()
+    {
+        var applicable = (_repairPreflight?.RetainedItems ?? Array.Empty<RepairPlanItem>())
+            .Where(i => i.Changes.Count > 0).ToList();
+        _repairItemRows = RepairSession.Describe(applicable)
+            .Select(ic => new RepairItemRow { ItemId = ic.ItemId, Description = BuildConfirmationText(ic) })
+            .ToList();
+        ListRepairItems.ItemsSource = null;   // force the ItemsControl to re-bind (rows are mutable POCOs)
+        ListRepairItems.ItemsSource = _repairItemRows;
+    }
+
+    private static string BuildConfirmationText(ItemConfirmation ic)
+    {
+        var head = ic.Targets.Count > 0
+            ? $"{ic.TargetCode} — {string.Join(", ", ic.Targets)}"
+            : ic.TargetCode;
+        var reversible = ic.Reversible ? Loc.Get("repair.reversible.yes") : Loc.Get("repair.reversible.no");
+        var backup = ic.BackupPlanned ? Loc.Get("repair.backup.yes") : Loc.Get("repair.backup.no");
+        return $"{head}\n{reversible} · {backup}";
+    }
+
+    private void RefreshRepairUndoList()
+    {
+        _repairSession ??= NewRepairSessionForBrowsing();
+        ListRepairUndo.ItemsSource = null;
+        ListRepairUndo.ItemsSource = _repairSession.KnownPlanIds();
+        RepairUndoStatus.Text = _repairSession.LastJournalWriteFailed ? Loc.Get("repair.undo.journalwarning") : "";
+    }
+
+    /// <summary>
+    /// H.2 steps 4-5. Opt-in only (H.2 rule 3 — never a silent "fix everything"): nothing is applied
+    /// unless the user checked its box. H.3: any selected item that is not fully reversible gets an
+    /// explicit, unambiguous confirmation dialog before Apply is ever called — the wording says
+    /// plainly that the operation cannot be undone.
+    ///
+    /// <para>
+    /// Runs <see cref="RepairSession.Apply"/> on a background thread (<c>Task.Run</c>), same pattern
+    /// as <see cref="BtnScan_Click"/>. Today's four wired actions are all fast, so this made no
+    /// visible difference before — but LOT I's <c>RegisterComComponentAction</c> (not yet wired, see
+    /// ADR-012) can legitimately wait up to its 20-second launch timeout, and freezing the whole
+    /// window for that long would be a real regression the day it IS wired. Cheap to do now, before
+    /// there is a real plan sitting on screen to lose if it were forgotten later.
+    /// </para>
+    /// </summary>
+    private async void BtnRepairApply_Click(object sender, RoutedEventArgs e)
+    {
+        if (_repairSession is null || _repairPlan is null || _report is null) return;
+
+        var selected = _repairItemRows.Where(r => r.IsSelected)
+            .Select(r => r.ItemId).ToHashSet(StringComparer.Ordinal);
+        if (selected.Count == 0)
+        {
+            RepairApplyStatus.Text = Loc.Get("repair.noneselected");
+            return;
+        }
+
+        var retained = _repairPreflight?.RetainedItems ?? Array.Empty<RepairPlanItem>();
+        var selectedFacts = RepairSession.Describe(retained.Where(i => selected.Contains(i.ItemId)).ToList());
+        if (selectedFacts.Any(f => !f.Reversible))
+        {
+            var answer = MessageBox.Show(
+                Loc.Get("repair.confirm.nonreversible"), Loc.Get("repair.confirm.title"),
+                MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+            if (answer != MessageBoxResult.Yes) return;
+        }
+
+        // Snapshot what the background call needs — _repairSession/_repairPlan/selected must not be
+        // reassigned by another click while this one is still running (BtnRepairApply is disabled
+        // below for exactly that reason, but the local copies are the actual guarantee).
+        var session = _repairSession;
+        var plan = _repairPlan;
+
+        BtnRepairApply.IsEnabled = false;
+        RepairApplyStatus.Text = Loc.Get("repair.apply.running");
+        try
+        {
+            var result = await Task.Run(() => session.Apply(plan, selected));
+
+            var ok = result.ItemOutcomes.Count(kv => kv.Value);
+            var failed = result.ItemOutcomes.Count(kv => !kv.Value);
+            RepairApplyStatus.Text = string.Format(Loc.Get("repair.apply.status"), ok, failed);
+            if (result.RecoveryRequired)
+            {
+                RepairApplyStatus.Text += "\n" + Loc.Get("repair.apply.recovery")
+                    + (string.IsNullOrEmpty(result.BackupPath) ? "" : " " + result.BackupPath);
+            }
+
+            // Re-plan from the same scan so the checklist reflects what actually got fixed (a change
+            // just applied must not still be offered as if it were still broken).
+            _repairPlan = session.Plan(plan.ScanReportId, _report.Findings, licensed: _licensed);
+            _repairPreflight = session.Preflight(_repairPlan);
+            RefreshRepairItemsList();
+            RefreshRepairUndoList();
+        }
+        finally
+        {
+            BtnRepairApply.IsEnabled = true;
+        }
+    }
+
+    /// <summary>H.2 rule 5 — works even for a plan from a previous app session, because the journal is on disk.</summary>
+    private void BtnRepairUndo_Click(object sender, RoutedEventArgs e)
+    {
+        _repairSession ??= NewRepairSessionForBrowsing();
+
+        if (ListRepairUndo.SelectedItem is not string planId)
+        {
+            RepairUndoStatus.Text = Loc.Get("repair.undo.noneselected");
+            return;
+        }
+
+        var result = _repairSession.Undo(planId);
+        RepairUndoStatus.Text = result.Success
+            ? Loc.Get("repair.undo.ok")
+            : Loc.Get("repair.undo.fail") + (string.IsNullOrEmpty(result.Error) ? "" : " " + result.Error);
+
+        // The plan just undone may be the one currently on screen — refresh the checklist too so it
+        // does not keep showing items as fixed when they were just reverted.
+        if (_repairPlan is not null && _repairPlan.PlanId == planId && _report is not null)
+        {
+            _repairPreflight = _repairSession.Preflight(_repairPlan);
+            RefreshRepairItemsList();
+        }
+        RefreshRepairUndoList();
     }
 
     private void BtnExport_Click(object sender, RoutedEventArgs e)

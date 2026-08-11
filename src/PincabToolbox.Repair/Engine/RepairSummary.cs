@@ -46,6 +46,10 @@ public sealed record RepairSummary
             ChangeKind.RegistryWrite => 0.1,
             ChangeKind.SqliteWrite => 0.5,
             ChangeKind.FileMove => 1.0,
+            // Launching and waiting on an external registration tool is the slowest kind of change
+            // this engine plans — deliberately bucketed high so the confirmation screen never
+            // undersells how long it can take (LOT I).
+            ChangeKind.ComReregistration => 3.0,
             _ => 0.5,
         });
         if (backupPlanned) seconds *= 2;   // the backup costs roughly what the write costs

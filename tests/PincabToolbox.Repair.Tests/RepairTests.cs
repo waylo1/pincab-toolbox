@@ -394,6 +394,31 @@ public static class RepairTests
         A.False(fs.HasZoneIdentifier(@"C:\vpx\a.dll"), "and the fix did happen");
     }
 
+    /// <summary>
+    /// LOT H.2 rule 4 (spec 10/08): "si la sauvegarde échoue, l'action n'est pas appliquée".
+    /// Also LOT H.6's required test list: "sauvegarde en échec → aucune écriture".
+    /// </summary>
+    public static void Test_Apply_BackupFailure_NeverWrites()
+    {
+        var fs = new FakeFs();
+        fs.AddFile(@"C:\vpx\a.dll");
+        fs.Blocked.Add(@"C:\vpx\a.dll");
+        var pack = new KnowledgePack("2026.08", new[] { Build.Rule("unblock", "BLOCKED_DLL", "unblock_file") });
+        var journal = new InMemoryRepairJournal();
+        var backup = new FakeBackup { RefuseBackup = true };
+        var eng = new RepairEngine(
+            new RepairActionRegistry(new UnblockFileAction(fs)), pack, journal, backup,
+            new FakeProbe(), new FakeClock(), Build.Roots);
+
+        var plan = Build.Select(eng.Plan("scan-1", new[] { Build.Finding("BLOCKED_DLL", @"C:\vpx\a.dll") }, true));
+        var result = eng.Apply(plan);
+
+        A.True(fs.HasZoneIdentifier(@"C:\vpx\a.dll"), "the file must NOT have been unblocked — no write without a backup");
+        A.False(result.ItemOutcomes.Values.Any(ok => ok), "no item outcome can report success");
+        A.True(journal.Has(JournalEvent.BackupFailed), "the failure must be journalled");
+        A.False(journal.Has(JournalEvent.ChangeApplied), "no ChangeApplied can follow a failed backup");
+    }
+
     /// <summary>A playbook that fails at step 3 is rolled back whole, in reverse order.</summary>
     public static void Test_Apply_RollsBackAnOrderedPlaybookInReverse()
     {

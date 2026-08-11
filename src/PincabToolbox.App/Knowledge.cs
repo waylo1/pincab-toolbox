@@ -366,5 +366,99 @@ public static class Knowledge
             CauseEn = "VPinMAME can be configured through either the registry or an .ini file depending on version/build; both being present at once is usually a leftover from a reinstall or a manual config attempt.",
             CauseFr = "VPinMAME peut être configuré via le registre ou un fichier .ini selon la version/build ; la présence des deux à la fois vient généralement d'une réinstallation ou d'une tentative de configuration manuelle antérieure.",
         },
+
+        // ── Lot communauté 10/08 — LOT A (COM Registration Health).
+        ["COM_NOT_REGISTERED"] = new()
+        {
+            ImpactEn = "Windows COM registration is per-machine, not per-folder — copying an install (rather than running its official installer/registration tool) never carries it over, so this table's dependency will fail exactly like a missing file even though the file itself is right there.",
+            ImpactFr = "L'enregistrement COM Windows est par machine, pas par dossier — copier une installation (au lieu de lancer son installeur/outil d'enregistrement officiel) ne l'emporte jamais avec elle, donc cette dépendance échouera exactement comme si le fichier était absent, alors qu'il est bien là.",
+            CauseEn = "Most often a hand-copied VPX install (zip/USB stick/network share) where the component's own registration tool (Setup.exe, regsvr32, an UI registration button) was never run on this machine.",
+            CauseFr = "Le plus souvent une installation VPX copiée à la main (zip/clé USB/partage réseau) sur laquelle l'outil d'enregistrement du composant (Setup.exe, regsvr32, un bouton d'enregistrement dans une interface) n'a jamais été lancé sur cette machine.",
+        },
+        ["COM_STALE_PATH"] = new()
+        {
+            ImpactEn = "Windows will try to load the component from a path that no longer exists and fail — this looks identical to \"never installed\" from the table's point of view, even though the component is actually present elsewhere on this machine.",
+            ImpactFr = "Windows va essayer de charger le composant depuis un chemin qui n'existe plus, et échouer — cela ressemble exactement à « jamais installé » du point de vue de la table, alors que le composant est en réalité présent ailleurs sur cette machine.",
+            CauseEn = "The component was registered from a folder that was since moved, renamed, or deleted (a very common pattern after reorganizing a pincab install or migrating to a new drive).",
+            CauseFr = "Le composant a été enregistré depuis un dossier qui a depuis été déplacé, renommé ou supprimé (un cas très fréquent après une réorganisation d'installation pincab ou une migration vers un nouveau disque).",
+        },
+        ["COM_BITNESS_GAP"] = new()
+        {
+            ImpactEn = "32-bit and 64-bit COM registrations are two completely separate Windows registry trees (Wow6432Node) — a component registered in one is invisible to a process running the other bitness, no matter how correct the install otherwise looks.",
+            ImpactFr = "Les enregistrements COM 32-bit et 64-bit sont deux arborescences de registre Windows totalement séparées (Wow6432Node) — un composant enregistré dans l'une est invisible pour un processus tournant dans l'autre architecture, même si le reste de l'installation semble parfaitement correct.",
+            CauseEn = "Only one bitness of the component's registration tool was ever run — very common on hybrid 32+64-bit installs, since most guides only walk through registering one of the two.",
+            CauseFr = "Seule une des deux architectures de l'outil d'enregistrement du composant a été lancée — très fréquent sur les installations hybrides 32+64-bit, la plupart des guides ne détaillant l'enregistrement que d'une des deux.",
+        },
+        ["VPINMAME_NOT_REGISTERED"] = new()
+        {
+            ImpactEn = "Total: every ROM-based table fails to start with an opaque COM error, even though the ROMs, the tables and VPinMAME.dll are all genuinely present and correct — this is the single most common \"my cab suddenly can't launch anything with a ROM\" report in the whole research pass.",
+            ImpactFr = "Impact total : chaque table à ROM échoue au démarrage avec une erreur COM opaque, alors que les ROMs, les tables et VPinMAME.dll sont bien présents et corrects — c'est le symptôme le plus fréquent de tout le document de recherche pour « ma cab n'arrive soudain plus à lancer une seule table à ROM ».",
+            CauseEn = "VPinMAME.dll was copied into place (zip extraction, USB transfer, drive clone) but its own Setup.exe — the only thing that actually writes the COM registration — was never run on this machine.",
+            CauseFr = "VPinMAME.dll a été copié en place (extraction de zip, transfert USB, clonage de disque) mais son propre Setup.exe — la seule chose qui écrit réellement l'enregistrement COM — n'a jamais été lancé sur cette machine.",
+        },
+
+        // ── LOT B (Chain Bitness Doctor).
+        ["CHAIN_BITNESS_GAP"] = new()
+        {
+            ImpactEn = "The table loads a Visual Pinball process of one bitness, but the plugin it needs only exists for the other — the community's own framing fits exactly: \"32-bit and 64-bit are different ecosystems\", not two flavors of the same thing.",
+            ImpactFr = "La table charge un processus Visual Pinball dans une architecture, mais le plugin dont elle a besoin n'existe que pour l'autre — la formule de la communauté colle exactement : « le 32-bit et le 64-bit sont deux écosystèmes différents », pas deux variantes d'une même chose.",
+            CauseEn = "A hybrid 32+64-bit install where only one bitness of B2S/FlexDMD was ever downloaded and placed — easy to miss because the 32-bit tables keep working fine, only the other bitness's tables are affected.",
+            CauseFr = "Une installation hybride 32+64-bit où une seule des deux architectures de B2S/FlexDMD a été téléchargée et placée — facile à manquer, car les tables de l'autre architecture continuent de fonctionner normalement, seules celles de l'architecture manquante sont affectées.",
+        },
+
+        // ── LOT C (dmddevice.ini Config Doctor).
+        ["DMD_POSITION_OFFSCREEN"] = new()
+        {
+            ImpactEn = "The virtual DMD window opens somewhere no monitor can show it — it isn't a crash or an error, it simply never becomes visible, which is a much harder symptom to diagnose than an outright failure.",
+            ImpactFr = "La fenêtre du DMD virtuel s'ouvre à un endroit qu'aucun écran ne peut afficher — ce n'est ni un plantage ni une erreur, elle ne devient simplement jamais visible, un symptôme bien plus difficile à diagnostiquer qu'un échec franc.",
+            CauseEn = "A stale position left over from a previous monitor layout, GPU change, or a monitor that's now disconnected/reordered — dmddevice.ini keeps whatever coordinates were last saved, it never re-validates them.",
+            CauseFr = "Une position périmée héritée d'une disposition d'écrans précédente, d'un changement de carte graphique, ou d'un écran maintenant débranché/réordonné — dmddevice.ini garde les dernières coordonnées enregistrées, il ne les revalide jamais.",
+        },
+
+        // ── LOT G (NVRAM Folder Writability).
+        ["NVRAM_FOLDER_NOT_WRITABLE"] = new()
+        {
+            ImpactEn = "Every table's high scores and per-game settings are lost the moment the app closes — nothing crashes, nothing errors, VPinMAME just has nowhere to put the save, silently, for every table using this folder.",
+            ImpactFr = "Les meilleurs scores et réglages de chaque table sont perdus dès que l'application se ferme — rien ne plante, rien ne remonte d'erreur, VPinMAME n'a simplement nulle part où écrire la sauvegarde, silencieusement, pour toutes les tables utilisant ce dossier.",
+            CauseEn = "The folder (or a parent of it) is marked read-only, or the current Windows user account lacks write permission — common after restoring from a backup, copying from another user's profile, or a permissions change on the drive.",
+            CauseFr = "Le dossier (ou un de ses parents) est marqué en lecture seule, ou le compte utilisateur Windows actuel n'a pas le droit d'écriture — fréquent après une restauration depuis une sauvegarde, une copie depuis le profil d'un autre utilisateur, ou un changement de permissions sur le disque.",
+        },
+
+        // ── Note-level entries (ADR-010 Doctrine) — still worth explaining, per the DMD_COM_PORT_NOT_FOUND precedent.
+        ["COM_PATH_OUTSIDE_INSTALL"] = new()
+        {
+            ImpactEn = "Not a defect by itself — but it means tables run from this folder actually load a DIFFERENT copy of the component than the one sitting right next to them, which can matter if you keep several installs deliberately out of sync (different plugin versions per cab profile, for instance).",
+            ImpactFr = "Pas un défaut en soi — mais cela signifie que les tables lancées depuis ce dossier chargent en réalité une copie DIFFÉRENTE du composant que celle posée juste à côté, ce qui peut compter si tu maintiens plusieurs installations volontairement désynchronisées (versions de plugin différentes selon le profil de cab, par exemple).",
+            CauseEn = "A legitimate multi-install setup (several VPX folders on the same machine), where only one install's copy of the component was ever registered.",
+            CauseFr = "Une configuration multi-installation légitime (plusieurs dossiers VPX sur la même machine), où seule la copie du composant d'une des installations a été enregistrée.",
+        },
+        ["DMD_VIRTUAL_DISABLED"] = new()
+        {
+            ImpactEn = "If unintentional, the DMD simply goes missing with zero error message — a symptom that sends people looking at B2S, FlexDMD, or their video driver before anyone thinks to check this one checkbox.",
+            ImpactFr = "Si involontaire, le DMD disparaît tout simplement sans le moindre message d'erreur — un symptôme qui pousse à chercher du côté de B2S, FlexDMD, ou du pilote vidéo, bien avant que quiconque pense à vérifier cette simple case à cocher.",
+            CauseEn = "A Freezy dmd-extensions update is known to reset '[virtualdmd] enabled' to false on its own during an upgrade, independent of what the user had configured.",
+            CauseFr = "Une mise à jour de Freezy dmd-extensions est connue pour réinitialiser d'elle-même « [virtualdmd] enabled » à false lors d'une mise à niveau, indépendamment de ce que l'utilisateur avait configuré.",
+        },
+        ["ALTSOUND_PRESENT_NOT_ENABLED"] = new()
+        {
+            ImpactEn = "The install looks entirely correct (files extracted, folder structure right) and stays silent — no error, just no sound difference — because the switch that actually turns AltSound on is a separate per-game VPinMAME setting, not a file.",
+            ImpactFr = "L'installation a l'air entièrement correcte (fichiers extraits, structure de dossier bonne) et reste silencieuse — aucune erreur, juste aucune différence sonore — car l'interrupteur qui active réellement AltSound est un réglage VPinMAME séparé par jeu, pas un fichier.",
+            CauseEn = "The pack was extracted correctly but the per-ROM Sound Mode option was never switched from its default (0/Original) in VPinMAME's own game options.",
+            CauseFr = "Le pack a été extrait correctement mais l'option Sound Mode par ROM n'a jamais été changée de sa valeur par défaut (0/Original) dans les options de jeu propres à VPinMAME.",
+        },
+        ["ALTCOLOR_PRESENT_NOT_ENABLED"] = new()
+        {
+            ImpactEn = "Same shape as ALTSOUND_PRESENT_NOT_ENABLED for the DMD: a complete, correctly-extracted colorization set that still renders in plain mono because the enable switch is a separate per-game VPinMAME setting.",
+            ImpactFr = "Même schéma que ALTSOUND_PRESENT_NOT_ENABLED pour le DMD : un jeu de colorisation complet et correctement extrait qui continue de s'afficher en mono, car l'interrupteur d'activation est un réglage VPinMAME séparé par jeu.",
+            CauseEn = "The colorization set was extracted correctly but the per-ROM DMD colorization option was never switched on in VPinMAME's own game options.",
+            CauseFr = "Le jeu de colorisation a été extrait correctement mais l'option de colorisation DMD par ROM n'a jamais été activée dans les options de jeu propres à VPinMAME.",
+        },
+        ["SCREENRES_UNPARSED"] = new()
+        {
+            ImpactEn = "None by itself — this is the tool being explicit about a blind spot rather than silently skipping the file, which would otherwise look identical to \"checked, all good\".",
+            ImpactFr = "Aucun en soi — c'est l'outil qui explicite un angle mort au lieu d'ignorer silencieusement le fichier, ce qui ressemblerait sinon à « vérifié, tout va bien ».",
+            CauseEn = "The file predates B2S Backglass Server 2.0.0's '# V2' marker, or was hand-edited into an unrecognised shape — both common on installs migrated forward from older setups.",
+            CauseFr = "Le fichier est antérieur au marqueur « # V2 » de B2S Backglass Server 2.0.0, ou a été édité à la main dans une structure non reconnue — les deux cas sont fréquents sur des installations migrées depuis d'anciennes configurations.",
+        },
     };
 }

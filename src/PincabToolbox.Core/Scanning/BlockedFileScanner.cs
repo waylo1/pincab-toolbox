@@ -4,18 +4,34 @@ using PincabToolbox.Core.Models;
 namespace PincabToolbox.Core.Scanning;
 
 /// <summary>
-/// Detects DLLs blocked by Windows ("Mark of the Web"). When a file is extracted from a
+/// Detects files blocked by Windows ("Mark of the Web"). When a file is extracted from a
 /// downloaded ZIP, Windows attaches a Zone.Identifier NTFS alternate data stream; DLLs marked
 /// this way silently fail to load (VPinMAME, dmddevice, B2S, FlexDMD…), which is one of the most
 /// common — and most invisible — causes of a pincab "that just doesn't work". Strictly read-only:
 /// it only reads the stream, it never unblocks anything.
+///
+/// <para>
+/// LOT E (spec 10/08) extended the surface from <c>*.dll</c> alone to <c>*.dll</c> + <c>*.exe</c> +
+/// <c>*.ocx</c> — the research cites blocked <b>executables</b> (<c>VPinballX.exe</c>) causing the
+/// exact same opaque symptom as a blocked DLL. Deliberately the ONLY thing that changed:
+/// <see cref="CriticalNames"/> was NOT extended, so a blocked <c>.exe</c>/<c>.ocx</c> still comes
+/// back as <see cref="Severity.Warning"/>, never <see cref="Severity.Critical"/> — widening the file
+/// surface and the severity at the same time is exactly how a false-Critical spike gets made (spec's
+/// own warning). This is the one scanner this lot is allowed to touch (spec §3.1 rule 5 exception).
+/// </para>
 /// </summary>
 public sealed class BlockedFileScanner : IScanner
 {
     public string Id => "security";
     public string Name => "Blocked-file check";
 
+    /// <summary>LOT E: DLLs, executables and ActiveX controls — Mark-of-the-Web blocks all three identically.</summary>
+    private static readonly string[] ScannedPatterns = { "*.dll", "*.exe", "*.ocx" };
+
     // Plugins whose blocking outright breaks tables → Critical; anything else → Warning.
+    // Deliberately DLL-only, unchanged by LOT E: widening the scanned surface must never also widen
+    // what counts as Critical (spec §5/LOT E — "élargir la surface et la sévérité en même temps est
+    // exactement comme ça qu'on fabrique un pic de faux Critical").
     private static readonly string[] CriticalNames =
     {
         "vpinmame.dll", "vpinmame64.dll",
@@ -76,24 +92,27 @@ public sealed class BlockedFileScanner : IScanner
         // C:\Documents and Settings NTFS junction under a C:\ root) would escape the unprotected
         // foreach and fail the whole scanner (caught upstream by ScanEngine as a raw
         // SCANNER_ERROR) instead of just skipping that one subtree.
-        var dlls = new List<string>();
+        var candidates = new List<string>();
         foreach (var dir in LayoutDetector.SafeEnumerateDirs(root, int.MaxValue))
         {
             ct.ThrowIfCancellationRequested();
-            string[] files;
-            try
+            foreach (var pattern in ScannedPatterns)
             {
-                files = Directory.GetFiles(dir, "*.dll");
+                string[] files;
+                try
+                {
+                    files = Directory.GetFiles(dir, pattern);
+                }
+                catch
+                {
+                    continue; // this directory is unreadable for this pattern — skip it, keep walking the rest of the tree
+                }
+                candidates.AddRange(files);
             }
-            catch
-            {
-                continue; // this directory is unreadable — skip it, keep walking the rest of the tree
-            }
-            dlls.AddRange(files);
         }
 
         int blocked = 0;
-        foreach (var dll in dlls)
+        foreach (var dll in candidates)
         {
             ct.ThrowIfCancellationRequested();
             if (!IsBlocked(dll)) continue;
@@ -121,7 +140,7 @@ public sealed class BlockedFileScanner : IScanner
                 Severity = Severity.Ok,
                 Category = Id,
                 Subject = "Windows block check",
-                EnglishText = "No Windows-blocked DLLs found.",
+                EnglishText = "No Windows-blocked files found.",
             });
         }
 

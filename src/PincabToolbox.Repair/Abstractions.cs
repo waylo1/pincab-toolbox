@@ -140,6 +140,44 @@ public interface IAudioDeviceControl
 }
 
 /// <summary>
+/// Result of a single, argument-free launch of an external executable
+/// (<see cref="Actions.RegisterComComponentAction"/>, LOT I). Deliberately reports only whether
+/// the process STARTED and whether it returned within the timeout — never its stdout/exit-code
+/// semantics, which are tool-specific and not something this engine can interpret safely.
+/// </summary>
+public sealed record ProcessLaunchResult(bool Started, bool TimedOut, int? ExitCode, string? Error)
+{
+    public static ProcessLaunchResult Ok(int exitCode) => new(true, false, exitCode, null);
+    public static ProcessLaunchResult TimedOutResult() => new(true, true, null, null);
+    public static ProcessLaunchResult Failed(string error) => new(false, false, null, error);
+}
+
+/// <summary>
+/// LOT I (spec 10/08) — the ONLY way this project ever runs a foreign executable. Deliberately
+/// narrow: one path in, zero arguments, one timeout out. No shell, no <c>cmd /c</c>, no string
+/// interpolation of a command line — <see cref="RealProcessLauncher"/> calls
+/// <c>Process.Start</c> directly on the exact path handed to it. Confinement (whitelist +
+/// canonical-path containment) is the CALLER's job (<see cref="Actions.RegisterComComponentAction"/>);
+/// this interface exists only so that logic is testable without ever actually spawning a process.
+/// </summary>
+public interface IProcessLauncher
+{
+    ProcessLaunchResult Launch(string exePath, TimeSpan timeout);
+}
+
+/// <summary>
+/// Whether THIS process currently holds an elevated (administrator) token — checked at the moment
+/// of use, never assumed from the static <c>app.manifest</c> (which requests <c>asInvoker</c>: the
+/// app never auto-elevates, but a user can still right-click "Run as administrator" by hand, which
+/// this interface must be able to see). LOT I rule 6: a repair that needs admin rights must say so
+/// plainly and never attempt a surprise elevation.
+/// </summary>
+public interface IElevationProbe
+{
+    bool IsCurrentProcessElevated();
+}
+
+/// <summary>
 /// Minimal file surface used by actions. Exists so actions stay testable without
 /// touching a real disk — and so the engine can be exercised on any OS.
 /// </summary>

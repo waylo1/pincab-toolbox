@@ -357,7 +357,21 @@ public sealed class RepairEngine : IRepairEngine
                 continue;
             }
 
-            var path = _backup.Backup(plan.PlanId, item);
+            // H.2 rule 4: a backup that cannot be completed must never be followed by a write.
+            // The backup call is not otherwise guarded anywhere in this stack (FileBackupService
+            // makes real disk calls with no try/catch of its own), so this is the one place that
+            // stands between a failed backup and a write proceeding anyway.
+            string path;
+            try
+            {
+                path = _backup.Backup(plan.PlanId, item);
+            }
+            catch (Exception ex)
+            {
+                _journal.Write(Entry(JournalEvent.BackupFailed, plan.PlanId, item.ItemId, ex.Message));
+                outcomes[item.ItemId] = false;
+                continue;
+            }
             backupPath ??= path;
             _journal.Write(Entry(JournalEvent.BackupCreated, plan.PlanId, item.ItemId, path));
 

@@ -19,6 +19,15 @@ public sealed class Settings
     public string? Lang { get; set; }
     public bool OnboardingSeen { get; set; }
 
+    /// <summary>
+    /// LOT H.4 (spec 10/08) — the Repair license key, pasted once by the user and re-verified
+    /// (never trusted) on every Apply via <see cref="Repair.Licensing.LicenseVerifier"/>. Stored as
+    /// plain text like the rest of this file: the key itself is a public, non-secret credential
+    /// (its signature is what proves validity, not its confidentiality) — same posture as any
+    /// software license key.
+    /// </summary>
+    public string? RepairLicenseKey { get; set; }
+
     private static string FilePath =>
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

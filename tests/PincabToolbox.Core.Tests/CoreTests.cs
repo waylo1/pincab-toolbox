@@ -418,6 +418,46 @@ public static class BlockedFileTests
         };
         Assert.Equal(0, new BlockedFileScanner().Scan(ctx).Count());
     }
+
+    // ───────────────────────── LOT E (spec 10/08) — *.exe / *.ocx surface ─────────────────────────
+
+    public static void Test_Exe_Not_In_CriticalNames_Classifies_As_Warning()
+    {
+        // The research cites a blocked VPinballX.exe as the exact same opaque symptom as a blocked
+        // DLL — but LOT E explicitly does NOT extend CriticalNames, so it must stay Warning.
+        Assert.Equal(Severity.Warning, BlockedFileScanner.SeverityFor("VPinballX.exe"));
+        Assert.Equal(Severity.Warning, BlockedFileScanner.SeverityFor("VPinballX64.exe"));
+    }
+
+    public static void Test_Ocx_Classifies_As_Warning()
+    {
+        Assert.Equal(Severity.Warning, BlockedFileScanner.SeverityFor("SomeControl.ocx"));
+    }
+
+    public static void Test_Scan_Enumerates_Exe_And_Ocx_Alongside_Dll_Without_Crashing()
+    {
+        // No real NTFS Zone.Identifier stream is available in this sandbox, so this cannot assert
+        // an actual BLOCKED_* finding for the new extensions — it proves the widened *.dll/*.exe/*.ocx
+        // walk (LOT E) still completes cleanly and still reports the all-clear.
+        var tmp = Path.Combine(Path.GetTempPath(), "pt_blk_lote_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tmp);
+        try
+        {
+            File.WriteAllText(Path.Combine(tmp, "VPinballX.exe"), "x");
+            File.WriteAllText(Path.Combine(tmp, "SomeControl.ocx"), "x");
+            File.WriteAllText(Path.Combine(tmp, "vpinmame.dll"), "x");
+            var ctx = new ScanContext
+            {
+                Layout = new InstallLayout { RootPath = tmp },
+                Profile = Fixtures.Profile(),
+            };
+            var f = new BlockedFileScanner().Scan(ctx).ToList();
+
+            Assert.True(f.Any(x => x.Code == "BLOCKED_NONE" && x.Severity == Severity.Ok),
+                "a clean install (dll+exe+ocx present, none blocked) must still say so explicitly");
+        }
+        finally { Directory.Delete(tmp, true); }
+    }
 }
 
 /// <summary>

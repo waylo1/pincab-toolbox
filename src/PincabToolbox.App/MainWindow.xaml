@@ -99,7 +99,7 @@
         </Border>
 
         <!-- Tabs -->
-        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Margin="10,6,10,0">
+        <TabControl x:Name="MainTabs" Grid.Row="1" Background="Transparent" BorderThickness="0" Margin="10,6,10,0">
 
             <!-- ============ SCANNER ============ -->
             <TabItem x:Name="TabScanner">
@@ -309,7 +309,11 @@
                                         FontWeight="SemiBold" Click="DetailAction_Click"/>
 
                                 <Border x:Name="DetailRepairTag" Visibility="Collapsed" Background="#22FF9F1C" BorderBrush="#55FF9F1C" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,11,0,0" HorizontalAlignment="Left" MaxWidth="420">
-                                    <TextBlock x:Name="DetailRepairTagText" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" TextWrapping="Wrap" LineHeight="18"/>
+                                    <StackPanel>
+                                        <TextBlock x:Name="DetailRepairTagText" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" TextWrapping="Wrap" LineHeight="18"/>
+                                        <Button x:Name="BtnGotoRepair" Click="BtnGotoRepair_Click" HorizontalAlignment="Left"
+                                                Margin="0,8,0,0" Padding="10,4" FontSize="11.5"/>
+                                    </StackPanel>
                                 </Border>
 
                                 <TextBlock x:Name="DetailPath" Foreground="{StaticResource TextDim}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Margin="0,11,0,0" Visibility="Collapsed"/>
@@ -426,6 +430,74 @@
                                        Foreground="{StaticResource TextDim}" TextWrapping="Wrap"/>
                         </StackPanel>
                         <TextBlock Text="© 2026 MC Automation" Foreground="{StaticResource TextDim}" Margin="0,12,0,0"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ REPAIR (LOT H, spec 10/08) ============ -->
+            <TabItem x:Name="TabRepair">
+                <TabItem.Header><TextBlock x:Name="TabRepairHeader" Text="Repair" FontSize="14"/></TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="24" MaxWidth="820" HorizontalAlignment="Left">
+
+                        <TextBlock x:Name="RepairIntro" TextWrapping="Wrap" FontSize="13.5" LineHeight="21" Foreground="{StaticResource Text}"/>
+
+                        <!-- License -->
+                        <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1"
+                                CornerRadius="8" Padding="14" Margin="0,16,0,0">
+                            <StackPanel>
+                                <TextBlock x:Name="LblRepairLicense" FontWeight="Bold" Margin="0,0,0,8"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TxtRepairLicense" Grid.Column="0" VerticalContentAlignment="Center"/>
+                                    <Button x:Name="BtnRepairVerifyLicense" Grid.Column="1" Margin="8,0,0,0" Padding="12,4"
+                                            Click="BtnRepairVerifyLicense_Click"/>
+                                </Grid>
+                                <TextBlock x:Name="LblRepairLicenseStatus" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{StaticResource TextDim}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Plan -->
+                        <Button x:Name="BtnRepairBuildPlan" Style="{StaticResource AccentButton}" HorizontalAlignment="Left"
+                                Margin="0,18,0,0" Click="BtnRepairBuildPlan_Click"/>
+                        <TextBlock x:Name="RepairPlanStatus" Margin="0,10,0,0" TextWrapping="Wrap" Foreground="{StaticResource TextDim}"/>
+                        <TextBlock x:Name="RepairBlockers" Visibility="Collapsed" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Foreground="{StaticResource Warning}"/>
+
+                        <!-- Items -->
+                        <ItemsControl x:Name="ListRepairItems" Margin="0,14,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1"
+                                            CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalContentAlignment="Top">
+                                            <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Foreground="{StaticResource Text}" MaxWidth="720"/>
+                                        </CheckBox>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Button x:Name="BtnRepairApply" HorizontalAlignment="Left" Margin="0,4,0,0" Padding="14,7"
+                                FontWeight="SemiBold" Click="BtnRepairApply_Click"/>
+                        <TextBlock x:Name="RepairApplyStatus" Margin="0,10,0,0" TextWrapping="Wrap" Foreground="{StaticResource TextDim}"/>
+
+                        <!-- Undo -->
+                        <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1"
+                                CornerRadius="8" Padding="14" Margin="0,22,0,0">
+                            <StackPanel>
+                                <TextBlock x:Name="LblRepairUndo" FontWeight="Bold" Margin="0,0,0,8"/>
+                                <ListBox x:Name="ListRepairUndo" Height="110" Background="{StaticResource PanelAlt}"
+                                         BorderBrush="{StaticResource Border}" BorderThickness="1" Foreground="{StaticResource Text}"/>
+                                <Button x:Name="BtnRepairUndo" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,4"
+                                        Click="BtnRepairUndo_Click"/>
+                                <TextBlock x:Name="RepairUndoStatus" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{StaticResource TextDim}"/>
+                            </StackPanel>
+                        </Border>
+
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

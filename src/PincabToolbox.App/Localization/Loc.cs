@@ -68,6 +68,7 @@ public static class Loc
         ["tab.scanner"] = "Scanner",
         ["tab.diff"] = "Script Diff",
         ["tab.about"] = "About",
+        ["tab.repair"] = "Repair",
         ["scan.root"] = "Pincab root folder:",
         ["scan.browse"] = "Browse…",
         ["scan.demo"] = "Demo mode",
@@ -98,16 +99,46 @@ public static class Loc
         ["detail.cause"] = "PROBABLE CAUSE",
         ["detail.fix"] = "RECOMMENDED FIX",
         // Écran 1 (UX-COPY-Repair.md) — facts computed from the real plan by RepairOfferBuilder,
-        // never declared. "soon" because no purchase flow exists yet (ADR-009 not wired).
+        // never declared.
         ["repair.checks.fixable"] = "✓ Fixable automatically",
         ["repair.checks.backup"] = "✓ Backed up before changing",
         ["repair.checks.reversible"] = "✓ Reversible — one click to undo",
         ["repair.checks.duration.seconds"] = "⏱ A few seconds",
         ["repair.checks.duration.underminute"] = "⏱ Under a minute",
         ["repair.checks.duration.minutes"] = "⏱ A few minutes",
-        ["repair.tag"] = "🔒 Repair — coming soon",
-        ["repair.summary"] = "Repair could fix {0} of the {1} findings here automatically — coming soon.",
+        ["repair.tag"] = "→ See the Repair tab to apply this fix",
+        ["repair.summary"] = "Repair could fix {0} of the {1} findings here automatically — see the Repair tab.",
         ["repair.notautomatable"] = "Some steps will always stay manual, licence or not:",
+        ["repair.goto"] = "Go to the Repair tab →",
+
+        // Écran 2 (LOT H, spec 10/08) — the write path itself.
+        ["repair.intro"] = "Repair can fix some of the findings above automatically: every change is backed up first and can be undone, and nothing is ever applied without your explicit, per-item confirmation. Enter your license key, build the plan, review it, then choose what to apply.",
+        ["repair.license.label"] = "License key",
+        ["repair.license.hint"] = "Paste the key you received after purchase.",
+        ["repair.license.verify"] = "Verify",
+        ["repair.license.valid"] = "✓ Valid license.",
+        ["repair.license.invalid"] = "Invalid or missing license key — Repair will only show what could be fixed, not apply it.",
+        ["repair.plan.build"] = "Analyze what can be repaired",
+        ["repair.plan.status"] = "{0} fixable item(s) found. Review and select what to apply below.",
+        ["repair.plan.empty"] = "Nothing to apply right now — either everything is already fine, every fix needs a license, or the remaining steps stay manual.",
+        ["repair.needscan"] = "Run a scan first, from the Scanner tab.",
+        ["repair.noneselected"] = "Nothing selected — check at least one item before applying.",
+        ["repair.reversible.yes"] = "Reversible",
+        ["repair.reversible.no"] = "Cannot be undone",
+        ["repair.backup.yes"] = "Backed up first",
+        ["repair.backup.no"] = "No backup (nothing to restore)",
+        ["repair.confirm.title"] = "This cannot be undone",
+        ["repair.confirm.nonreversible"] = "At least one selected fix cannot be undone once applied. Do you want to continue?",
+        ["repair.apply.button"] = "Apply selected fixes",
+        ["repair.apply.running"] = "Applying…",
+        ["repair.apply.status"] = "{0} applied, {1} failed.",
+        ["repair.apply.recovery"] = "Something went wrong while undoing a partial change — a backup is kept here, restore it by hand if needed:",
+        ["repair.undo.label"] = "Undo history",
+        ["repair.undo.button"] = "Undo selected plan",
+        ["repair.undo.ok"] = "Undone.",
+        ["repair.undo.fail"] = "Could not fully undo:",
+        ["repair.undo.noneselected"] = "Select a plan from the list first.",
+        ["repair.undo.journalwarning"] = "⚠ The last write to the undo journal failed — Undo may be incomplete for the most recent action.",
         ["col.severity"] = "Severity",
         ["col.category"] = "Module",
         ["col.subject"] = "Subject",
@@ -155,9 +186,16 @@ public static class Loc
         ["cat.display"] = "Display Setup",
         ["cat.media-orphan"] = "Orphaned Media",
         ["cat.vpxversion"] = "VPX Version",
+        // Lot communauté 10/08 (LOT A→G).
+        ["cat.com"] = "COM Registration",
+        ["cat.chain-bitness"] = "Chain Bitness",
+        ["cat.dmd-config"] = "DMD Config",
+        ["cat.feature-enabled"] = "Feature Enabled",
+        ["cat.screenres-format"] = "ScreenRes Format",
+        ["cat.nvram-writable"] = "NVRAM Writability",
         ["about.tagline"] = "The mechanic for your pincab.",
         ["about.body"] = "Pincab Toolbox scans your Visual Pinball X / PinUP Popper installation and tells you what is broken, missing or mismatched — before you hit Start on a table.\n\n• 100% local scanning — your cab, your files and your findings are never uploaded, no telemetry, no account.\n• Read-only — the free scanner never modifies a single file.\n• The Update Watcher uses the open-source Virtual Pinball Spreadsheet database and only ever links you to official pages. It never downloads tables, ROMs or media.\n• The one exception: the \"Check for updates\" button below is manual and opt-in — click it, and it contacts GitHub just to see if a newer version exists. Nothing about your cab, your tables or your scan results is ever sent. It never runs on its own.",
-        ["about.roadmap"] = "Coming next: Repair — optional one-click fixes for some of what the scanner finds, always with a backup first, a preview of every change, and undo. The free scanner always stays read-only. Follow the forum thread to be notified.",
+        ["about.roadmap"] = "Repair is here: optional one-click fixes for some of what the scanner finds, always with a backup first, a preview of every change, and one-click undo. It needs a license key (Repair tab) — the free scanner itself always stays read-only, license or not.",
         ["about.version"] = "Version",
         ["about.checkupdate"] = "Check for updates",
         ["about.update.checking"] = "Checking…",
@@ -178,6 +216,7 @@ public static class Loc
         ["tab.scanner"] = "Scanner",
         ["tab.diff"] = "Diff de scripts",
         ["tab.about"] = "À propos",
+        ["tab.repair"] = "Repair",
         ["scan.root"] = "Dossier racine du pincab :",
         ["scan.browse"] = "Parcourir…",
         ["scan.demo"] = "Mode démo",
@@ -208,16 +247,46 @@ public static class Loc
         ["detail.cause"] = "CAUSE PROBABLE",
         ["detail.fix"] = "CORRECTIF RECOMMANDÉ",
         // Écran 1 (UX-COPY-Repair.md) — faits calculés depuis le plan réel par RepairOfferBuilder,
-        // jamais déclarés. « bientôt » car aucun parcours d'achat n'existe encore (ADR-009 non câblé).
+        // jamais déclarés.
         ["repair.checks.fixable"] = "✓ Réparable automatiquement",
         ["repair.checks.backup"] = "✓ Sauvegarde avant modification",
         ["repair.checks.reversible"] = "✓ Réversible — annulable en un clic",
         ["repair.checks.duration.seconds"] = "⏱ Quelques secondes",
         ["repair.checks.duration.underminute"] = "⏱ Moins d'une minute",
         ["repair.checks.duration.minutes"] = "⏱ Quelques minutes",
-        ["repair.tag"] = "🔒 Repair — bientôt disponible",
-        ["repair.summary"] = "Repair pourrait corriger {0} problème(s) sur {1} détecté(s) automatiquement — bientôt disponible.",
+        ["repair.tag"] = "→ Voir l'onglet Repair pour appliquer ce correctif",
+        ["repair.summary"] = "Repair pourrait corriger {0} problème(s) sur {1} détecté(s) automatiquement — voir l'onglet Repair.",
         ["repair.notautomatable"] = "Certaines étapes resteront toujours manuelles, licence ou pas :",
+        ["repair.goto"] = "Aller à l'onglet Repair →",
+
+        // Écran 2 (LOT H, spec 10/08) — le chemin d'écriture lui-même.
+        ["repair.intro"] = "Repair peut corriger automatiquement certains résultats ci-dessus : chaque modification est sauvegardée avant d'être appliquée et peut être annulée, et rien n'est jamais appliqué sans ta confirmation explicite, poste par poste. Entre ta clé de licence, construis le plan, vérifie-le, puis choisis ce que tu veux appliquer.",
+        ["repair.license.label"] = "Clé de licence",
+        ["repair.license.hint"] = "Colle la clé reçue après ton achat.",
+        ["repair.license.verify"] = "Vérifier",
+        ["repair.license.valid"] = "✓ Licence valide.",
+        ["repair.license.invalid"] = "Clé de licence absente ou invalide, Repair affichera seulement ce qui pourrait être corrigé, sans l'appliquer.",
+        ["repair.plan.build"] = "Analyser ce qui peut être réparé",
+        ["repair.plan.status"] = "{0} élément(s) réparable(s) trouvé(s). Vérifie et sélectionne ce que tu veux appliquer ci-dessous.",
+        ["repair.plan.empty"] = "Rien à appliquer pour l'instant, soit tout va déjà bien, soit chaque correctif nécessite une licence, soit les étapes restantes restent manuelles.",
+        ["repair.needscan"] = "Lance d'abord un scan depuis l'onglet Scanner.",
+        ["repair.noneselected"] = "Rien n'est sélectionné, coche au moins un élément avant d'appliquer.",
+        ["repair.reversible.yes"] = "Réversible",
+        ["repair.reversible.no"] = "Non annulable",
+        ["repair.backup.yes"] = "Sauvegardé avant modification",
+        ["repair.backup.no"] = "Pas de sauvegarde (rien à restaurer)",
+        ["repair.confirm.title"] = "Cette action est irréversible",
+        ["repair.confirm.nonreversible"] = "Au moins un correctif sélectionné ne pourra pas être annulé une fois appliqué. Veux-tu continuer ?",
+        ["repair.apply.button"] = "Appliquer les correctifs sélectionnés",
+        ["repair.apply.running"] = "Application en cours…",
+        ["repair.apply.status"] = "{0} appliqué(s), {1} échoué(s).",
+        ["repair.apply.recovery"] = "Un problème est survenu en annulant une modification partielle, une sauvegarde est conservée ici, restaure-la à la main si besoin :",
+        ["repair.undo.label"] = "Historique d'annulation",
+        ["repair.undo.button"] = "Annuler le plan sélectionné",
+        ["repair.undo.ok"] = "Annulé.",
+        ["repair.undo.fail"] = "Annulation incomplète :",
+        ["repair.undo.noneselected"] = "Sélectionne d'abord un plan dans la liste.",
+        ["repair.undo.journalwarning"] = "⚠ La dernière écriture du journal d'annulation a échoué, Undo pourrait être incomplet pour l'action la plus récente.",
         ["col.severity"] = "Gravité",
         ["col.category"] = "Module",
         ["col.subject"] = "Sujet",
@@ -265,6 +334,13 @@ public static class Loc
         ["cat.display"] = "Configuration écrans",
         ["cat.media-orphan"] = "Médias orphelins",
         ["cat.vpxversion"] = "Version VPX",
+        // Lot communauté 10/08 (LOT A→G).
+        ["cat.com"] = "Enregistrement COM",
+        ["cat.chain-bitness"] = "Chaîne 32/64-bit",
+        ["cat.dmd-config"] = "Config DMD",
+        ["cat.feature-enabled"] = "Fonction activée",
+        ["cat.screenres-format"] = "Format ScreenRes",
+        ["cat.nvram-writable"] = "Écriture NVRAM",
         ["about.tagline"] = "Le mécanicien de ton pincab.",
         ["about.body"] = "Pincab Toolbox scanne ton installation Visual Pinball X / PinUP Popper et te dit ce qui est cassé, manquant ou incompatible — avant que tu ne lances une table.\n\n• Scan 100 % local — ta cab, tes fichiers et tes résultats de scan ne sont jamais envoyés, zéro télémétrie, zéro compte.\n• Lecture seule — le scanner gratuit ne modifie jamais le moindre fichier.\n• L'Update Watcher s'appuie sur la base open source Virtual Pinball Spreadsheet et se contente de te donner le lien officiel. Il ne télécharge jamais ni table, ni ROM, ni média.\n• Seule exception : le bouton « Vérifier les mises à jour » ci-dessous est manuel et volontaire — tu cliques, et il contacte GitHub juste pour voir si une nouvelle version existe. Rien concernant ta cab, tes tables ou tes résultats de scan n'est jamais envoyé. Il ne se déclenche jamais tout seul.",
         ["about.roadmap"] = "Bientôt : Repair — des réparations optionnelles en un clic pour une partie de ce que le scanner trouve, toujours avec sauvegarde avant, aperçu de chaque changement et annulation. Le scanner gratuit reste toujours en lecture seule. Suis le fil du forum pour être prévenu.",
@@ -313,7 +389,7 @@ public static class Loc
         ["TABLES_DIR_NOT_FOUND"] = "Aucun dossier de tables trouvé sous la racine choisie — est-ce bien une installation Visual Pinball ?",
         ["ROMS_DIR_NOT_FOUND"] = "Dossier roms de VPinMAME introuvable — vérification des ROMs ignorée.",
         ["BLOCKED_DLL"] = "« {0} » est bloqué par Windows (fichier téléchargé) — il risque de ne pas se charger tant que tu ne l'as pas débloqué.",
-        ["BLOCKED_NONE"] = "Aucune DLL bloquée par Windows détectée.",
+        ["BLOCKED_NONE"] = "Aucun fichier bloqué par Windows détecté.",
         ["BITNESS_INVENTORY"] = "{0} — {1} ({2}).",
         ["BITNESS_NOTHING_FOUND"] = "Aucun binaire connu à analyser.",
         ["BITNESS_MISMATCH_VPM"] = "Un Visual Pinball 64-bit est installé mais seul un VPinMAME.dll 32-bit a été trouvé. Le VPX 64-bit ne peut pas utiliser le serveur COM 32-bit — les tables à ROM échoueront.",
@@ -352,6 +428,35 @@ public static class Loc
         ["LOCALE_DECIMAL_SEPARATOR"] = "Le séparateur décimal de cet utilisateur Windows est « {0} » au lieu de « . ». Certains scripts de table VPX et analyses de physique/configuration supposent un point, et peuvent mal se comporter avec un séparateur virgule — un point de friction connu pour les installations Windows en français.",
         // Pas d'argument — le constat ne dépend d'aucune valeur variable.
         ["VPINMAME_CONFIG_PHANTOM"] = "Une configuration VPinMAME dans le registre (HKCU\\Software\\Freeware\\Visual PinMame) ET un fichier VPinMAME.ini ont été trouvés. VPinMAME peut être configuré via l'un ou l'autre — si tu modifies l'un sans voir les changements s'appliquer, tu modifies peut-être celui qui n'est pas actuellement utilisé.",
+
+        // ── Lot communauté 10/08 — LOT A (COM Registration Health). {0} = ProgID.
+        ["COM_NOT_REGISTERED"] = "« {0} » n'est enregistré dans aucune des deux vues du registre COM (32 et 64-bit), alors que le composant correspondant est présent dans cette installation et qu'au moins une table en a besoin — ça va échouer avec une erreur du type « ActiveX component can't create object » ou « Library not registered (Exception from HRESULT: 0x8002801D) ».",
+        // {0} = ProgID, {1} = chemin enregistré.
+        ["COM_STALE_PATH"] = "« {0} » est enregistré mais pointe vers « {1} », qui n'existe plus — un reste d'enregistrement d'une installation précédente. Le chargement échouera.",
+        ["COM_PATH_OUTSIDE_INSTALL"] = "« {0} » est enregistré, mais vers une copie en dehors de cette installation (« {1} ») — cette installation a aussi sa propre copie du composant. Les tables lancées ici chargeront en réalité la copie enregistrée (l'autre).",
+        ["COM_OK"] = "« {0} » est enregistré et pointe à l'intérieur de cette installation.",
+        // {0} = ProgID, {1} = architecture manquante ("32-bit"/"64-bit").
+        ["COM_BITNESS_GAP"] = "Un Visual Pinball {1} est installé mais « {0} » n'est enregistré que dans l'AUTRE architecture — le processus {1} ne peut pas l'utiliser. C'est le classique problème « le 32-bit et le 64-bit sont deux écosystèmes différents ».",
+        // Pas d'argument — les 4 conditions sont déterministes, le constat ne dépend d'aucune valeur variable.
+        ["VPINMAME_NOT_REGISTERED"] = "VPinMAME.dll est présent mais VPinMAME.Controller n'est enregistré dans aucune des deux vues du registre COM (32 ou 64-bit), alors qu'au moins une table en a besoin — toutes les tables à ROM vont échouer au démarrage (« ActiveX component can't create object » / « Library not registered »). C'est presque toujours causé par une installation VPX copiée à la main sans jamais avoir lancé le Setup.exe de VPinMAME.",
+
+        // ── LOT B (Chain Bitness Doctor). {0} = nom du composant (B2S/FlexDMD), {1} = architecture ("32-bit"/"64-bit").
+        ["CHAIN_BITNESS_GAP"] = "Un Visual Pinball {1} est installé et au moins une table a besoin de {0}, mais aucun binaire {0} en {1} n'a été trouvé sous cette installation — le chargement échouera depuis le processus {1}.",
+
+        // ── LOT C (dmddevice.ini Config Doctor). Pas d'argument.
+        ["DMD_VIRTUAL_DISABLED"] = "dmddevice.ini a le DMD virtuel désactivé (« [virtualdmd] enabled = false »), et aucun pilote de DMD matériel n'est activé non plus dans le même fichier. Si tu n'as pas de DMD physique, ton DMD va simplement disparaître sans message d'erreur — une mise à jour de Freezy est connue pour réinitialiser cette valeur toute seule.",
+        // {0}=left, {1}=top, {2}=width, {3}=height.
+        ["DMD_POSITION_OFFSCREEN"] = "dmddevice.ini positionne le DMD virtuel à ({0},{1}) avec une taille de {2}x{3}, ce qui tombe entièrement en dehors de tous les écrans connectés — il ne sera jamais visible, même si dmddevice.ini se charge sans erreur.",
+
+        // ── LOT D (Feature Enabled Doctor). {0} = nom de la ROM.
+        ["ALTSOUND_PRESENT_NOT_ENABLED"] = "« {0} » a un pack AltSound installé sous altsound/{0}/, mais le mode Alt Sound de VPinMAME est réglé sur 0 (désactivé) pour cette ROM — le pack est présent mais silencieux.",
+        ["ALTCOLOR_PRESENT_NOT_ENABLED"] = "« {0} » a un jeu de colorisation AltColor/Serum complet installé sous altcolor/{0}/, mais la colorisation DMD de VPinMAME est désactivée pour cette ROM — le DMD s'affichera en mono.",
+
+        // ── LOT F (ScreenRes.txt Format Honesty). {0} = nom du fichier concerné (ScreenRes.txt ou nom de table).
+        ["SCREENRES_UNPARSED"] = "« {0} » est présent mais pas dans un format que cet outil sait vérifier (pas de marqueur « # V2 », ou une structure non reconnue) — sa position de backglass/DMD n'est pas vérifiée ; ceci n'est pas une affirmation qu'il y a un problème.",
+
+        // ── LOT G (NVRAM Folder Writability). Pas d'argument.
+        ["NVRAM_FOLDER_NOT_WRITABLE"] = "Le dossier nvram de VPinMAME existe mais un vrai test d'écriture a échoué — les meilleurs scores et réglages par table vont échouer à s'enregistrer silencieusement, table après table, sans aucune erreur affichée.",
     };
 
     /// <summary>French fix hints per finding code (English fallback is in the Core Finding.FixHint).</summary>
@@ -393,5 +498,19 @@ public static class Loc
         ["DMD_COM_PORT_NOT_FOUND"] = "Vérifie que le DMD est sous tension et que sa connexion USB/série est branchée, ou mets à jour dmddevice.ini si le port COM a changé.",
         ["LOCALE_DECIMAL_SEPARATOR"] = "Dans les paramètres régionaux Windows, tu peux régler le « symbole décimal » sur « . » dans le format de nombre avancé — certains propriétaires de pincab font tourner leur compte cab en format numérique anglais (États-Unis) spécifiquement pour éviter ce genre de souci.",
         ["VPINMAME_CONFIG_PHANTOM"] = "Si tu t'appuies sur VPinMAME.ini, vérifie que ses réglages s'appliquent réellement ; sinon, envisage de le supprimer pour éviter l'ambiguïté et garder le registre comme source unique.",
+
+        // ── Lot communauté 10/08 — LOT A→G.
+        ["COM_NOT_REGISTERED"] = "Lance l'outil d'enregistrement du composant (son Setup.exe / son application d'enregistrement / regsvr32) en tant qu'administrateur.",
+        ["COM_STALE_PATH"] = "Relance l'outil d'enregistrement du composant depuis son emplacement ACTUEL pour écraser l'enregistrement périmé.",
+        ["COM_PATH_OUTSIDE_INSTALL"] = "Si tu voulais utiliser la copie de CETTE installation, relance son outil d'enregistrement depuis ici.",
+        ["COM_BITNESS_GAP"] = "Enregistre la version du composant qui correspond à l'architecture manquante, ou lance la version de VPX dont l'architecture EST déjà enregistrée.",
+        ["VPINMAME_NOT_REGISTERED"] = "Lance le Setup.exe de VPinMAME (dans le dossier VPinMAME) en tant qu'administrateur — il enregistre le composant COM. C'est le correctif le plus courant pour « aucune table à ROM ne démarre ».",
+        ["CHAIN_BITNESS_GAP"] = "Installe la version manquante du composant dans l'architecture concernée, à côté du Visual Pinball correspondant.",
+        ["DMD_VIRTUAL_DISABLED"] = "Si tu n'as pas de DMD physique, mets « enabled = true » sous [virtualdmd] dans dmddevice.ini.",
+        ["DMD_POSITION_OFFSCREEN"] = "Réinitialise les valeurs left/top/width/height de [virtualdmd] dans dmddevice.ini (ou supprime-les pour revenir aux valeurs par défaut) avec tous les écrans branchés dans leur disposition normale du cab.",
+        ["ALTSOUND_PRESENT_NOT_ENABLED"] = "Dans les options par jeu de VPinMAME (menu F1, ou l'interface de configuration VPinMAME), change le mode son de 0/Original pour utiliser le pack AltSound installé.",
+        ["ALTCOLOR_PRESENT_NOT_ENABLED"] = "Dans les options par jeu de VPinMAME, active la colorisation DMD (« Colorize DMD » / couleurs DMD externes) pour utiliser le jeu installé.",
+        ["SCREENRES_UNPARSED"] = "Si la position de ton backglass semble fausse, relance B2S_ScreenResIdentifier (ou ton éditeur ScreenRes) pour régénérer le fichier dans le format actuel.",
+        ["NVRAM_FOLDER_NOT_WRITABLE"] = "Vérifie que le dossier nvram n'est pas en lecture seule et que ton compte utilisateur Windows a le droit d'écriture dessus (clic droit → Propriétés → Sécurité).",
     };
 }
