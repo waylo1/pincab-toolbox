@@ -33,6 +33,7 @@ public sealed class RepairSession
     private readonly IRepairEngine _engine;
     private readonly FileRepairJournal _journal;
     private readonly ILicenseVerifier _licenseVerifier;
+    private readonly bool _forceDryRun;
 
     /// <summary>
     /// <c>%APPDATA%\PincabToolbox</c> — the shared root under which the journal and backups both
@@ -43,12 +44,37 @@ public sealed class RepairSession
     public static string DefaultAppDataRoot() => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PincabToolbox");
 
+    /// <summary>
+    /// Kill switch for a first field test on real hardware, added 11/08/2026 the same day the real
+    /// license key was embedded (see ADR-012's "Suite" section) — a way to exercise the whole Repair
+    /// UI end-to-end against a real license without trusting that every code path behind it has
+    /// already been run on Windows. Reads <c>PINCAB_REPAIR_FORCE_DRYRUN</c> (any of "1"/"true"/"yes",
+    /// case-insensitive); unset or anything else means normal behavior. Checked once per session,
+    /// same posture as the rest of this class: never assumed, read fresh.
+    /// </summary>
+    public static bool IsForceDryRunRequestedByEnvironment()
+    {
+        var raw = Environment.GetEnvironmentVariable("PINCAB_REPAIR_FORCE_DRYRUN");
+        return raw is not null &&
+               (raw.Equals("1", StringComparison.Ordinal) ||
+                raw.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                raw.Equals("yes", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// True when this session will never call the real engine from <see cref="Apply"/>, regardless
+    /// of license or selection. The UI must show this plainly — a forced dry-run that looks like a
+    /// normal session would be exactly the kind of silent behavior this project's doctrine rejects.
+    /// </summary>
+    public bool ForceDryRunActive => _forceDryRun;
+
     public RepairSession(
         IKnowledgePack pack,
         IReadOnlyList<string> confinementRoots,
         InstallLayout? layout = null,
         string? appDataRoot = null,
-        ILicenseVerifier? licenseVerifier = null)
+        ILicenseVerifier? licenseVerifier = null,
+        bool? forceDryRun = null)
     {
         var root = appDataRoot ?? DefaultAppDataRoot();
         var fs = new RealFileSystem();
@@ -62,6 +88,7 @@ public sealed class RepairSession
         var backupRoot = Path.Combine(root, "repair-backups");
         _journal = new FileRepairJournal(Path.Combine(root, "repair-journal"));
         _licenseVerifier = licenseVerifier ?? new LicenseVerifier();
+        _forceDryRun = forceDryRun ?? IsForceDryRunRequestedByEnvironment();
 
         _engine = new RepairEngine(
             registry, pack, _journal,
@@ -111,6 +138,25 @@ public sealed class RepairSession
     /// </summary>
     public ApplyResult Apply(RepairPlan plan, IReadOnlySet<string> selectedItemIds)
     {
+        if (_forceDryRun)
+        {
+            // Deliberately never touches _engine at all — not "call Apply but no-op inside it",
+            // an actual skipped call. That is the whole guarantee: no registered action, no
+            // backup service, no journal write for the change itself can run, no matter what a
+            // future bug in any of them might do. Selection is still honored so the reported
+            // counts match what a real Apply would have attempted.
+            var outcomes = plan.Items
+                .Where(i => selectedItemIds.Contains(i.ItemId))
+                .ToDictionary(i => i.ItemId, _ => true);
+            return new ApplyResult
+            {
+                PlanId = plan.PlanId,
+                ItemOutcomes = outcomes,
+                RecoveryRequired = false,
+                ForcedDryRun = true,
+            };
+        }
+
         var withSelection = plan with
         {
             Items = plan.Items.Select(i => i with { Selected = selectedItemIds.Contains(i.ItemId) }).ToList(),

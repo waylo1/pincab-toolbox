@@ -964,6 +964,11 @@ public partial class MainWindow : Window
         RepairPlanStatus.Text = _repairItemRows.Count > 0
             ? string.Format(Loc.Get("repair.plan.status"), _repairItemRows.Count)
             : Loc.Get("repair.plan.empty");
+
+        // 11/08/2026, ADR-012 "Suite" — never let this run silently: if the kill switch is on,
+        // say so every time a plan is built, not just once, so it can't be missed mid-session.
+        if (_repairSession.ForceDryRunActive)
+            RepairPlanStatus.Text = Loc.Get("repair.forceddryrun.banner") + "\n" + RepairPlanStatus.Text;
     }
 
     /// <summary>
@@ -1053,6 +1058,8 @@ public partial class MainWindow : Window
             var ok = result.ItemOutcomes.Count(kv => kv.Value);
             var failed = result.ItemOutcomes.Count(kv => !kv.Value);
             RepairApplyStatus.Text = string.Format(Loc.Get("repair.apply.status"), ok, failed);
+            if (result.ForcedDryRun)
+                RepairApplyStatus.Text = Loc.Get("repair.forceddryrun.applied") + "\n" + RepairApplyStatus.Text;
             if (result.RecoveryRequired)
             {
                 RepairApplyStatus.Text += "\n" + Loc.Get("repair.apply.recovery")

@@ -185,4 +185,12 @@ public sealed record ApplyResult
 
     public string? BackupPath { get; init; }
     public IReadOnlyList<Blocker> Blockers { get; init; } = Array.Empty<Blocker>();
+
+    /// <summary>
+    /// True when this result comes from <see cref="RepairSession"/>'s forced-dry-run mode
+    /// (<c>PINCAB_REPAIR_FORCE_DRYRUN</c>) — <see cref="ItemOutcomes"/> reports what WOULD have
+    /// happened, but the engine was never called: zero disk I/O occurred. The caller must never
+    /// present this the same way as a real apply — see <see cref="RepairSession.Apply"/>.
+    /// </summary>
+    public bool ForcedDryRun { get; init; } = false;
 }

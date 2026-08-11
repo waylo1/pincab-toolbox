@@ -1,5 +1,35 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 11/08/2026
 
+## 🧪 MAJ 11/08 (quater) — coupe-circuit "simulation forcée" pour le premier test réel sur cabinet
+
+> **Suite directe de l'entrée (ter) juste en dessous, même journée.** Maxime a donné le feu vert
+> à l'amélioration proposée en revue CTO+Produit : un moyen de tester tout le chemin d'écriture sur
+> sa cab réelle, avec une vraie licence, sans risquer une écriture réelle avant d'être serein.
+>
+> **Fait** : `RepairSession` lit désormais la variable d'environnement `PINCAB_REPAIR_FORCE_DRYRUN`
+> (`1`/`true`/`yes`) à la construction. Si elle est active, `Apply()` ne touche **jamais**
+> `RepairEngine` — pas un dry-run simulé à l'intérieur du moteur, un appel réellement sauté :
+> aucune action enregistrée, aucun service de backup, aucune écriture ne peut s'exécuter, quel que
+> soit un bug futur dans l'un de ces composants. `ApplyResult.ForcedDryRun` porte l'information ;
+> `RepairSession.ForceDryRunActive` l'expose pour l'UI. Jamais silencieux (doctrine du projet) : un
+> bandeau s'affiche dans l'onglet Repair dès qu'un plan est construit sous ce mode, et le message de
+> fin d'Apply dit explicitement "simulation uniquement" plutôt que de laisser croire à une vraie
+> application.
+>
+> **Usage pour Maxime** : lancer `PincabToolbox.exe` avec `PINCAB_REPAIR_FORCE_DRYRUN=1` dans
+> l'environnement pour un premier passage complet Preflight → Apply → Undo sur la cab réelle, sans
+> aucun risque d'écriture, avant de retirer la variable pour un usage normal.
+>
+> **Vérifié** : le sandbox a bien subi une panne d'outil temporaire (classifieur de sécurité de
+> l'environnement indisponible plusieurs minutes) pendant l'écriture de ce correctif, mais une fois
+> revenu, Core 412/412 et Repair 145/145 (140→145 pour les 5 nouveaux tests forced-dry-run), tous
+> verts — deux erreurs de compilation réelles trouvées et corrigées au passage (paramètre `msg`
+> manquant sur deux `A.True`/`A.False`). `PincabToolbox.App` reste non compilable dans ce sandbox
+> (fait déjà documenté) : le fichier édité (`MainWindow.xaml.cs`) a été vérifié par la même méthode
+> `csc` sans références WPF que le reste de cette session (aucune erreur CS1xxx), et le XAML reparsé
+> comme XML valide — jamais compilé ni exécuté réellement, à vérifier en premier via `build.cmd` sur
+> la machine de Maxime.
+
 ## 🔑 MAJ 11/08 (ter) — clé de licence RÉELLE déployée, `Apply` n'est plus un no-op prouvé
 
 > **Suite directe de l'entrée juste en dessous, même journée, changement matériel de posture de

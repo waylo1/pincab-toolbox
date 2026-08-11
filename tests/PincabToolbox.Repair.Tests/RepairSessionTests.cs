@@ -81,6 +81,148 @@ public static class RepairSessionTests
         finally { TryDelete(root); }
     }
 
+    // ───────────────────────── Forced dry-run kill switch (11/08/2026, ADR-012 "Suite") ─────────────────────────
+
+    public static void Test_IsForceDryRunRequestedByEnvironment_UnsetIsFalse()
+    {
+        var before = Environment.GetEnvironmentVariable("PINCAB_REPAIR_FORCE_DRYRUN");
+        try
+        {
+            Environment.SetEnvironmentVariable("PINCAB_REPAIR_FORCE_DRYRUN", null);
+            A.False(RepairSession.IsForceDryRunRequestedByEnvironment(), "unset must default to normal behavior");
+        }
+        finally { Environment.SetEnvironmentVariable("PINCAB_REPAIR_FORCE_DRYRUN", before); }
+    }
+
+    public static void Test_IsForceDryRunRequestedByEnvironment_RecognizesTrueVariants()
+    {
+        var before = Environment.GetEnvironmentVariable("PINCAB_REPAIR_FORCE_DRYRUN");
+        try
+        {
+            foreach (var v in new[] { "1", "true", "TRUE", "yes", "YES" })
+            {
+                Environment.SetEnvironmentVariable("PINCAB_REPAIR_FORCE_DRYRUN", v);
+                A.True(RepairSession.IsForceDryRunRequestedByEnvironment(), $"'{v}' must be recognized as enabled");
+            }
+            foreach (var v in new[] { "0", "false", "no", "" })
+            {
+                Environment.SetEnvironmentVariable("PINCAB_REPAIR_FORCE_DRYRUN", v);
+                A.False(RepairSession.IsForceDryRunRequestedByEnvironment(), $"'{v}' must NOT be recognized as enabled");
+            }
+        }
+        finally { Environment.SetEnvironmentVariable("PINCAB_REPAIR_FORCE_DRYRUN", before); }
+    }
+
+    public static void Test_Apply_ForcedDryRun_NeverWritesTheFileAndReportsSelectedItemsAsOk()
+    {
+        var root = NewTempRoot();
+        try
+        {
+            Directory.CreateDirectory(root);
+            var target = Path.Combine(root, "would-be-written.txt");
+            File.WriteAllText(target, "untouched");
+
+            var session = new RepairSession(KnowledgePack.Empty, new[] { root }, appDataRoot: root, forceDryRun: true);
+            A.True(session.ForceDryRunActive, "constructor override must be honored");
+
+            // A fictitious ActionId is safe here specifically BECAUSE forced dry-run never reaches
+            // the registry — if it did, this would fail with "unknown action", proving the isolation.
+            var plan = new RepairPlan
+            {
+                PlanId = "plan-test-1",
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                ScanReportId = "scan-1",
+                Items = new[]
+                {
+                    Item("i1", RepairMode.Automatic, new[]
+                    {
+                        new PlannedChange
+                        {
+                            ActionId = "not_a_real_action", Kind = ChangeKind.FileAttribute,
+                            Target = target, Before = "untouched", After = "would-be-changed", Reversible = true,
+                        },
+                    }),
+                },
+            };
+
+            var result = session.Apply(plan, new HashSet<string> { "i1" });
+
+            A.True(result.ForcedDryRun, "the result must say plainly this was a forced dry-run");
+            A.True(result.ItemOutcomes.TryGetValue("i1", out var ok) && ok, "selected item reports as ok");
+            A.False(result.RecoveryRequired, "a forced dry-run never needs recovery");
+            A.Equal("untouched", File.ReadAllText(target), "forced dry-run must never touch the real file");
+        }
+        finally { TryDelete(root); }
+    }
+
+    public static void Test_Apply_ForcedDryRun_UnselectedItemsAreNotInOutcomes()
+    {
+        var root = NewTempRoot();
+        try
+        {
+            var session = new RepairSession(KnowledgePack.Empty, new[] { root }, appDataRoot: root, forceDryRun: true);
+            var plan = new RepairPlan
+            {
+                PlanId = "plan-test-2",
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                ScanReportId = "scan-1",
+                Items = new[]
+                {
+                    Item("i1", RepairMode.Automatic, new[] { Change("/x/a", true) }),
+                    Item("i2", RepairMode.Automatic, new[] { Change("/x/b", true) }),
+                },
+            };
+
+            var result = session.Apply(plan, new HashSet<string> { "i1" });
+
+            A.Equal(1, result.ItemOutcomes.Count, "only the explicitly selected item is reported — opt-in, even in a forced dry-run");
+            A.True(result.ItemOutcomes.ContainsKey("i1"), "the selected item must be present");
+        }
+        finally { TryDelete(root); }
+    }
+
+    public static void Test_Apply_WithoutForceDryRun_DefaultIsRealEngine_AndFailsOnUnknownAction()
+    {
+        // Companion to the forced-dry-run test above: proves the fictitious ActionId trick would
+        // NOT silently succeed if forced dry-run were somehow bypassed — the real engine actually
+        // gets called by default, and rejects an unregistered action rather than pretending it ran.
+        var root = NewTempRoot();
+        try
+        {
+            Directory.CreateDirectory(root);
+            var target = Path.Combine(root, "target.txt");
+            File.WriteAllText(target, "untouched");
+
+            var session = new RepairSession(KnowledgePack.Empty, new[] { root }, appDataRoot: root, forceDryRun: false);
+            A.False(session.ForceDryRunActive, "explicit forceDryRun:false must be honored");
+
+            var plan = new RepairPlan
+            {
+                PlanId = "plan-test-3",
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                ScanReportId = "scan-1",
+                Items = new[]
+                {
+                    Item("i1", RepairMode.Automatic, new[]
+                    {
+                        new PlannedChange
+                        {
+                            ActionId = "not_a_real_action", Kind = ChangeKind.FileAttribute,
+                            Target = target, Before = "untouched", After = "would-be-changed", Reversible = true,
+                        },
+                    }),
+                },
+            };
+
+            var result = session.Apply(plan, new HashSet<string> { "i1" });
+
+            A.False(result.ForcedDryRun, "the real engine path must never claim to be a forced dry-run");
+            A.True(result.ItemOutcomes.TryGetValue("i1", out var ok) && !ok, "an unknown action must be reported as failed, never silently ok");
+            A.Equal("untouched", File.ReadAllText(target), "an unknown action must never write, but this is a genuine engine rejection, not a dry-run skip");
+        }
+        finally { TryDelete(root); }
+    }
+
     // ───────────────────────── Journal persistence (H.1, through the session) ─────────────────────────
 
     public static void Test_Plan_PersistsAcrossSessions_SamePlanIdKnownAfterRestart()
