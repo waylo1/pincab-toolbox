@@ -60,9 +60,23 @@ un vrai sujet à traiter, pas un oubli.
 - **Autres frontends (PinballY, PinballX)** — le projet cible PinUP Popper aujourd'hui. Ouvrir
   d'autres frontends est un choix de périmètre, pas un bug à corriger.
 - **Variables d'environnement** — aucun scanner générique dessus aujourd'hui.
-- **Score de santé du pincab, historique des scans, comparaison entre deux scans, rapport
-  HTML/PDF/JSON** — fonctionnalités transverses citées par ChatGPT, aucune n'existe. Ce sont des
-  chantiers UI/produit à part entière, pas des scanners individuels.
+- **Historique des scans, comparaison entre deux scans** — n'existent pas. Chantiers UI/produit à
+  part entière, pas des scanners individuels.
+
+> **⚠️ CORRECTION 11/08 (même jour, après relecture du code pour les maquettes UI).** La première
+> version de cette ligne affirmait aussi que le *score de santé* et les *rapports HTML/JSON*
+> n'existaient pas. **C'est faux, et l'erreur venait de moi, pas de ChatGPT** : je m'étais fié à ma
+> lecture de la liste des scanners sans ouvrir `Models/` ni le code d'export.
+>
+> - **Score de santé : existe déjà**, `ScanScoring.ComputeScore` (100 − 15 par Critical − pénalité
+>   logarithmique plafonnée à 30 pour les Warnings) + `GradeFor` (A+/A/B/C/F). Partagé entre le scan
+>   d'une install et le scan multi-racines, exprès pour ne pas dériver.
+> - **Causes racines corrélées : existent déjà**, `App/Scenarios.cs` — plusieurs findings recoupés
+>   en un diagnostic nommé, avec un score de confiance calculé. **Deux scénarios définis
+>   aujourd'hui** (migration 32→64 incomplète, intégration frontend incomplète), c'est une simple
+>   table de données conçue pour grandir.
+> - **Rapports : existent déjà** en HTML, TXT, Markdown, BBCode et JSON, tous anonymisés (ADR-003).
+>   Seul le **PDF** manque réellement.
 
 ## Hors périmètre par choix, pas par oubli
 
