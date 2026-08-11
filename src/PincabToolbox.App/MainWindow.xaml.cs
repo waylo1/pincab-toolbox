@@ -625,11 +625,13 @@ public partial class MainWindow : Window
         ScoreGrade.Foreground = scoreBrush;
 
         // Arc de la jauge (bandeau, maquette 11/08). StrokeDashArray se compte en MULTIPLES de
-        // l'épaisseur du trait, pas en pixels : circonférence (2·π·53) ÷ épaisseur (9) = 37.0
+        // l'épaisseur du trait, pas en pixels : circonférence (2·π·45) ÷ épaisseur (8) = 35.34
         // unités pour un tour complet. Le second segment, volontairement énorme, garantit qu'il
-        // n'y a jamais de second tiret visible.
+        // n'y a jamais de second tiret visible. Si le diamètre ou l'épaisseur de l'Ellipse
+        // changent dans MainWindow.xaml, cette constante doit changer avec eux.
+        const double fullTurn = 35.34;
         ScoreArc.Stroke = scoreBrush;
-        ScoreArc.StrokeDashArray = new DoubleCollection { 37.0 * Math.Max(0, Math.Min(100, _report.Score)) / 100.0, 1000 };
+        ScoreArc.StrokeDashArray = new DoubleCollection { fullTurn * Math.Max(0, Math.Min(100, _report.Score)) / 100.0, 1000 };
 
         // Accroche : ce que l'utilisateur doit retenir en une ligne. Le nombre de bloquants informe,
         // là où la seule note "F" juge — voir docs/REVUE-maquettes-scanner-2026-08-11.md.
