@@ -38,18 +38,85 @@ public sealed class FindingRow
 }
 
 /// <summary>
-/// Une case de la chaîne causale affichée sous le diagnostic principal (maquette 11/08).
-/// Chaque case est un résultat RÉELLEMENT mesuré qui a déclenché la corrélation — jamais une
-/// étape décorative ajoutée pour faire joli, sinon la chaîne raconterait une histoire que le
-/// scan n'a pas vérifiée.
+/// Une carte de cause racine de l'onglet « Causes racines » (maquette 11/08) : badge de gravité,
+/// titre, puce de confiance, phrase joueur, phrase d'impact, chaîne causale et pied de carte.
+/// Construite par RefreshCauseCards depuis Scenarios.DetectAll — chaque valeur affichée vient
+/// d'un résultat de scan réel, jamais d'un gabarit rempli pour faire joli.
 /// </summary>
-public sealed class ChainNode
+public sealed class CauseCardRow
 {
-    /// <summary>Vide pour la première case, la flèche pour les suivantes — évite un convertisseur d'index.</summary>
+    public required string BadgeText { get; init; }
+    public required Brush AccentBrush { get; init; }
+    public required Brush BadgeBg { get; init; }
+    public required Brush BadgeBorder { get; init; }
+    public required string Title { get; init; }
+    public required string ConfText { get; init; }
+    public required string Player { get; init; }
+    public required string Impact { get; init; }
+    public required Visibility ImpactVis { get; init; }
+    public required IReadOnlyList<CauseChainRow> Chain { get; init; }
+    public required Visibility ChainVis { get; init; }
+    public required string FootComponents { get; init; }
+    public required Visibility FootComponentsVis { get; init; }
+    public required string FootTables { get; init; }
+    public required Visibility FootTablesVis { get; init; }
+    public required string FootCodes { get; init; }
+    public required string ManualText { get; init; }
+    public required Visibility ManualVis { get; init; }
+    public required string StepsLabel { get; init; }
+    /// <summary>Codes déclencheurs — « Voir les étapes » ouvre le premier de ces résultats.</summary>
+    public required IReadOnlyList<string> Codes { get; init; }
+}
+
+/// <summary>
+/// Une case de la chaîne causale d'une carte (maquette 11/08). Chaque case est un résultat
+/// RÉELLEMENT mesuré qui a déclenché la corrélation (Scenarios filtre par RequiresCode) — jamais
+/// une étape décorative, sinon la chaîne raconterait une histoire que le scan n'a pas vérifiée.
+/// </summary>
+public sealed class CauseChainRow
+{
+    /// <summary>Vide pour la première case ; « ✕→ » rouge sur la première rupture bon→cassé.</summary>
     public required string Arrow { get; init; }
+    public required Brush ArrowBrush { get; init; }
     public required string Label { get; init; }
     public required string Status { get; init; }
-    public required Brush Accent { get; init; }
+    public required Brush StatusBrush { get; init; }
+    public required Brush NodeBg { get; init; }
+    public required Brush NodeBorder { get; init; }
+}
+
+/// <summary>Une ligne des encadrés « Résultats critiques » / « Remarques » — clic = renvoi
+/// vers la ligne correspondante de l'onglet Tous les résultats (Code + Subject).</summary>
+public sealed class SideRow
+{
+    public required Brush Dot { get; init; }
+    public required string Text { get; init; }
+    public required string Sub { get; init; }
+    public required string Code { get; init; }
+    public required string Subject { get; init; }
+}
+
+/// <summary>Une ligne de « Santé des composants » — uniquement des composants portés par un
+/// résultat réel du scan (inventaire bitness, composant manquant, base Popper lue).</summary>
+public sealed class CompRow
+{
+    public required string Name { get; init; }
+    public required string Meta { get; init; }
+    public required string StatusText { get; init; }
+    public required Brush StatusBrush { get; init; }
+}
+
+/// <summary>Une ligne du tableau « Tables analysées » — chaque cellule vient d'un résultat de
+/// scan ou d'une lecture positive (base Popper) ; « — » = non vérifié sur ce scan.</summary>
+public sealed class TableRowVm
+{
+    public required string Name { get; init; }
+    public required string Rom { get; init; }
+    public required Brush RomBrush { get; init; }
+    public required string B2s { get; init; }
+    public required Brush B2sBrush { get; init; }
+    public required string Frontend { get; init; }
+    public required Brush FeBrush { get; init; }
 }
 
 public sealed class DiffRow
@@ -111,6 +178,16 @@ public partial class MainWindow : Window
     private string? _demoRoot;                       // real demo path while the box shows a friendly label
     private System.Windows.Threading.DispatcherTimer? _flashTimer;
 
+    // ── Écran Scanner porté sur la maquette 11/08 — contexte du dernier scan ──
+    // Nombre de contrôles réellement configurés sur ce scan (ScanEngine.Scanners.Count, jamais
+    // une constante : un scanner ajouté demain doit se compter tout seul).
+    private int _scanChecks;
+    private bool _scanWasDemo;
+    // Lecture POSITIVE de la base PinUP Popper (même requête que CompletenessScanner) pour la
+    // colonne Frontend du tableau des tables : null = base absente ou illisible, la colonne
+    // affiche alors « — » plutôt qu'une valeur déduite du silence (ADR-010).
+    private HashSet<string>? _popperRegistered;
+
     private static readonly Brush BrushCritical = new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6E));
     private static readonly Brush BrushWarning = new SolidColorBrush(Color.FromRgb(0xF5, 0xA5, 0x24));
     // Severity.Note — distinct from Info on purpose (Doctrine Note, HANDOFF §"rendu App"): a heuristic
@@ -125,6 +202,42 @@ public partial class MainWindow : Window
     private static readonly Brush RowNote = new SolidColorBrush(Color.FromArgb(0x14, 0xB5, 0x8D, 0xF5));
     private static readonly Brush RowInfo = new SolidColorBrush(Color.FromArgb(0x14, 0x3E, 0x9C, 0xF3));
     private static readonly Brush RowOk = new SolidColorBrush(Color.FromArgb(0x14, 0x46, 0xC0, 0x6E));
+
+    // Cartes de causes racines (maquette 11/08) — teintes des cases de chaîne causale.
+    private static readonly Brush BrushDim = new SolidColorBrush(Color.FromRgb(0x9C, 0x9C, 0xAC));
+    private static readonly Brush NodeGoodBg = new SolidColorBrush(Color.FromRgb(0x26, 0x26, 0x30));
+    private static readonly Brush NodeGoodBorder = new SolidColorBrush(Color.FromArgb(0x52, 0x46, 0xC0, 0x6E));
+    private static readonly Brush NodeBadBg = new SolidColorBrush(Color.FromArgb(0x14, 0xE5, 0x48, 0x4D));
+    private static readonly Brush NodeBadBorder = new SolidColorBrush(Color.FromArgb(0x66, 0xE5, 0x48, 0x4D));
+    private static readonly Brush NodeWarnBg = new SolidColorBrush(Color.FromArgb(0x10, 0xF5, 0xA5, 0x24));
+    private static readonly Brush NodeWarnBorder = new SolidColorBrush(Color.FromArgb(0x5C, 0xF5, 0xA5, 0x24));
+
+    private static string SevGlyph(Severity s) => s switch
+    {
+        Severity.Critical => "✕",
+        Severity.Warning => "▲",
+        Severity.Note => "✎",
+        Severity.Info => "ⓘ",
+        _ => "✓",
+    };
+
+    private static Brush SevBrushOf(Severity s) => s switch
+    {
+        Severity.Critical => BrushCritical,
+        Severity.Warning => BrushWarning,
+        Severity.Note => BrushNote,
+        Severity.Info => BrushInfo,
+        _ => BrushOk,
+    };
+
+    /// <summary>La couleur de gravité en version voilée (fond / bordure des badges de carte).</summary>
+    private static Brush SevTint(Severity s, byte alpha)
+    {
+        var c = ((SolidColorBrush)SevBrushOf(s)).Color;
+        var br = new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B));
+        br.Freeze();
+        return br;
+    }
 
     private static readonly Regex UrlRx = new(@"https?://[^\s""'<>)\]]+", RegexOptions.Compiled);
 
@@ -302,6 +415,26 @@ public partial class MainWindow : Window
         BtnCheckUpdate.Content = Loc.Get("about.checkupdate");
         BtnGotoRepair.Content = Loc.Get("repair.goto");
 
+        // Écran Scanner porté sur la maquette 11/08 — libellés statiques ; les compteurs et
+        // contenus dépendants du scan sont repris par RefreshList() en fin de méthode.
+        StabCausesHeader.Text = Loc.Get("stab.causes");
+        StabResultsHeader.Text = Loc.Get("stab.results");
+        StabComponentsHeader.Text = Loc.Get("stab.components");
+        StabTablesHeader.Text = Loc.Get("stab.tables");
+        StabSystemHeader.Text = Loc.Get("stab.system");
+        BtnRepairCardOpen.Content = Loc.Get("repaircard.open");
+        SideCompNote.Text = CompTabNote.Text = Loc.Get("side.comp.note");
+        TblHTable.Text = TblHTable2.Text = Loc.Get("tbl.h.table");
+        TblHRom.Text = TblHRom2.Text = Loc.Get("tbl.h.rom");
+        TblHB2s.Text = TblHB2s2.Text = Loc.Get("tbl.h.b2s");
+        TblHFe.Text = TblHFe2.Text = Loc.Get("tbl.h.frontend");
+        if (_report is null)
+        {
+            CompTabEmpty.Text = Loc.Get("sys.needscan");
+            TablesTabEmpty.Text = Loc.Get("sys.needscan");
+        }
+        RefreshSystemTab();
+
         RepairIntro.Text = Loc.Get("repair.intro");
         LblRepairLicense.Text = Loc.Get("repair.license.label");
         TxtRepairLicense.ToolTip = Loc.Get("repair.license.hint");
@@ -457,7 +590,7 @@ public partial class MainWindow : Window
         try
         {
             var ct = _cts.Token;
-            var report = await Task.Run(async () =>
+            var (report, checksConfigured) = await Task.Run(async () =>
             {
                 var vps = await new VpsDatabase(profile.UpdateSource).LoadAsync(ct).ConfigureAwait(false);
                 var engine = new ScanEngine()
@@ -495,14 +628,21 @@ public partial class MainWindow : Window
                     .Add(new FeatureEnabledScanner())
                     .Add(new ScreenResUnparsedScanner())
                     .Add(new NvramWritabilityScanner());
-                if (!isWholeDrive) return engine.Run(root, profile, progress, ct);
+                // Le nombre de contrôles remonte avec le rapport (ligne méta « Contrôles N / N ») —
+                // compté sur le moteur réel, jamais une constante à maintenir à la main.
+                if (!isWholeDrive) return (engine.Run(root, profile, progress, ct), engine.Scanners.Count);
 
                 var driveReport = engine.RunAcrossDrive(root, profile, progress, ct);
                 _lastDriveScanRoots = driveReport.Reports.Select(r => r.Layout.RootPath).ToList();
-                return driveReport.ToMergedScanReport();
+                return (driveReport.ToMergedScanReport(), engine.Scanners.Count);
             }, ct);
 
             _report = report;
+            _scanChecks = checksConfigured;
+            _scanWasDemo = _demoRoot is not null && root == _demoRoot;
+            // Lecture positive de la base Popper pour la colonne Frontend du tableau des tables
+            // (même requête que CompletenessScanner) — null si base absente ou illisible.
+            _popperRegistered = await Task.Run(() => LoadPopperRegistered(report.Layout));
             // Bonus surface on top of the free scan — RepairOfferBuilder.Build never throws
             // (returns null on any failure), so it can never take the scan report down with it.
             // Whole-drive scans MUST pass the real per-install roots (ADR-005/ADR-011, 10/08) —
@@ -516,7 +656,10 @@ public partial class MainWindow : Window
                 report.Count(Severity.Critical), report.Count(Severity.Warning), report.Count(Severity.Info),
                 report.Count(Severity.Note));
             if (report.Layout.VpxTables.Count == 0)
+            {
                 LblPlaceholder.Text = Loc.Get("scan.hint.notables");
+                LblPlaceholder.Visibility = Visibility.Visible;   // RefreshList vient de le replier au profit de la ligne méta
+            }
             BtnExport.IsEnabled = true;
             BtnCopyForum.IsEnabled = true;
         }
@@ -659,113 +802,30 @@ public partial class MainWindow : Window
         };
         HeroHeadline.Foreground = blocking > 0 ? BrushCritical : BrushOk;
 
-        // primary insight — a correlated scenario if detectable, else the single most severe issue
+        // ── Écran porté sur la maquette 11/08 : ligne méta, cartes de causes racines, carte
+        // réparation, colonne de droite, tableau des tables, onglet Système, compteurs d'onglets.
+        // Tout est reconstruit ensemble à chaque scan (et à chaque bascule de langue) pour que
+        // les vues ne divergent jamais du même ScanReport.
+        RefreshMetaRow();
+
         var present = new HashSet<string>(_report.Findings.Select(f => f.Code));
-        var scenario = Scenarios.Detect(present);
-        if (scenario is not null)
-        {
-            // Confiance en mots, pas en pourcentage : le score sort d'une formule volontairement
-            // simple (une base + un bonus par code trouvé), l'afficher au point près prêterait à
-            // ce calcul une précision qu'il n'a pas — doctrine ADR-010.
-            var conf = Loc.Get(scenario.Confidence >= 85 ? "diagnosis.conf.high"
-                             : scenario.Confidence >= 65 ? "diagnosis.conf.mid"
-                             : "diagnosis.conf.low");
-            PriorityLabel.Text = $"{Loc.Get("diagnosis.label")} · {Loc.Get("diagnosis.confidence")} {conf}";
-            PriorityText.Text = scenario.Title;
-            PriorityExplain.Text = scenario.Explanation;
-            PriorityExplain.Visibility = Visibility.Visible;
-            PriorityFix.Visibility = Visibility.Collapsed;
-            PriorityAccent.Background = BrushCritical;
-            // transparency — show which findings triggered this correlation (never a black box)
-            var triggers = _report.Findings
-                .Where(f => scenario.TriggeredBy.Contains(f.Code) && !string.IsNullOrEmpty(f.Subject))
-                .Select(f => f.Subject).Distinct().ToList();
-            PriorityTriggers.Text = triggers.Count > 0 ? $"{Loc.Get("priority.basedon")} {string.Join(", ", triggers)}" : "";
+        var scenarios = Scenarios.DetectAll(present);
+        // Sous-titre du bandeau : le nombre de causes de fond réellement détectées ; sinon la
+        // phrase de score existante. Pas de « tout se règle en cascade » — on n'affirme que la
+        // relation cause → symptômes, pas la disparition de résultats non liés (ADR-010).
+        if (scenarios.Count > 0)
+            ScoreStatus.Text = scenarios.Count == 1
+                ? Loc.Get("hero.causes.one")
+                : string.Format(Loc.Get("hero.causes.many"), scenarios.Count);
 
-            // Chaîne causale : une case par résultat déclencheur, dans l'ordre de gravité déjà
-            // établi par Ordered(). Le libellé de gravité est celui de la liste (Loc.SeverityLabel),
-            // donc la case dit la même chose que la ligne du tableau, jamais une reformulation.
-            var chain = _report.Ordered()
-                .Where(f => scenario.TriggeredBy.Contains(f.Code) && !string.IsNullOrEmpty(f.Subject))
-                .GroupBy(f => f.Subject).Select(g => g.First())
-                .Select((f, i) => new ChainNode
-                {
-                    Arrow = i == 0 ? "" : "→",
-                    Label = f.Subject,
-                    Status = Loc.SeverityLabel(f.Severity),
-                    Accent = f.Severity switch
-                    {
-                        Severity.Critical => BrushCritical,
-                        Severity.Warning => BrushWarning,
-                        _ => BrushOk,
-                    },
-                })
-                .ToList();
-            ChainNodes.ItemsSource = chain;
-            var showChain = chain.Count > 1;
-            ChainNodes.Visibility = showChain ? Visibility.Visible : Visibility.Collapsed;
-
-            // « Basé sur : VPinMAME, dmddevice » dit EXACTEMENT ce que les cases de la chaîne
-            // montrent déjà. Les afficher tous les deux, c'était deux fois la même information et
-            // une ligne de hauteur volée à la liste des résultats.
-            PriorityTriggers.Visibility = (!showChain && triggers.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
-
-            PriorityBanner.Visibility = Visibility.Visible;
-        }
-        else
-        {
-            ChainNodes.Visibility = Visibility.Collapsed;
-            PriorityExplain.Visibility = Visibility.Collapsed;
-            PriorityTriggers.Visibility = Visibility.Collapsed;
-            var top = _report.Ordered().FirstOrDefault(f => f.Severity == Severity.Critical)
-                      ?? _report.Ordered().FirstOrDefault(f => f.Severity == Severity.Warning);
-            if (top is not null)
-            {
-                // "Fix this first" is reserved for genuine breakage (Critical). A lone Warning
-                // is worth a look, not an emergency — a softer label + warning accent, so a
-                // healthy install with only minor notes never gets an alarming red "FIX THIS
-                // FIRST" on a non-issue (FIELD-LOG 2026-07-30 / FD's compat note surfaced there).
-                var isCritical = top.Severity == Severity.Critical;
-                PriorityLabel.Text = Loc.Get(isCritical ? "priority.label" : "priority.watch");
-                PriorityText.Text = Loc.FindingText(top);
-                var pfix = Loc.FixHintText(top);
-                PriorityFix.Text = string.IsNullOrEmpty(pfix) ? "" : "→ " + pfix;
-                PriorityFix.Visibility = string.IsNullOrEmpty(pfix) ? Visibility.Collapsed : Visibility.Visible;
-                PriorityAccent.Background = isCritical ? BrushCritical : BrushWarning;
-                PriorityBanner.Visibility = Visibility.Visible;
-            }
-            else PriorityBanner.Visibility = Visibility.Collapsed;
-        }
-
-        // Écran 1 — aggregate free offer, computed from the real plan (RepairOfferBuilder).
-        if (_repairResult is { } rr && !rr.Offer.IsEmpty)
-        {
-            RepairSummaryLine.Text = string.Format(Loc.Get("repair.summary"), rr.Offer.FixableCount, rr.Offer.FindingsConsidered);
-            RepairSummaryLine.Visibility = Visibility.Visible;
-        }
-        else
-        {
-            RepairSummaryLine.Visibility = Visibility.Collapsed;
-        }
-
-        // ADR-006 (décision Maxime, revue qualité 04/08) : un scénario partiellement automatisable
-        // (ex. migration 32→64) compte quand même dans FixableCount ci-dessus — c'est mérité, il y a
-        // une vraie valeur à vendre. Mais les étapes qui resteront TOUJOURS manuelles doivent être
-        // visibles ici, avant l'achat, pas découvertes après (RepairOffer.NotAutomatable).
-        if (_repairResult is { } rrNa && rrNa.Offer.NotAutomatable.Count > 0)
-        {
-            const int maxShown = 4;
-            var items = rrNa.Offer.NotAutomatable;
-            var shown = items.Take(maxShown).ToList();
-            var suffix = items.Count > maxShown ? $" (+{items.Count - maxShown})" : "";
-            RepairNotAutomatableLine.Text = Loc.Get("repair.notautomatable") + " " +
-                string.Join(" · ", shown) + suffix;
-            RepairNotAutomatableLine.Visibility = Visibility.Visible;
-        }
-        else
-        {
-            RepairNotAutomatableLine.Visibility = Visibility.Collapsed;
-        }
+        var causeCount = RefreshCauseCards(scenarios);
+        RefreshRepairCard();
+        var compRows = BuildComponentRows();
+        var tableRows = BuildTableRows();
+        RefreshSideBoxes(compRows);
+        RefreshTablesViews(tableRows);
+        RefreshSystemTab();
+        RefreshInnerTabHeaders(causeCount, compRows.Count, tableRows.Count);
 
         // Exhaustive over all 5 Severity values on purpose (not "_ => _showOk"): a wildcard here once
         // silently routed Note through the Ok toggle (hidden by default, wrong bucket) — the exact
@@ -873,6 +933,552 @@ public partial class MainWindow : Window
 
         ListFindings.ItemsSource = rows;
         DetailPanel.Visibility = Visibility.Collapsed;
+    }
+
+    // ═════════════ Écran Scanner porté sur la maquette 11/08 (docs/maquette-scanner-2026-08-11.html) ═════════════
+    // Règle unique de toutes ces méthodes : chaque valeur affichée vient d'un résultat de scan
+    // réel (ou d'une lecture positive vérifiée) — une case sans mesure affiche « — », jamais une
+    // valeur plausible (ADR-010, docs/REVUE-maquettes-scanner-2026-08-11.md).
+
+    /// <summary>Ligne méta sous le bandeau : mode, horodatage, durée, contrôles, tables.</summary>
+    private void RefreshMetaRow()
+    {
+        MetaMode.Text = $"{Loc.Get("meta.mode")} {Loc.Get(_scanWasDemo ? "meta.mode.demo" : "meta.mode.folder")}";
+        MetaStarted.Text = $"{Loc.Get("meta.started")} {_report!.StartedAt.ToLocalTime():dd/MM/yyyy HH:mm}";
+        var dur = _report.FinishedAt - _report.StartedAt;
+        var hasDur = _report.FinishedAt != default && dur > TimeSpan.Zero;
+        MetaDuration.Text = hasDur ? $"{Loc.Get("meta.duration")} {dur:hh\\:mm\\:ss}" : "";
+        MetaDuration.Visibility = hasDur ? Visibility.Visible : Visibility.Collapsed;
+        MetaChecks.Text = _scanChecks > 0 ? $"{Loc.Get("meta.checks")} {_scanChecks} / {_scanChecks}" : "";
+        MetaChecks.Visibility = _scanChecks > 0 ? Visibility.Visible : Visibility.Collapsed;
+        MetaTables.Text = $"{Loc.Get("meta.tablecount")} {_report.Layout.VpxTables.Count}";
+        MetaRow.Visibility = Visibility.Visible;
+        LblPlaceholder.Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// Cartes de causes racines. Une carte par scénario réellement détecté (Scenarios.DetectAll),
+    /// triées gravité réelle puis confiance ; en l'absence de scénario, une carte de repli est
+    /// construite depuis le résultat le plus grave — même comportement que l'ancien bandeau
+    /// priorité, au format carte. Retourne le nombre de cartes (compteur d'onglet).
+    /// </summary>
+    private int RefreshCauseCards(IReadOnlyList<ScenarioMatch> scenarios)
+    {
+        var tableNames = new HashSet<string>(
+            _report!.Layout.VpxTables.Select(p => Path.GetFileNameWithoutExtension(p)),
+            StringComparer.OrdinalIgnoreCase);
+
+        var cards = new List<(Severity Sev, int Conf, CauseCardRow Row)>();
+        foreach (var sc in scenarios)
+        {
+            var trig = _report.Findings.Where(f => sc.TriggeredBy.Contains(f.Code)).ToList();
+            // Gravité du badge = la gravité MAX réellement mesurée parmi les déclencheurs — jamais
+            // une gravité déclarée par le scénario (sur le démo, « Intégration frontend » sort en
+            // À noter/Info, pas en Avertissement : le badge doit le dire tel quel).
+            var sev = trig.Count > 0 ? trig.Max(f => f.Severity) : Severity.Note;
+            var subjects = trig.Select(f => f.Subject).Where(s => !string.IsNullOrEmpty(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var tables = subjects.Count(s => tableNames.Contains(s));
+            var comps = subjects.Count - tables;
+            // Confiance en mots, pas en pourcentage : le score sort d'une formule volontairement
+            // simple (une base + un bonus par code trouvé), l'afficher au point près prêterait à
+            // ce calcul une précision qu'il n'a pas — doctrine ADR-010.
+            var confKey = sc.Confidence >= 85 ? "diagnosis.conf.high"
+                        : sc.Confidence >= 65 ? "diagnosis.conf.mid" : "diagnosis.conf.low";
+            var fixable = _repairResult is not null && sc.TriggeredBy.Any(c => _repairResult.ByCode.ContainsKey(c));
+            cards.Add((sev, sc.Confidence, BuildCauseCard(
+                sev, sc.Title,
+                $"{Loc.Get("card.conf")} {Loc.Get(confKey)}",
+                sc.Player, sc.Explanation,
+                BuildChainRows(sc.Chain),
+                comps, tables, tableNames.Count,
+                sc.TriggeredBy, manual: !fixable)));
+        }
+
+        var rows = cards.OrderByDescending(c => c.Sev).ThenByDescending(c => c.Conf).Select(c => c.Row).ToList();
+
+        if (rows.Count == 0)
+        {
+            var top = _report.Ordered().FirstOrDefault(f => f.Severity == Severity.Critical)
+                   ?? _report.Ordered().FirstOrDefault(f => f.Severity == Severity.Warning);
+            if (top is not null)
+            {
+                var fixable = _repairResult is not null && _repairResult.ByCode.ContainsKey(top.Code);
+                var pfix = Loc.FixHintText(top);
+                rows.Add(BuildCauseCard(
+                    top.Severity,
+                    string.IsNullOrEmpty(top.Subject) ? Loc.Get("cat." + top.Category) : top.Subject,
+                    Loc.Get(top.Severity == Severity.Critical ? "priority.label" : "priority.watch"),
+                    Loc.FindingText(top),
+                    string.IsNullOrEmpty(pfix) ? "" : "→ " + pfix,
+                    new List<CauseChainRow>(),
+                    comps: 0, tables: 0, tableTotal: 0,
+                    codes: new[] { top.Code }, manual: !fixable));
+            }
+        }
+
+        CauseCards.ItemsSource = rows;
+        return rows.Count;
+    }
+
+    private CauseCardRow BuildCauseCard(Severity sev, string title, string confText, string player,
+        string impact, List<CauseChainRow> chain, int comps, int tables, int tableTotal,
+        IReadOnlyList<string> codes, bool manual)
+    {
+        return new CauseCardRow
+        {
+            BadgeText = $"{SevGlyph(sev)} {Loc.SeverityLabel(sev).ToUpperInvariant()}",
+            AccentBrush = SevBrushOf(sev),
+            BadgeBg = SevTint(sev, 0x24),
+            BadgeBorder = SevTint(sev, 0x4D),
+            Title = title,
+            ConfText = confText,
+            Player = player,
+            Impact = impact,
+            ImpactVis = string.IsNullOrEmpty(impact) ? Visibility.Collapsed : Visibility.Visible,
+            Chain = chain,
+            ChainVis = chain.Count > 1 ? Visibility.Visible : Visibility.Collapsed,
+            FootComponents = comps > 0 ? "🧩 " + string.Format(Loc.Get(comps == 1 ? "card.comp.one" : "card.comp.many"), comps) : "",
+            FootComponentsVis = comps > 0 ? Visibility.Visible : Visibility.Collapsed,
+            FootTables = tables > 0 ? "🎰 " + string.Format(Loc.Get(tables == 1 ? "card.tbl.one" : "card.tbl.many"), tables, tableTotal) : "",
+            FootTablesVis = tables > 0 ? Visibility.Visible : Visibility.Collapsed,
+            FootCodes = "🔎 " + string.Join(" · ", codes),
+            ManualText = Loc.Get("card.manual"),
+            ManualVis = manual ? Visibility.Visible : Visibility.Collapsed,
+            StepsLabel = Loc.Get("card.steps"),
+            Codes = codes,
+        };
+    }
+
+    /// <summary>« ✕→ » rouge sur la première rupture bon→cassé, « → » discret ailleurs — même
+    /// convention que la maquette.</summary>
+    private static List<CauseChainRow> BuildChainRows(IReadOnlyList<ChainStepMatch> steps)
+    {
+        var rows = new List<CauseChainRow>(steps.Count);
+        for (int i = 0; i < steps.Count; i++)
+        {
+            var s = steps[i];
+            var cut = i > 0 && steps[i - 1].Tone == ChainTone.Good && s.Tone == ChainTone.Bad;
+            rows.Add(new CauseChainRow
+            {
+                Arrow = i == 0 ? "" : cut ? "✕→" : "→",
+                ArrowBrush = cut ? BrushCritical : BrushDim,
+                Label = s.Label,
+                Status = s.Status,
+                StatusBrush = s.Tone switch { ChainTone.Good => BrushOk, ChainTone.Bad => BrushCritical, _ => BrushWarning },
+                NodeBg = s.Tone switch { ChainTone.Bad => NodeBadBg, ChainTone.Warn => NodeWarnBg, _ => NodeGoodBg },
+                NodeBorder = s.Tone switch { ChainTone.Bad => NodeBadBorder, ChainTone.Warn => NodeWarnBorder, _ => NodeGoodBorder },
+            });
+        }
+        return rows;
+    }
+
+    /// <summary>
+    /// Carte réparation : l'offre réelle de RepairOfferBuilder quand elle existe, sinon la carte
+    /// « aucune réparation automatique disponible » (ADR-006 — l'état honnête est affiché, jamais
+    /// caché). Les étapes qui resteront TOUJOURS manuelles restent visibles AVANT l'achat.
+    /// </summary>
+    private void RefreshRepairCard()
+    {
+        BtnRepairCardOpen.Content = Loc.Get("repaircard.open");
+        if (_repairResult is { } rr && !rr.Offer.IsEmpty)
+        {
+            RepairCardTitle.Text = Loc.Get("repaircard.some.title");
+            RepairCardBody.Visibility = Visibility.Collapsed;
+            RepairSummaryLine.Text = string.Format(Loc.Get("repair.summary"), rr.Offer.FixableCount, rr.Offer.FindingsConsidered);
+            RepairSummaryLine.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            RepairCardTitle.Text = Loc.Get("repaircard.none.title");
+            RepairCardBody.Text = Loc.Get("repaircard.none.body");
+            RepairCardBody.Visibility = Visibility.Visible;
+            RepairSummaryLine.Visibility = Visibility.Collapsed;
+        }
+
+        // ADR-006 (décision Maxime, revue qualité 04/08) : un scénario partiellement automatisable
+        // (ex. migration 32→64) compte quand même dans FixableCount ci-dessus — c'est mérité, il y a
+        // une vraie valeur à vendre. Mais les étapes qui resteront TOUJOURS manuelles doivent être
+        // visibles ici, avant l'achat, pas découvertes après (RepairOffer.NotAutomatable).
+        if (_repairResult is { } rrNa && rrNa.Offer.NotAutomatable.Count > 0)
+        {
+            const int maxShown = 4;
+            var items = rrNa.Offer.NotAutomatable;
+            var shown = items.Take(maxShown).ToList();
+            var suffix = items.Count > maxShown ? $" (+{items.Count - maxShown})" : "";
+            RepairNotAutomatableLine.Text = Loc.Get("repair.notautomatable") + " " +
+                string.Join(" · ", shown) + suffix;
+            RepairNotAutomatableLine.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            RepairNotAutomatableLine.Visibility = Visibility.Collapsed;
+        }
+        RepairCard.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Rôle du profil → clé de composant regroupée (32 et 64-bit sur la même ligne).</summary>
+    private static string RoleKey(string role) => role switch
+    {
+        "vpinmame" or "vpinmame64" => "vpinmame",
+        "dmddevice" or "dmddevice64" => "dmddevice",
+        _ => role,
+    };
+
+    /// <summary>À quel composant un résultat défavorable se rattache — mapping explicite par code,
+    /// jamais une heuristique floue sur le texte.</summary>
+    private static string? CompKeyForFinding(Finding f) => f.Code switch
+    {
+        "BITNESS_MISMATCH_VPM" or "VPINMAME_NOT_REGISTERED" => "vpinmame",
+        "BITNESS_DMD64_MISSING" => "dmddevice",
+        "B2S_SERVER_MISSING" => "b2s",
+        "FLEXDMD_MISSING" => "flexdmd",
+        "COM_NOT_REGISTERED" or "COM_STALE_PATH" or "COM_PATH_OUTSIDE_INSTALL" or "COM_BITNESS_GAP" =>
+            f.Subject.Contains("VPinMAME", StringComparison.OrdinalIgnoreCase) ? "vpinmame"
+            : f.Subject.Contains("B2S", StringComparison.OrdinalIgnoreCase) ? "b2s"
+            : f.Subject.Contains("FlexDMD", StringComparison.OrdinalIgnoreCase) ? "flexdmd"
+            : null,
+        _ => null,
+    };
+
+    /// <summary>
+    /// « Santé des composants » : uniquement des lignes portées par un résultat réel du scan
+    /// (BITNESS_INVENTORY, composant manquant, base Popper) — jamais une ligne déduite du silence
+    /// d'un scanner. C'est pour ça que la ligne « FlexDMD — non requis » de la maquette n'existe
+    /// pas ici : « aucun résultat » n'est pas une mesure (doctrine affichée dans l'encadré même).
+    /// </summary>
+    private List<CompRow> BuildComponentRows()
+    {
+        var meta = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        foreach (var f in _report!.Findings.Where(f => f.Code == "BITNESS_INVENTORY" && f.Args.Count >= 3))
+        {
+            var key = RoleKey(f.Args[2]);
+            if (!meta.TryGetValue(key, out var list)) meta[key] = list = new List<string>();
+            if (!list.Contains(f.Args[1])) list.Add(f.Args[1]);
+        }
+
+        var absent = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var f in _report.Findings)
+        {
+            if (f.Code == "B2S_SERVER_MISSING") absent.Add("b2s");
+            if (f.Code == "FLEXDMD_MISSING") absent.Add("flexdmd");
+        }
+
+        var worst = new Dictionary<string, Finding>(StringComparer.Ordinal);
+        foreach (var f in _report.Findings)
+        {
+            var key = CompKeyForFinding(f);
+            if (key is null) continue;
+            if (!worst.TryGetValue(key, out var cur) || f.Severity > cur.Severity) worst[key] = f;
+        }
+
+        var rows = new List<CompRow>();
+        foreach (var key in new[] { "main-exe", "vpinmame", "b2s", "dmddevice", "flexdmd" })
+        {
+            var hasMeta = meta.TryGetValue(key, out var bits);
+            var isAbsent = absent.Contains(key);
+            if (!hasMeta && !isAbsent) continue;   // aucun résultat sur ce composant → pas de ligne
+            worst.TryGetValue(key, out var w);
+            rows.Add(new CompRow
+            {
+                Name = Loc.Get("comp.name." + key),
+                Meta = hasMeta ? string.Join(" + ", bits!) : Loc.Get("comp.meta.absent"),
+                StatusText = CompStatusText(w),
+                StatusBrush = w is null ? BrushOk : SevBrushOf(w.Severity),
+            });
+        }
+
+        if (_report.Layout.PupDatabasePath is not null)
+        {
+            // « base lue » seulement quand la lecture positive a réussi ; illisible → le fait
+            // mesuré est dit tel quel et la colonne statut se tait (rien n'est affirmé).
+            var read = _popperRegistered is not null;
+            rows.Add(new CompRow
+            {
+                Name = Loc.Get("comp.name.popper"),
+                Meta = Loc.Get(read ? "comp.meta.dbread" : "comp.meta.dbunreadable"),
+                StatusText = read ? Loc.Get("comp.st.ok") : "",
+                StatusBrush = BrushOk,
+            });
+        }
+        return rows;
+    }
+
+    private static string CompStatusText(Finding? worst)
+    {
+        if (worst is null) return Loc.Get("comp.st.ok");
+        var perCode = Loc.Get("comp.code." + worst.Code);
+        if (perCode != "comp.code." + worst.Code) return perCode;   // libellé court spécifique au code
+        return worst.Severity switch
+        {
+            Severity.Critical => Loc.Get("comp.st.critical"),
+            Severity.Warning => Loc.Get("comp.st.warn"),
+            _ => Loc.Get("comp.st.note"),
+        };
+    }
+
+    /// <summary>
+    /// Lignes du tableau « Tables analysées ». ROM : résultats du RomValidator uniquement (« — »
+    /// quand le dossier roms est introuvable — le résultat ROMS_DIR_NOT_FOUND l'explique dans la
+    /// liste). Backglass : B2S_MISSING sinon « présent » — inférence sûre, le contrôle est
+    /// inconditionnel par table (CompletenessScanner) et un plantage du scanner produirait un
+    /// SCANNER_ERROR qui la désactive ici. Frontend : lecture positive de la base Popper.
+    /// </summary>
+    private List<TableRowVm> BuildTableRows()
+    {
+        var byTable = _report!.Findings
+            .Where(f => !string.IsNullOrEmpty(f.Subject))
+            .GroupBy(f => f.Subject, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+        var completenessFailed = _report.Findings.Any(f => f.Code == "SCANNER_ERROR" && f.Category == "completeness");
+
+        var rows = new List<TableRowVm>();
+        foreach (var path in _report.Layout.VpxTables)
+        {
+            var name = Path.GetFileNameWithoutExtension(path);
+            var fs = byTable.TryGetValue(name, out var found) ? found : new List<Finding>();
+
+            string rom = Loc.Get("tbl.unknown");
+            Brush romBrush = BrushDim;
+            var frRom = fs.FirstOrDefault(f => f.Code is "ROM_OK" or "ROM_MISSING" or "ROM_NOT_REQUIRED" or "ROM_UNZIPPED");
+            if (frRom is not null)
+            {
+                (rom, romBrush) = frRom.Code switch
+                {
+                    "ROM_OK" => (string.Format(Loc.Get("tbl.rom.ok"), frRom.Args.Count > 1 ? frRom.Args[1] : ""), BrushOk),
+                    "ROM_MISSING" => (string.Format(Loc.Get("tbl.rom.missing"), frRom.Args.Count > 1 ? frRom.Args[1] : ""), BrushCritical),
+                    "ROM_NOT_REQUIRED" => (Loc.Get("tbl.rom.notrequired"), BrushOk),
+                    _ => (Loc.Get("tbl.rom.unzipped"), BrushWarning),
+                };
+            }
+
+            string b2s = Loc.Get("tbl.unknown");
+            Brush b2sBrush = BrushDim;
+            if (!completenessFailed)
+            {
+                var frB2s = fs.FirstOrDefault(f => f.Code == "B2S_MISSING");
+                b2s = frB2s is null ? Loc.Get("tbl.b2s.present") : $"{SevGlyph(frB2s.Severity)} {Loc.Get("tbl.b2s.missing")}";
+                b2sBrush = frB2s is null ? BrushOk : SevBrushOf(frB2s.Severity);
+            }
+
+            string fe = Loc.Get("tbl.unknown");
+            Brush feBrush = BrushDim;
+            if (_popperRegistered is not null)
+            {
+                if (_popperRegistered.Contains(name)) { fe = Loc.Get("tbl.fe.registered"); feBrush = BrushOk; }
+                else
+                {
+                    // La teinte suit la gravité RÉELLE du résultat (Info sur le pack actuel) —
+                    // pas l'orange de la maquette, qui surjouait un résultat informatif.
+                    var frFe = fs.FirstOrDefault(f => f.Code == "POPPER_NOT_REGISTERED");
+                    var sev = frFe?.Severity ?? Severity.Info;
+                    fe = $"{SevGlyph(sev)} {Loc.Get("tbl.fe.notregistered")}";
+                    feBrush = SevBrushOf(sev);
+                }
+            }
+
+            rows.Add(new TableRowVm
+            {
+                Name = name,
+                Rom = rom, RomBrush = romBrush,
+                B2s = b2s, B2sBrush = b2sBrush,
+                Frontend = fe, FeBrush = feBrush,
+            });
+        }
+        return rows;
+    }
+
+    /// <summary>Colonne de droite : résultats critiques réels, santé des composants, remarques
+    /// (Rolled — les répétitions par table restent regroupées comme dans la liste).</summary>
+    private void RefreshSideBoxes(List<CompRow> compRows)
+    {
+        SideRow ToRow(Finding f, Brush dot) => new()
+        {
+            Dot = dot,
+            Text = Loc.FindingText(f),
+            Sub = string.IsNullOrEmpty(f.Subject)
+                ? Loc.Get("cat." + f.Category)
+                : $"{Loc.Get("cat." + f.Category)} · {f.Subject}",
+            Code = f.Code,
+            Subject = f.Subject,
+        };
+
+        // Plafond des encadrés : une install cassée peut porter des dizaines de critiques et un
+        // ItemsControl ne virtualise pas. Le TOTAL réel reste dans l'en-tête, le renvoi dit
+        // combien de lignes ne sont pas montrées ici — rien n'est caché, tout est dans la liste.
+        const int sideCap = 8;
+
+        var crits = _report!.Ordered().Where(f => f.Severity == Severity.Critical)
+            .Select(f => ToRow(f, BrushCritical)).ToList();
+        SideCritHeader.Text = "✕ " + Loc.Get("side.criticals");
+        SideCritCount.Text = crits.Count.ToString();
+        SideCritList.ItemsSource = crits.Count > sideCap ? crits.Take(sideCap).ToList() : crits;
+        SideCritMore.Text = crits.Count > sideCap ? string.Format(Loc.Get("more.results"), crits.Count - sideCap) : "";
+        SideCritMore.Visibility = crits.Count > sideCap ? Visibility.Visible : Visibility.Collapsed;
+        SideCritBox.Visibility = crits.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        SideCompHeader.Text = Loc.Get("side.components");
+        SideCompCount.Text = compRows.Count.ToString();
+        SideCompList.ItemsSource = compRows;
+        SideCompNote.Text = Loc.Get("side.comp.note");
+        SideCompBox.Visibility = compRows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        // Onglet Composants : les mêmes lignes, pleine largeur.
+        CompList.ItemsSource = compRows;
+        CompTabNote.Text = Loc.Get("side.comp.note");
+        CompTabCard.Visibility = compRows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        CompTabEmpty.Text = compRows.Count > 0 ? "" : Loc.Get("scan.empty");
+
+        var notes = _report.Rolled().Where(f => f.Severity == Severity.Note)
+            .Select(f => ToRow(f, BrushNote)).ToList();
+        SideNoteHeader.Text = "✎ " + Loc.Get("side.notes");
+        SideNoteCount.Text = _report.Count(Severity.Note).ToString();
+        SideNoteList.ItemsSource = notes.Count > sideCap ? notes.Take(sideCap).ToList() : notes;
+        SideNoteMore.Text = notes.Count > sideCap ? string.Format(Loc.Get("more.results"), notes.Count - sideCap) : "";
+        SideNoteMore.Visibility = notes.Count > sideCap ? Visibility.Visible : Visibility.Collapsed;
+        SideNoteBox.Visibility = notes.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>Le tableau des tables, aux deux endroits où la maquette le montre : la vue
+    /// Causes racines et l'onglet Tables (même liste, zéro dérive possible).</summary>
+    private void RefreshTablesViews(List<TableRowVm> tableRows)
+    {
+        TablesCardHeader.Text = "🎰 " + Loc.Get("tbl.header");
+        TablesCardCount.Text = tableRows.Count.ToString();
+        TblHTable.Text = TblHTable2.Text = Loc.Get("tbl.h.table");
+        TblHRom.Text = TblHRom2.Text = Loc.Get("tbl.h.rom");
+        TblHB2s.Text = TblHB2s2.Text = Loc.Get("tbl.h.b2s");
+        TblHFe.Text = TblHFe2.Text = Loc.Get("tbl.h.frontend");
+        // Résumé plafonné dans la vue Causes racines (ItemsControl non virtualisé) ; la liste
+        // complète, virtualisée, vit dans l'onglet Tables. Le compteur d'en-tête reste le total réel.
+        const int cardCap = 12;
+        TablesList.ItemsSource = tableRows.Count > cardCap ? tableRows.Take(cardCap).ToList() : tableRows;
+        TablesListMore.Text = tableRows.Count > cardCap ? string.Format(Loc.Get("more.tables"), tableRows.Count - cardCap) : "";
+        TablesListMore.Visibility = tableRows.Count > cardCap ? Visibility.Visible : Visibility.Collapsed;
+        TablesListFull.ItemsSource = tableRows;
+        var vis = tableRows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        TablesCard.Visibility = vis;
+        TablesTabCard.Visibility = vis;
+        TablesTabEmpty.Text = tableRows.Count > 0 ? "" : Loc.Get("scan.hint.notables");
+    }
+
+    /// <summary>
+    /// Onglet Système — uniquement des faits mesurés : métadonnées du dernier scan (ScanReport)
+    /// et machine (OS/CPU/mémoire par les API système, écrans par MonitorTopologyProbe — silence
+    /// hors Windows). Pas de GPU : le lire demanderait WMI, hors contrainte zéro-dépendance.
+    /// </summary>
+    private void RefreshSystemTab()
+    {
+        SysScanHeader.Text = Loc.Get("sys.scan.header");
+        SysMachineHeader.Text = Loc.Get("sys.machine.header");
+        SysMachineBody.Text = MachineInfoText();
+
+        if (_report is null)
+        {
+            SysScanBody.Text = Loc.Get("sys.needscan");
+            return;
+        }
+
+        static string Mark(object? v) => v is null ? "—" : "✓";
+        var l = _report.Layout;
+        var sb = new StringBuilder();
+        sb.AppendLine($"{Loc.Get("sys.root")} : {l.RootPath}");
+        sb.AppendLine($"{Loc.Get("sys.dirs")} : Tables {Mark(l.TablesDir)} · VPinMAME {Mark(l.VPinMameDir)} · roms {Mark(l.RomsDir)} · PinUP Popper {Mark(l.PupDatabasePath)}");
+        sb.AppendLine($"{Loc.Get("meta.started")} {_report.StartedAt.ToLocalTime():dd/MM/yyyy HH:mm}");
+        var dur = _report.FinishedAt - _report.StartedAt;
+        if (_report.FinishedAt != default && dur > TimeSpan.Zero)
+            sb.AppendLine($"{Loc.Get("meta.duration")} {dur:hh\\:mm\\:ss}");
+        if (_scanChecks > 0)
+            sb.AppendLine($"{Loc.Get("meta.checks")} {_scanChecks} / {_scanChecks}");
+        sb.Append($"{Loc.Get("meta.tablecount")} {l.VpxTables.Count}");
+        SysScanBody.Text = sb.ToString();
+    }
+
+    private static string MachineInfoText()
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"{Loc.Get("sys.os")} : {System.Runtime.InteropServices.RuntimeInformation.OSDescription} · {(Environment.Is64BitOperatingSystem ? "64-bit" : "32-bit")}");
+
+        string? cpu = null;
+        try
+        {
+            if (OperatingSystem.IsWindows())
+                cpu = Registry.GetValue(@"HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0",
+                    "ProcessorNameString", null) as string;
+        }
+        catch { /* lecture registre refusée → la ligne se réduit au nombre de cœurs */ }
+        var cores = string.Format(Loc.Get("sys.cores"), Environment.ProcessorCount);
+        sb.AppendLine($"{Loc.Get("sys.cpu")} : {(string.IsNullOrWhiteSpace(cpu) ? cores : cpu!.Trim() + " · " + cores)}");
+
+        var gb = Math.Round(GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / 1073741824.0);
+        sb.Append($"{Loc.Get("sys.ram")} : {string.Format(Loc.Get("sys.ram.fmt"), gb)}");
+
+        // Écrans : la sonde existante du Core (Windows uniquement — null ailleurs, la ligne se tait).
+        var monitors = MonitorTopologyProbe.TryGetMonitorRects();
+        if (monitors is not null)
+        {
+            sb.AppendLine();
+            sb.Append($"{Loc.Get("sys.screens")} : {string.Format(Loc.Get("sys.screens.fmt"), monitors.Count, (int)SystemParameters.VirtualScreenWidth, (int)SystemParameters.VirtualScreenHeight)}");
+        }
+        return sb.ToString();
+    }
+
+    private void RefreshInnerTabHeaders(int causes, int comps, int tables)
+    {
+        StabCausesHeader.Text = $"{Loc.Get("stab.causes")} · {causes}";
+        StabResultsHeader.Text = $"{Loc.Get("stab.results")} · {_report!.Findings.Count}";
+        StabComponentsHeader.Text = comps > 0 ? $"{Loc.Get("stab.components")} · {comps}" : Loc.Get("stab.components");
+        StabTablesHeader.Text = tables > 0 ? $"{Loc.Get("stab.tables")} · {tables}" : Loc.Get("stab.tables");
+        StabSystemHeader.Text = Loc.Get("stab.system");
+    }
+
+    /// <summary>Même requête que CompletenessScanner.LoadPopperGames — la colonne Frontend doit
+    /// dire la même chose que le scanner, jamais une réimplémentation qui dérive.</summary>
+    private static HashSet<string>? LoadPopperRegistered(InstallLayout layout)
+    {
+        if (layout.PupDatabasePath is null || !File.Exists(layout.PupDatabasePath)) return null;
+        var dbRows = SqliteReader.TryReadTable(layout.PupDatabasePath, "Games", "GameName", "GameFileName");
+        if (dbRows is null) return null;
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in dbRows)
+        {
+            foreach (var v in row)
+            {
+                if (string.IsNullOrEmpty(v)) continue;
+                names.Add(v);
+                names.Add(Path.GetFileNameWithoutExtension(v));
+            }
+        }
+        return names;
+    }
+
+    /// <summary>« Voir les étapes » d'une carte : ouvre Tous les résultats sur le premier résultat
+    /// déclencheur — le panneau de détail (impact / cause / correction) porte les étapes.</summary>
+    private void CauseSteps_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as System.Windows.Controls.Button)?.DataContext is CauseCardRow row)
+            JumpToFinding(row.Codes, null);
+    }
+
+    private void SideRow_Click(object sender, MouseButtonEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is SideRow row)
+            JumpToFinding(new[] { row.Code }, row.Subject);
+    }
+
+    private void JumpToFinding(IReadOnlyList<string> codes, string? subject)
+    {
+        ScannerTabs.SelectedItem = StabResults;
+        foreach (var item in ListFindings.Items)
+        {
+            if (item is FindingRow r && codes.Contains(r.Code) &&
+                (string.IsNullOrEmpty(subject) || string.Equals(r.Subject, subject, StringComparison.OrdinalIgnoreCase)))
+            {
+                ListFindings.SelectedItem = item;
+                ListFindings.ScrollIntoView(item);
+                return;
+            }
+        }
     }
 
     private void TxtSearch_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)

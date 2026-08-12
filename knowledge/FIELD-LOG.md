@@ -26,6 +26,40 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-12 (session éco) · Écran Scanner porté sur la maquette du 11/08 — en une passe
+- code:        transverse UI (aucun nouveau code de finding) + `Scenarios.DetectAll` (liste triée au
+  lieu du seul meilleur) + nouveau scénario `VPINMAME_NOT_REGISTERED` (MinMatch 1 — les 4 conditions
+  du LOT A sont toutes mesurées, un seul code est déjà un diagnostic complet)
+- bac:         FIX (3ᵉ reprise du même retour de Maxime : « l'écran ne ressemble pas à la maquette »)
+- contexte:    `docs/maquette-scanner-2026-08-11.html` = la cible ; portage complet en une passe
+  plutôt que des retouches successives (chaque aller-retour coûte un `build.cmd`).
+- analyse:     ce qui manquait a été porté : ligne méta sous le bandeau (mode, lancé le, durée,
+  contrôles N/N, tables), onglets internes (Causes racines / Tous les résultats / Composants /
+  Tables / Système), cartes de causes racines en liste (badge de gravité MESURÉE, titre, puce de
+  confiance en mots, phrase joueur, phrase d'impact, chaîne causale par scénario dont chaque case
+  exige son code déclencheur, pied composants/tables/codes/réparation manuelle + « Voir les
+  étapes » qui saute sur le résultat), colonne de droite (Résultats critiques, Santé des
+  composants, Remarques), carte réparation honnête (offre réelle ou « aucune réparation
+  automatique »), tableau des tables (ROM/Backglass/Frontend par table).
+  **Vérité terrain consignée** : le scan réel du DemoData (hors Windows) donne 17 résultats,
+  score 68/C, 1 critique, 2 causes racines — PAS les 27/38/F/3 critiques de la maquette, qui
+  supposait un dossier `roms/` absent du DemoData et des scanners registre/écrans qui ne parlent
+  que sous Windows. La colonne ROM du démo affiche donc « — » partout (ROMS_DIR_NOT_FOUND
+  l'explique dans la liste). Sur le poste Windows de Maxime, le démo produira EN PLUS les
+  résultats COM/écrans/audio de SA machine. Écarté volontairement : ligne « FlexDMD — non
+  requis » (déduction du silence d'un scanner, contraire à la doctrine affichée dans l'encadré
+  même), voyants réseau (ADR-002), pourcentages de confiance (ADR-010), vignettes-objets SVG
+  (hors périmètre énuméré). Badge de la carte « Intégration frontend » : « À noter », pas
+  « Avertissement » comme la maquette — c'est la gravité réellement mesurée (Info + Note).
+- disposition: livré (bundle) · à vérifier EN PREMIER sur la machine de Maxime via `build.cmd` +
+  Mode démo — l'App ne compile toujours pas dans le sandbox (NU1100, fait documenté) ; vérifié ici
+  par XML bien formé, passe `csc` sans références WPF (zéro CS1xxx), script de recoupement
+  x:Name/gestionnaires/assets (0 erreur), exécution du VRAI `Scenarios.cs` contre le vrai scan
+  démo (2 scénarios, conf 90/86, chaînes conformes), Core 412/412 + Repair 145/145 verts.
+  Amélioration à faible coût proposée SANS être codée : enrichir `DemoData` d'un dossier
+  `roms/` (afm_113b.zip + afm_113.zip) pour que le mode démo raconte la même histoire que la
+  maquette (critique ROM réelle sur Medieval Madness, colonne ROM remplie).
+
 ## 2026-08-12 · Gregg — suite du 07/08 sur FlexDMD, cette fois avec captures d'écran exploitables
 - code:        ROM_MISSING (confirmé exact), FLEXDMD_MISSING, B2SBACKGLASS_MISSING (question d'usage,
   pas un bug), col.message "Details" (source de la confusion sur "comment ouvrir le rapport complet")

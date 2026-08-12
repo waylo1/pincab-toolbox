@@ -77,6 +77,135 @@
             <Setter Property="Background" Value="{StaticResource Border}"/>
             <Setter Property="Foreground" Value="{StaticResource Text}"/>
         </Style>
+
+        <!-- ══ Écran Scanner porté sur la maquette 11/08 — templates partagés ══
+             Chaque template est utilisé à DEUX endroits (colonne de droite + onglet dédié),
+             d'où leur place ici plutôt qu'en inline : une seule définition, zéro dérive. -->
+
+        <!-- Une ligne du tableau des tables analysées. Chaque cellule est alimentée en
+             code-behind depuis un vrai résultat de scan ; "—" = non vérifié sur ce scan. -->
+        <DataTemplate x:Key="TableRowTpl">
+            <Border BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="14,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="1.4*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="1.1*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Name}" FontSize="12.5" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Rom}" Foreground="{Binding RomBrush}" FontSize="11.5" TextTrimming="CharacterEllipsis" ToolTip="{Binding Rom}"/>
+                    <TextBlock Grid.Column="2" Text="{Binding B2s}" Foreground="{Binding B2sBrush}" FontSize="11.5" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Grid.Column="3" Text="{Binding Frontend}" Foreground="{Binding FeBrush}" FontSize="11.5" TextTrimming="CharacterEllipsis"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- Une ligne de santé de composant : nom / fait mesuré (bitness, base lue…) / statut. -->
+        <DataTemplate x:Key="CompRowTpl">
+            <Border BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="14,8">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText}" Foreground="{Binding StatusBrush}"
+                               FontSize="11.5" FontWeight="SemiBold" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding Meta}" Foreground="{StaticResource TextDim}"
+                               FontSize="11.5" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Name}" FontSize="12.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- Une ligne des encadrés « Résultats critiques » / « Remarques » — cliquable,
+             renvoie vers la ligne correspondante de l'onglet Tous les résultats. -->
+        <DataTemplate x:Key="SideRowTpl">
+            <Border Background="Transparent" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1"
+                    Padding="13,9" Cursor="Hand" MouseLeftButtonUp="SideRow_Click">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Ellipse Width="7" Height="7" Fill="{Binding Dot}" Margin="0,5,9,0" VerticalAlignment="Top"/>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="{Binding Text}" FontSize="12" TextWrapping="Wrap" LineHeight="17"/>
+                        <TextBlock Text="{Binding Sub}" FontSize="10.5" Foreground="{StaticResource TextDim}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="›" Foreground="{StaticResource TextDim}" Margin="8,0,0,0" VerticalAlignment="Top"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- Carte de cause racine (maquette 11/08) : badge de gravité, titre, puce de confiance,
+             phrase joueur, phrase d'impact, chaîne causale, pied (touché / codes / manuel / étapes).
+             Tout est construit en code-behind depuis Scenarios.DetectAll — jamais écrit en dur. -->
+        <DataTemplate x:Key="CauseCardTpl">
+            <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1"
+                    CornerRadius="12" Margin="0,0,0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Background="{Binding AccentBrush}" CornerRadius="12,0,0,12"/>
+                    <StackPanel Grid.Column="1">
+                        <StackPanel Margin="16,12,16,12">
+                            <DockPanel>
+                                <Border DockPanel.Dock="Left" Background="{Binding BadgeBg}" BorderBrush="{Binding BadgeBorder}"
+                                        BorderThickness="1" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding BadgeText}" Foreground="{Binding AccentBrush}" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                                <Border DockPanel.Dock="Right" BorderBrush="{StaticResource Border}" BorderThickness="1"
+                                        CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding ConfText}" Foreground="{StaticResource TextDim}" FontSize="11"/>
+                                </Border>
+                                <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="Bold" Margin="10,0"
+                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </DockPanel>
+                            <TextBlock Text="{Binding Player}" FontSize="13" TextWrapping="Wrap" Margin="0,9,0,0"/>
+                            <TextBlock Text="{Binding Impact}" Foreground="{StaticResource TextDim}" FontSize="12.5"
+                                       TextWrapping="Wrap" Margin="0,3,0,0" Visibility="{Binding ImpactVis}"/>
+                            <ItemsControl ItemsSource="{Binding Chain}" Margin="0,11,0,0" Visibility="{Binding ChainVis}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                            <TextBlock Text="{Binding Arrow}" Foreground="{Binding ArrowBrush}" FontSize="13"
+                                                       FontWeight="Bold" VerticalAlignment="Center" Margin="6,0,6,0"/>
+                                            <Border Background="{Binding NodeBg}" BorderBrush="{Binding NodeBorder}"
+                                                    BorderThickness="1" CornerRadius="8" Padding="10,6">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Label}" FontSize="12" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding Status}" FontSize="10.5" Foreground="{Binding StatusBrush}" Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                        <Border Background="#FF1A1A22" BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0"
+                                CornerRadius="0,0,12,0" Padding="16,8">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="{Binding StepsLabel}" Click="CauseSteps_Click"
+                                        Padding="10,4" FontSize="12" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding ManualText}" Foreground="{StaticResource Warning}"
+                                           FontSize="12" VerticalAlignment="Center" Visibility="{Binding ManualVis}"/>
+                                <WrapPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding FootComponents}" Foreground="{StaticResource TextDim}" FontSize="12"
+                                               Margin="0,0,14,0" VerticalAlignment="Center" Visibility="{Binding FootComponentsVis}"/>
+                                    <TextBlock Text="{Binding FootTables}" Foreground="{StaticResource TextDim}" FontSize="12"
+                                               Margin="0,0,14,0" VerticalAlignment="Center" Visibility="{Binding FootTablesVis}"/>
+                                    <TextBlock Text="{Binding FootCodes}" Foreground="{StaticResource TextDim}" FontFamily="Consolas"
+                                               FontSize="11.5" VerticalAlignment="Center"/>
+                                </WrapPanel>
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
@@ -115,12 +244,13 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
-                        <!-- Plancher garanti pour la liste : c'est le contenu principal de l'écran,
-                             il ne doit jamais être écrasé par ce qu'on ajoute au-dessus (bandeau,
-                             diagnostic, chaîne causale). Sans ce MinHeight, chaque bloc décoratif
-                             ajouté lui volait des pixels — c'est exactement ce qui s'est produit. -->
+                        <!-- Plancher garanti pour la zone de contenu (dont le tableau des
+                             résultats, qui la remplit entièrement dans son onglet) : c'est le
+                             contenu principal de l'écran, il ne doit jamais être écrasé par ce
+                             qu'on ajoute au-dessus (bandeau, ligne méta). Sans ce MinHeight,
+                             chaque bloc décoratif ajouté lui volait des pixels — c'est
+                             exactement ce qui s'est produit. -->
                         <RowDefinition Height="*" MinHeight="240"/>
-                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- path row -->
@@ -261,68 +391,176 @@
                         </Border>
                     </Border>
 
+                    <!-- ── ligne méta (maquette 11/08) : mode, horodatage, durée, contrôles, tables.
+                         Chaque valeur vient du vrai ScanReport / ScanEngine, remplie en code-behind.
+                         Avant le premier scan, la même rangée porte le texte d'accueil. ── -->
                     <StackPanel Grid.Row="2">
-                        <Border x:Name="PriorityBanner" Visibility="Collapsed" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Margin="0,0,0,8">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="4"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Border x:Name="PriorityAccent" Grid.Column="0" Background="{StaticResource Critical}" CornerRadius="10,0,0,10"/>
-                                <StackPanel Grid.Column="1" Margin="14,9">
-                                    <TextBlock x:Name="PriorityLabel" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
-                                    <TextBlock x:Name="PriorityText" FontSize="15" FontWeight="Bold" Foreground="{StaticResource Text}" TextWrapping="Wrap" Margin="0,3,0,0"/>
-                                    <!-- Titre et explication séparés, comme sur la maquette : un seul
-                                         pavé gras oblige à tout lire pour trouver de quoi il s'agit. -->
-                                    <TextBlock x:Name="PriorityExplain" FontSize="12.5" Foreground="{StaticResource TextDim}"
-                                               TextWrapping="Wrap" Margin="0,4,0,0" Visibility="Collapsed"/>
-
-                                    <!-- Chaîne causale (maquette 11/08) : une case par résultat qui a
-                                         réellement déclenché la corrélation, dans l'ordre. C'est la
-                                         meilleure idée des maquettes — un pincabiste ne lit pas
-                                         « BITNESS_MISMATCH_VPM », il lit trois cases dont une est rouge.
-                                         Alimentée en code-behind, jamais écrite en dur. -->
-                                    <ItemsControl x:Name="ChainNodes" Visibility="Collapsed" Margin="0,8,0,0">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                                    <TextBlock Text="{Binding Arrow}" Foreground="{StaticResource TextDim}"
-                                                               FontSize="15" VerticalAlignment="Center" Margin="7,0,7,0"/>
-                                                    <Border Background="{StaticResource PanelAlt}" BorderBrush="{Binding Accent}"
-                                                            BorderThickness="1" CornerRadius="8" Padding="9,5">
-                                                        <StackPanel>
-                                                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="12.5"
-                                                                       Foreground="{StaticResource Text}"/>
-                                                            <TextBlock Text="{Binding Status}" FontSize="11"
-                                                                       Foreground="{Binding Accent}" Margin="0,2,0,0"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-
-                                    <TextBlock x:Name="PriorityTriggers" FontSize="12.5" Foreground="{StaticResource TextDim}" TextWrapping="Wrap" Margin="0,5,0,0" Visibility="Collapsed"/>
-                                    <TextBlock x:Name="PriorityFix" FontSize="13" Foreground="{StaticResource OkSev}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                        <!-- Écran 1 — free aggregate offer, computed by RepairOfferBuilder from the real plan -->
-                        <TextBlock x:Name="RepairSummaryLine" Visibility="Collapsed" Foreground="{StaticResource Accent}"
-                                   FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap" Margin="2,0,2,6"/>
-
-                        <!-- ADR-006 anti-survente : ce que Repair NE fera jamais, même une fois acheté
-                             (RepairOffer.NotAutomatable) — affiché AVANT l'achat, jamais caché. -->
-                        <TextBlock x:Name="RepairNotAutomatableLine" Visibility="Collapsed" Foreground="{StaticResource TextDim}"
-                                   FontSize="12" TextWrapping="Wrap" Margin="2,0,2,6"/>
                         <TextBlock x:Name="LblPlaceholder" Foreground="{StaticResource TextDim}"
-                                   TextWrapping="Wrap" Margin="2,0,2,8"/>
+                                   TextWrapping="Wrap" Margin="2,0,2,6"/>
+                        <WrapPanel x:Name="MetaRow" Visibility="Collapsed" Margin="2,0,2,2">
+                            <TextBlock x:Name="MetaMode" Foreground="{StaticResource TextDim}" FontSize="12" Margin="0,0,22,4"/>
+                            <TextBlock x:Name="MetaStarted" Foreground="{StaticResource TextDim}" FontSize="12" Margin="0,0,22,4"/>
+                            <TextBlock x:Name="MetaDuration" Foreground="{StaticResource TextDim}" FontSize="12" Margin="0,0,22,4"/>
+                            <TextBlock x:Name="MetaChecks" Foreground="{StaticResource TextDim}" FontSize="12" Margin="0,0,22,4"/>
+                            <TextBlock x:Name="MetaTables" Foreground="{StaticResource TextDim}" FontSize="12" Margin="0,0,22,4"/>
+                        </WrapPanel>
                     </StackPanel>
 
-                    <ListView x:Name="ListFindings" Grid.Row="3"
+                    <!-- ══════════════ ONGLETS INTERNES (maquette 11/08) ══════════════
+                         Causes racines / Tous les résultats / Composants / Tables / Système.
+                         Même style d'onglet souligné que les onglets principaux. Le tableau des
+                         résultats vit dans son onglet et y occupe TOUTE la zone de contenu, donc
+                         le plancher MinHeight de la ligne du Grid le protège comme avant. -->
+                    <TabControl x:Name="ScannerTabs" Grid.Row="3" Background="Transparent" BorderThickness="0" Padding="0">
+
+                        <!-- ══ CAUSES RACINES ══ -->
+                        <TabItem x:Name="StabCauses">
+                            <TabItem.Header><TextBlock x:Name="StabCausesHeader" Text="Causes racines" FontSize="13"/></TabItem.Header>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="330"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <!-- Cartes de causes racines — Scenarios.DetectAll, triées
+                                             gravité puis confiance. En repli (aucun scénario), une
+                                             seule carte construite depuis le résultat le plus grave. -->
+                                        <ItemsControl x:Name="CauseCards" ItemTemplate="{StaticResource CauseCardTpl}"/>
+
+                                        <!-- État réparable — honnête (ADR-006) : l'offre réelle de
+                                             RepairOfferBuilder quand elle existe, sinon la carte
+                                             « aucune réparation automatique disponible ». -->
+                                        <Border x:Name="RepairCard" Visibility="Collapsed" Background="{StaticResource Panel}"
+                                                BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12" Margin="0,0,0,10">
+                                            <Grid Margin="16,12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="⚒" FontSize="16" Foreground="{StaticResource TextDim}" Margin="0,1,12,0" VerticalAlignment="Top"/>
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock x:Name="RepairCardTitle" FontSize="13.5" FontWeight="Bold" TextWrapping="Wrap"/>
+                                                    <TextBlock x:Name="RepairCardBody" Foreground="{StaticResource TextDim}" FontSize="12.5"
+                                                               TextWrapping="Wrap" Margin="0,4,0,0" LineHeight="18"/>
+                                                    <!-- Écran 1 — free aggregate offer, computed by RepairOfferBuilder from the real plan -->
+                                                    <TextBlock x:Name="RepairSummaryLine" Visibility="Collapsed" Foreground="{StaticResource Accent}"
+                                                               FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                                    <!-- ADR-006 anti-survente : ce que Repair NE fera jamais, même une fois acheté
+                                                         (RepairOffer.NotAutomatable) — affiché AVANT l'achat, jamais caché. -->
+                                                    <TextBlock x:Name="RepairNotAutomatableLine" Visibility="Collapsed" Foreground="{StaticResource TextDim}"
+                                                               FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                                </StackPanel>
+                                                <Button x:Name="BtnRepairCardOpen" Grid.Column="2" Click="BtnGotoRepair_Click"
+                                                        Padding="12,5" FontSize="12" Margin="14,0,0,0" VerticalAlignment="Top"/>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Tableau des tables analysées — données réelles du scan,
+                                             une cellule sans résultat affiche « — », jamais une valeur déduite. -->
+                                        <Border x:Name="TablesCard" Visibility="Collapsed" Background="{StaticResource Panel}"
+                                                BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12" Margin="0,0,0,10">
+                                            <StackPanel>
+                                                <Border BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="14,10">
+                                                    <DockPanel>
+                                                        <TextBlock x:Name="TablesCardCount" DockPanel.Dock="Right" Foreground="{StaticResource TextDim}" FontSize="11"/>
+                                                        <TextBlock x:Name="TablesCardHeader" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                                    </DockPanel>
+                                                </Border>
+                                                <Border Background="#FF1A1A22" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="14,7">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="2*"/>
+                                                            <ColumnDefinition Width="1.4*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="1.1*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock x:Name="TblHTable" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                                        <TextBlock x:Name="TblHRom" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                                        <TextBlock x:Name="TblHB2s" Grid.Column="2" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                                        <TextBlock x:Name="TblHFe" Grid.Column="3" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                                    </Grid>
+                                                </Border>
+                                                <!-- Résumé plafonné (12 lignes) : un ItemsControl ne virtualise
+                                                     pas, et une collection réelle peut faire 2000 tables
+                                                     (FIELD-LOG 2026-07-30). La liste complète, virtualisée,
+                                                     vit dans l'onglet Tables — le renvoi ci-dessous l'affiche. -->
+                                                <ItemsControl x:Name="TablesList" ItemTemplate="{StaticResource TableRowTpl}"/>
+                                                <TextBlock x:Name="TablesListMore" Visibility="Collapsed" Foreground="{StaticResource TextDim}"
+                                                           FontSize="11.5" Padding="14,8"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- ══ COLONNE DE DROITE (maquette 11/08) ══ -->
+                                    <StackPanel Grid.Column="2">
+
+                                        <Border x:Name="SideCritBox" Visibility="Collapsed" Background="{StaticResource Panel}"
+                                                BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12" Margin="0,0,0,12">
+                                            <StackPanel>
+                                                <Border BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="13,10">
+                                                    <DockPanel>
+                                                        <TextBlock x:Name="SideCritCount" DockPanel.Dock="Right" Foreground="{StaticResource TextDim}" FontSize="11"/>
+                                                        <TextBlock x:Name="SideCritHeader" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                                    </DockPanel>
+                                                </Border>
+                                                <!-- Plafonné à 8 lignes (une install cassée peut porter des
+                                                     dizaines de critiques) — le total réel reste affiché dans
+                                                     l'en-tête, la liste complète est dans Tous les résultats. -->
+                                                <ItemsControl x:Name="SideCritList" ItemTemplate="{StaticResource SideRowTpl}"/>
+                                                <TextBlock x:Name="SideCritMore" Visibility="Collapsed" Foreground="{StaticResource TextDim}"
+                                                           FontSize="11" Padding="13,8"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Santé des composants : uniquement des lignes portées par un
+                                             résultat réel (inventaire bitness, composant manquant, base
+                                             Popper lue). Jamais de ligne déduite du silence d'un scanner. -->
+                                        <Border x:Name="SideCompBox" Visibility="Collapsed" Background="{StaticResource Panel}"
+                                                BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12" Margin="0,0,0,12">
+                                            <StackPanel>
+                                                <Border BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="13,10">
+                                                    <DockPanel>
+                                                        <TextBlock x:Name="SideCompCount" DockPanel.Dock="Right" Foreground="{StaticResource TextDim}" FontSize="11"/>
+                                                        <TextBlock x:Name="SideCompHeader" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                                    </DockPanel>
+                                                </Border>
+                                                <ItemsControl x:Name="SideCompList" ItemTemplate="{StaticResource CompRowTpl}"/>
+                                                <Border Background="#FF1A1A22" Padding="13,9" CornerRadius="0,0,12,12">
+                                                    <TextBlock x:Name="SideCompNote" Foreground="{StaticResource TextDim}" FontSize="11"
+                                                               TextWrapping="Wrap" LineHeight="16"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border x:Name="SideNoteBox" Visibility="Collapsed" Background="{StaticResource Panel}"
+                                                BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12" Margin="0,0,0,12">
+                                            <StackPanel>
+                                                <Border BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="13,10">
+                                                    <DockPanel>
+                                                        <TextBlock x:Name="SideNoteCount" DockPanel.Dock="Right" Foreground="{StaticResource TextDim}" FontSize="11"/>
+                                                        <TextBlock x:Name="SideNoteHeader" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                                    </DockPanel>
+                                                </Border>
+                                                <ItemsControl x:Name="SideNoteList" ItemTemplate="{StaticResource SideRowTpl}"/>
+                                                <TextBlock x:Name="SideNoteMore" Visibility="Collapsed" Foreground="{StaticResource TextDim}"
+                                                           FontSize="11" Padding="13,8"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <!-- ══ TOUS LES RÉSULTATS ══ (le tableau existant, filtres et détail inchangés) -->
+                        <TabItem x:Name="StabResults">
+                            <TabItem.Header><TextBlock x:Name="StabResultsHeader" Text="Tous les résultats" FontSize="13"/></TabItem.Header>
+                            <Grid Margin="0,8,0,0">
+
+                    <ListView x:Name="ListFindings"
                               Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1"
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                               SelectionChanged="ListFindings_SelectionChanged"
@@ -397,7 +635,7 @@
                     </ListView>
 
                     <!-- detail panel — populated on row selection -->
-                    <Border x:Name="DetailPanel" Grid.Row="3" VerticalAlignment="Bottom" Visibility="Collapsed" MaxHeight="250"
+                    <Border x:Name="DetailPanel" VerticalAlignment="Bottom" Visibility="Collapsed" MaxHeight="250"
                             Background="{StaticResource Panel}" BorderBrush="{StaticResource Accent}" BorderThickness="1"
                             CornerRadius="8" Padding="14,12" Margin="8,0,8,8">
                         <Border.Effect><DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.55"/></Border.Effect>
@@ -434,6 +672,102 @@
                                     Width="26" Height="26" Padding="0" FontSize="13" Click="BtnCloseDetail_Click"/>
                         </Grid>
                     </Border>
+                            </Grid>
+                        </TabItem>
+
+                        <!-- ══ COMPOSANTS ══ (mêmes lignes que l'encadré de droite, pleine largeur) -->
+                        <TabItem x:Name="StabComponents">
+                            <TabItem.Header><TextBlock x:Name="StabComponentsHeader" Text="Composants" FontSize="13"/></TabItem.Header>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="0,8,0,0" MaxWidth="780" HorizontalAlignment="Left">
+                                    <Border x:Name="CompTabCard" Visibility="Collapsed" Background="{StaticResource Panel}"
+                                            BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12">
+                                        <StackPanel>
+                                            <ItemsControl x:Name="CompList" ItemTemplate="{StaticResource CompRowTpl}"/>
+                                            <Border Background="#FF1A1A22" Padding="14,9" CornerRadius="0,0,12,12">
+                                                <TextBlock x:Name="CompTabNote" Foreground="{StaticResource TextDim}" FontSize="11"
+                                                           TextWrapping="Wrap" LineHeight="16"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock x:Name="CompTabEmpty" Foreground="{StaticResource TextDim}" TextWrapping="Wrap" Margin="2,4,0,0"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <!-- ══ TABLES ══ (le même tableau que la vue Causes racines, complet cette
+                             fois : ListBox virtualisée — une collection réelle peut faire 2000
+                             tables, un ItemsControl créerait 2000 lignes visuelles d'un coup) -->
+                        <TabItem x:Name="StabTables">
+                            <TabItem.Header><TextBlock x:Name="StabTablesHeader" Text="Tables" FontSize="13"/></TabItem.Header>
+                            <Grid Margin="0,8,0,0">
+                                <Border x:Name="TablesTabCard" Visibility="Collapsed" Background="{StaticResource Panel}"
+                                        BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12"
+                                        MaxWidth="920" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Border Grid.Row="0" Background="#FF1A1A22" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="14,7">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="2*"/>
+                                                    <ColumnDefinition Width="1.4*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="1.1*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock x:Name="TblHTable2" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                                <TextBlock x:Name="TblHRom2" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                                <TextBlock x:Name="TblHB2s2" Grid.Column="2" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                                <TextBlock x:Name="TblHFe2" Grid.Column="3" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                            </Grid>
+                                        </Border>
+                                        <ListBox x:Name="TablesListFull" Grid.Row="1" Background="Transparent" BorderThickness="0"
+                                                 ItemTemplate="{StaticResource TableRowTpl}"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
+                                            <ListBox.ItemContainerStyle>
+                                                <!-- Lignes non interactives : pas de focus ni de surbrillance
+                                                     de sélection, le template de ligne porte déjà tout. -->
+                                                <Style TargetType="ListBoxItem">
+                                                    <Setter Property="Padding" Value="0"/>
+                                                    <Setter Property="Margin" Value="0"/>
+                                                    <Setter Property="Focusable" Value="False"/>
+                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="ListBoxItem">
+                                                                <ContentPresenter/>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </ListBox.ItemContainerStyle>
+                                        </ListBox>
+                                    </Grid>
+                                </Border>
+                                <TextBlock x:Name="TablesTabEmpty" Foreground="{StaticResource TextDim}" TextWrapping="Wrap"
+                                           Margin="2,4,0,0" VerticalAlignment="Top"/>
+                            </Grid>
+                        </TabItem>
+
+                        <!-- ══ SYSTÈME ══ — uniquement des faits mesurés : métadonnées du dernier
+                             scan (ScanReport) et machine (OS, CPU, mémoire, écrans via
+                             MonitorTopologyProbe). Pas de GPU : le lire demanderait WMI, hors
+                             contrainte zéro-dépendance du projet. -->
+                        <TabItem x:Name="StabSystem">
+                            <TabItem.Header><TextBlock x:Name="StabSystemHeader" Text="Système" FontSize="13"/></TabItem.Header>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="2,12,0,0" MaxWidth="820" HorizontalAlignment="Left">
+                                    <TextBlock x:Name="SysScanHeader" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                    <TextBlock x:Name="SysScanBody" FontSize="12.5" TextWrapping="Wrap" Margin="0,6,0,18" LineHeight="20"/>
+                                    <TextBlock x:Name="SysMachineHeader" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
+                                    <TextBlock x:Name="SysMachineBody" FontSize="12.5" TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="20"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+                    </TabControl>
                 </Grid>
             </TabItem>
 

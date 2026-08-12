@@ -1,5 +1,68 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 12/08/2026
 
+## 🖥️ MAJ 12/08 — écran Scanner porté sur la maquette du 11/08, en une passe
+
+> **Mission unique de la session : rendre l'écran Scanner fidèle à
+> `docs/maquette-scanner-2026-08-11.html`** (3ᵉ demande de Maxime sur ce point). Portage complet
+> en une passe, un commit, annulable d'un `git revert`.
+>
+> **Livré (tout est piloté par les données du vrai scan, rien d'écrit en dur)** :
+> - **Ligne méta** sous le bandeau : mode (Démonstration/Dossier), lancé le, durée
+>   (`ScanReport.StartedAt/FinishedAt`), contrôles N/N (`ScanEngine.Scanners.Count`, jamais une
+>   constante), tables analysées.
+> - **Onglets internes** : Causes racines / Tous les résultats / Composants / Tables / Système,
+>   compteurs réels dans les en-têtes. Le tableau des résultats vit dans son onglet et garde son
+>   plancher (`MinHeight=240` sur la ligne de Grid — le piège des sessions précédentes).
+> - **Cartes de causes racines** : `Scenarios.DetectAll` retourne maintenant la LISTE triée
+>   (l'ancien `Detect` reste en façade). Badge = gravité MAX réellement mesurée des déclencheurs
+>   (sur le démo, « Intégration frontend » sort en *À noter*, pas en *Avertissement* comme la
+>   maquette — Info+Note mesurés), confiance en mots (ADR-010), phrase joueur + impact par
+>   scénario (FR/EN dans `Scenarios.cs`), chaîne causale par scénario dont CHAQUE case exige son
+>   code déclencheur (`RequiresCode`), pied 🧩 composants / 🎰 tables sur N / 🔎 codes / ⚑
+>   réparation manuelle (dérivé de `RepairOfferBuilder.ByCode`) + « Voir les étapes → » qui
+>   sélectionne le résultat dans Tous les résultats. Repli sans scénario : une carte construite
+>   du résultat le plus grave (ancien comportement du bandeau priorité, même format).
+>   **Nouveau scénario** : `VPINMAME_NOT_REGISTERED` seul (MinMatch 1 — Critical LOT A, 4
+>   conditions toutes mesurées, diagnostic complet à lui seul).
+> - **Colonne de droite** : Résultats critiques (réels, clic → détail), **Santé des composants**
+>   alimentée UNIQUEMENT par des résultats réels (`BITNESS_INVENTORY` par rôle, `*_MISSING`,
+>   COM par sujet, base Popper lue) — la ligne « FlexDMD · non requis » de la maquette est
+>   ÉCARTÉE (déduction du silence). Remarques (Rolled). Encadrés plafonnés à 8 lignes + renvoi
+>   (total réel dans l'en-tête) : un ItemsControl ne virtualise pas, pense aux 2000 tables.
+> - **Tableau des tables** (vue Causes racines, plafonné 12 + onglet Tables complet en ListBox
+>   virtualisée) : ROM = findings `ROM_*` par table (« — » sur le démo actuel : PAS de dossier
+>   roms dans DemoData, `ROMS_DIR_NOT_FOUND` l'explique) ; Backglass = `B2S_MISSING` sinon
+>   « présent » (contrôle inconditionnel par table, désactivé si SCANNER_ERROR completeness) ;
+>   Frontend = lecture POSITIVE de la base Popper (`SqliteReader`, même requête que
+>   `CompletenessScanner.LoadPopperGames`) — base illisible → « — », jamais déduit du silence.
+> - **Carte réparation** (ADR-006) : l'offre réelle quand elle existe, sinon « aucune réparation
+>   automatique disponible » + les 4 types réparables ; `RepairSummaryLine` /
+>   `RepairNotAutomatableLine` conservés, déplacés dans la carte. **Onglet Système** : méta du
+>   dernier scan + dossiers résolus + OS/CPU/mémoire/écrans mesurés (`RuntimeInformation`,
+>   registre, `MonitorTopologyProbe`) — pas de GPU (demanderait WMI, hors zéro-dépendance).
+>
+> **Vérité terrain à connaître avant de comparer à la maquette** : le scan réel du DemoData donne
+> (hors Windows) **17 résultats, score 68/C, 1 critique, 2 causes racines** — pas les 27/38/F de
+> la maquette, qui supposait un dossier `roms/` inexistant dans DemoData et des scanners
+> registre/écrans muets hors Windows. Sur le poste de Maxime, le démo produira EN PLUS les
+> résultats COM/écrans/audio de SA machine. Proposition à faible coût, NON codée : ajouter
+> `DemoData/install/VPinMAME/roms/` (afm_113b.zip, afm_113.zip) pour que le démo raconte la même
+> histoire que la maquette.
+>
+> **Supprimés (code-behind mis à jour dans le même commit, non-négociable n°6)** :
+> `PriorityBanner/PriorityAccent/PriorityLabel/PriorityText/PriorityExplain/PriorityTriggers/
+> PriorityFix/ChainNodes` + classe `ChainNode` → remplacés par `CauseCards` (ItemsControl) et
+> `CauseCardRow/CauseChainRow/SideRow/CompRow/TableRowVm`. Pastilles de gravité : intactes,
+> toujours filtres cliquables.
+>
+> **Vérifié** : XML bien formé ; passe `csc` sans références WPF → uniquement
+> CS0234/CS0246/CS0518/CS0656 (zéro CS1xxx) ; script de recoupement x:Name ↔ code-behind ↔
+> gestionnaires ↔ assets : 0 erreur ; clés Loc : 223/223 En/Fr, zéro doublon ; le VRAI
+> `Scenarios.cs` exécuté (Loc stubé) contre le vrai scan démo : 2 scénarios, conf 90/86, chaînes
+> et pieds conformes, FR et EN ; **Core 412/412, Repair 145/145, tous verts**.
+> `PincabToolbox.App` **toujours pas compilable dans ce sandbox** (NU1100, fait documenté) —
+> **jamais compilé ni exécuté réellement : à vérifier en premier via `build.cmd` + Mode démo.**
+
 ## 💬 MAJ 12/08 — réponse à Gregg (rapport ROM + "où est le rapport complet"), aucun code touché
 
 > Gregg a relancé (suite du 07/08 "treize") avec captures d'écran d'un vrai scan : un Critical
