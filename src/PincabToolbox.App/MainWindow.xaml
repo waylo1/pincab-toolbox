@@ -289,17 +289,26 @@
                     <Border Grid.Row="1" Margin="0,2,0,10" CornerRadius="14"
                             BorderBrush="{StaticResource Border}" BorderThickness="1">
                         <Border.Background>
-                            <!-- décor : illustration originale, jamais un artwork de table réelle -->
+                            <!-- Décor : salle d'arcade, image générée — titres de tables inventés
+                                 (« Cosmic Eclipse », « Quantum Quest »…), donc aucun artwork réel
+                                 de Bally/Williams/Stern, conformément à la règle du projet.
+                                 UniformToFill + AlignmentY=Center : sur un écran large le bandeau
+                                 fait ~1884x190 pour un asset 1920x430, donc SEULE LA BANDE
+                                 CENTRALE de l'image est visible. Le cadrage a été calé pour ça —
+                                 recadrer l'asset en gardant le sujet au centre, pas en haut. -->
                             <ImageBrush ImageSource="Assets/background.png" Stretch="UniformToFill" AlignmentY="Center" Opacity="0.95"/>
                         </Border.Background>
                         <Border CornerRadius="13">
                             <Border.Background>
-                                <!-- voile : garde le texte lisible sans noyer l'illustration -->
+                                <!-- Voile : garde le texte lisible sans noyer l'illustration.
+                                     Renforcé le 12/08 avec la photo de salle d'arcade — bien plus
+                                     lumineuse que l'illustration qu'elle remplace, l'accroche rouge
+                                     ne passait plus sur les frontons éclairés. -->
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#A60D1520" Offset="0"/>
-                                    <GradientStop Color="#730D1520" Offset="0.34"/>
-                                    <GradientStop Color="#590D1520" Offset="0.62"/>
-                                    <GradientStop Color="#8C0D1520" Offset="1"/>
+                                    <GradientStop Color="#DB0B111A" Offset="0"/>
+                                    <GradientStop Color="#B80B111A" Offset="0.34"/>
+                                    <GradientStop Color="#A30B111A" Offset="0.62"/>
+                                    <GradientStop Color="#C70B111A" Offset="1"/>
                                 </LinearGradientBrush>
                             </Border.Background>
 

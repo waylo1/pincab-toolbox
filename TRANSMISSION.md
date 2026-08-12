@@ -1,5 +1,30 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 12/08/2026
 
+## 🎨 MAJ 12/08 (bis) — fond du bandeau remplacé par une salle d'arcade, voile renforcé
+
+> Maxime a jugé l'illustration vectorielle précédente illisible (« que des taches ») et a fourni
+> une image de salle d'arcade générée. **Titres de tables inventés** (« Cosmic Eclipse »,
+> « Quantum Quest », « Neon Outrun »…) : aucun artwork Bally/Williams/Stern, la règle
+> « illustrations originales uniquement » tient toujours.
+>
+> **Piège découvert, à retenir avant de retoucher cet asset.** Sur un écran 1920 maximisé, le
+> bandeau fait ~1884×190, soit ~9,9:1, alors que l'asset fait 1920×430 (4,47:1).
+> `Stretch="UniformToFill"` + `AlignmentY="Center"` met à l'échelle sur la largeur puis rogne
+> verticalement : **seule la bande centrale (~45 % de la hauteur) est réellement visible.** Un
+> sujet cadré en haut de l'asset ne s'affiche jamais. Le crop retenu (bas de l'image source :
+> plateaux + couloir + sol) place donc les machines au centre.
+>
+> **Voile renforcé** de `A6/73/59/8C` à `DB/B8/A3/C7` sur `#0B111A` (0,86 / 0,72 / 0,64 / 0,78) :
+> la photo est bien plus lumineuse que l'illustration qu'elle remplace, l'accroche rouge ne
+> passait plus. Valeurs choisies en comparant les rendus, pas au jugé.
+>
+> **Asset quantifié en PNG 256 couleurs** : 765 Ko → 186 Ko. Écart moyen mesuré *sous le voile*
+> 1,44/255 (max 10) — indiscernable à l'œil, vérifié numériquement avant de committer.
+>
+> Vérifié : XAML valide, recoupement x:Name/gestionnaires 0 erreur, Core 412/412, Repair 145/145.
+> Rendu contrôlé au format réel du bandeau avec l'asset et le voile exacts, mais **l'App n'est
+> toujours pas compilable dans ce sandbox** — rendu final à confirmer via `build.cmd`.
+
 ## 🖥️ MAJ 12/08 — écran Scanner porté sur la maquette du 11/08, en une passe
 
 > **Mission unique de la session : rendre l'écran Scanner fidèle à
