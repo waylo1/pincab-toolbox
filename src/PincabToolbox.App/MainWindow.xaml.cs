@@ -410,7 +410,6 @@ public partial class MainWindow : Window
         DiffEmpty.Text = Loc.Get("diff.empty");
         AboutTagline.Text = Loc.Get("about.tagline");
         AboutBody.Text = Loc.Get("about.body");
-        AboutRoadmap.Text = Loc.Get("about.roadmap");
         AboutVersion.Text = Loc.Get("about.version") + " " + CurrentVersion;
         BtnCheckUpdate.Content = Loc.Get("about.checkupdate");
         BtnGotoRepair.Content = Loc.Get("repair.goto");
