@@ -26,6 +26,29 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-12 · Gregg — suite du 07/08 sur FlexDMD, cette fois avec captures d'écran exploitables
+- code:        ROM_MISSING (confirmé exact), FLEXDMD_MISSING, B2SBACKGLASS_MISSING (question d'usage,
+  pas un bug), col.message "Details" (source de la confusion sur "comment ouvrir le rapport complet")
+- bac:         WORDING (rapport pas assez visible) + question d'usage pure, aucun FP
+- contexte:    Gregg a répondu à la relance du 07/08 (treize) avec 3 captures d'écran d'un scan réel :
+  avertissements FlexDMD.dll et B2SBackglassServer.dll manquants, un Critical ROM_MISSING sur
+  'Full House (Williams 1966)', écran À propos v0.1.2. Deux questions précises cette fois : où trouver
+  le rapport texte complet mentionné par la colonne "Details" du tableau, et s'il existe un moyen
+  d'éviter les alertes ROM manquant pour les tables qui n'en ont pas besoin.
+- analyse: vérifié `RomValidatorScanner.cs` avant de répondre. Le scanner fait déjà exactement ce que
+  Gregg demande — `ROM_NOT_REQUIRED` (Ok) sort dès que `!rom.UsesController`, une table originale/
+  homebrew qui se contente d'un B2S sans piloter VPinMAME n'est jamais remontée en Critical. 'Full
+  House (Williams 1966)' est une vraie table Williams qui pilote VPinMAME : le Critical est exact, pas
+  un FP, il lui manque juste `Full House.zip` dans son dossier roms. Le "rapport complet" que Gregg
+  cherche existe déjà (bouton "Export report" en HTML/TXT/MD/BBCode/JSON + "Copy for forum" qui copie
+  directement le Markdown), mais il ne l'a pas trouvé — signal de découvrabilité faible, pas un bug de
+  contenu.
+- disposition: réponse rédigée dans `docs/reply-gregg-2026-08-12.md`, à poster par Maxime. Aucune
+  correction de code nécessaire, le comportement mesuré est déjà correct sur les deux points. Idée à
+  faible coût notée pour une prochaine revue produit (pas codée) : rendre "Export report"/"Copy for
+  forum" plus visibles (ex. les répéter dans un menu contextuel du tableau), puisque c'est la 2e fois
+  qu'un utilisateur terrain ne les trouve pas.
+
 ## 2026-08-11 (session Sonnet 5, autonome, effort élevé) · Lot communauté 10/08 — LOTs A→H codés et câblés, LOT I codé mais délibérément non câblé, ADR-012
 - code:        transverse — LOT A (COM_NOT_REGISTERED, COM_STALE_PATH, COM_PATH_OUTSIDE_INSTALL,
   COM_OK, COM_BITNESS_GAP, VPINMAME_NOT_REGISTERED), LOT B (CHAIN_BITNESS_GAP), LOT C

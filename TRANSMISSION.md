@@ -1,4 +1,24 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 11/08/2026
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 12/08/2026
+
+## 💬 MAJ 12/08 — réponse à Gregg (rapport ROM + "où est le rapport complet"), aucun code touché
+
+> Gregg a relancé (suite du 07/08 "treize") avec captures d'écran d'un vrai scan : un Critical
+> `ROM_MISSING` sur 'Full House (Williams 1966)', des Warning FlexDMD/B2S manquants, et deux
+> questions — comment ouvrir "le rapport complet", et si le scanner peut éviter les alertes ROM sur
+> les tables qui n'en ont pas besoin.
+>
+> **Vérifié dans le code avant de répondre** (`RomValidatorScanner.cs`) : le scanner fait déjà
+> exactement ce que Gregg demande. `ROM_NOT_REQUIRED` sort en `Ok` dès que le script d'une table ne
+> pilote pas le contrôleur VPinMAME (originaux/homebrew B2S-only) — jamais de Critical dans ce cas.
+> 'Full House' pilote réellement VPinMAME, donc son Critical est exact, pas un faux positif : il lui
+> manque juste `Full House.zip` dans son dossier roms. Le "rapport complet" existe déjà (bouton
+> "Export report" HTML/TXT/MD/BBCode/JSON + "Copy for forum"), Gregg ne l'avait simplement pas repéré.
+>
+> **Aucun code changé.** Réponse rédigée dans `docs/reply-gregg-2026-08-12.md`, à poster par Maxime.
+> Entrée détaillée dans `knowledge/FIELD-LOG.md` (2026-08-12). Idée à faible coût notée pour une
+> prochaine revue produit, **pas codée** : rendre "Export report"/"Copy for forum" plus visibles
+> (c'est la 2e fois qu'un utilisateur terrain ne les trouve pas) — candidat pour un menu contextuel
+> sur le tableau des résultats.
 
 ## 🧪 MAJ 11/08 (quater) — coupe-circuit "simulation forcée" pour le premier test réel sur cabinet
 
