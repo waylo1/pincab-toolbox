@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Linq;
 using PincabToolbox.Core.Models;
 using PincabToolbox.Repair;
@@ -7,13 +6,15 @@ using PincabToolbox.Repair;
 namespace PincabToolbox.App.Localization;
 
 /// <summary>
-/// Minimal bilingual string table (EN default, FR). Chosen once at startup from the
-/// OS culture; the toolbar button toggles at runtime (the window re-applies texts).
+/// Minimal trilingual string table (EN/FR/ES). 14/08/2026, decision Maxime: English-speaking
+/// pinball cabinet builders are the larger audience, so the app now always opens in English on a
+/// fresh install, regardless of OS culture — no more guessing a French cab from a French Windows.
+/// A returning user's own choice (<see cref="SetLang"/>, restored from settings at startup) still
+/// wins over this default; only the very first launch is affected.
 /// </summary>
 public static class Loc
 {
-    public static string Lang { get; private set; } =
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("fr", StringComparison.OrdinalIgnoreCase) ? "fr" : "en";
+    public static string Lang { get; private set; } = "en";
 
     public static event Action? LanguageChanged;
 
