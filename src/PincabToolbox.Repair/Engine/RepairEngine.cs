@@ -97,7 +97,13 @@ public sealed class RepairEngine : IRepairEngine
 
         if (rule is null || !hasAction)
         {
-            // Unknown ActionId is NOT an error — clean degradation (ADR-005).
+            // Unknown ActionId is NOT an error — clean degradation (ADR-005). A code with no pack
+            // entry at all (rule is null) is not a degraded case of "should have been automatic" —
+            // for a code like ROM_MISSING it never will be (Repair cannot invent a ROM dump), so the
+            // pack simply never defines a rule for it. ADR-006 still applies to it: the finding's
+            // own FixHint (the same text Scanner already shows) is what Repair must surface here —
+            // an empty Missing[] would make the item look like it has no guidance at all, which is
+            // the gap found 13/08 (real ROM_MISSING findings invisible/unexplained in Repair).
             return new RepairPlanItem
             {
                 ItemId = itemId,
@@ -107,7 +113,7 @@ public sealed class RepairEngine : IRepairEngine
                 SourceFinding = f,
                 RuleId = rule?.Id,
                 Missing = rule is null
-                    ? Array.Empty<string>()
+                    ? (string.IsNullOrWhiteSpace(f.FixHint) ? Array.Empty<string>() : new[] { f.FixHint })
                     : new[] { $"action '{rule.ActionId}' not available in this version" },
             };
         }

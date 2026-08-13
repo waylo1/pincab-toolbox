@@ -26,6 +26,29 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 (session éco, encore plus tard) · Point 6/6 — items manuels/verrouillés enfin visibles dans Repair (ADR-006), largeur de l'onglet Tables corrigée
+- code:        aucun nouveau code de finding
+- bac:         FIX (Repair) + FIX (UI) + FN (score, non traité ici)
+- contexte:    rescan de 18h47 sur le vrai cab de Maxime : 8 vrais ROM_MISSING critiques, score 0/100,
+  Repair « ne trouve rien à réparer », onglet Tables avec un grand vide noir à droite
+- analyse:     (1) confirmé, ROM_MISSING n'a jamais de règle dans `knowledge/pack-2026.08.json` — ce
+  n'est pas un oubli, Repair ne peut pas fabriquer un dump de ROM. Mais `RepairEngine.BuildFindingItem`
+  laissait `Missing` vide dans ce cas précis (code sans règle du tout, distinct du cas « règle connue
+  mais action introuvable » qui lui avait déjà un message), et `RefreshRepairItemsList` côté App ne
+  rendait que les items avec `Changes.Count > 0` — les deux bugs cumulés faisaient disparaître
+  entièrement les 8 ROM_MISSING de l'onglet Repair, alors que Scanner les affichait très bien avec leur
+  indication (« Place le fichier .zip... »). Fixé : `Missing` reprend maintenant le `FixHint` du
+  finding quand aucune règle n'existe, et Repair affiche tous les items retenus (case à cocher
+  désactivée pour Manuel/Verrouillé, texte d'explication toujours visible). (2) Onglet Tables capé à
+  920px de large et aligné à gauche, même réglage que Composants/Système où ça a du sens pour du texte
+  court, mais laissait un grand vide sur un tableau à 4 colonnes avec des noms de table tronqués pour
+  rien alors que l'espace était disponible. Étendu à toute la largeur.
+- disposition: les deux corrigés et livrés. Le score à 0 malgré 8 critiques sur ~500 tables reste un
+  sujet ouvert (formule actuelle : -15 par instance, pas par code, pas de normalisation par taille
+  d'install) — question posée à Maxime, pas encore tranchée. La refonte demandée de la section Undo
+  (3 colonnes Réparé/À faire/Annulé au lieu d'un historique à IDs opaques) reste aussi à faire,
+  confirmée par Maxime mais pas encore codée.
+
 ## 2026-08-13 (session éco, plus tard) · Point 6/6 — `$Recycle.Bin` exclu du scan (feu vert reçu), 2 diagnostics de terrain rendus (Undo, échec Apply)
 - code:        aucun nouveau code de finding
 - bac:         FIX (LayoutDetector) + WORDING/FN (les deux diagnostics rendus, non corrigés ici)

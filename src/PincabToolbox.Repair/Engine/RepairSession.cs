@@ -116,6 +116,15 @@ public sealed class RepairSession
     /// H.2 step 3 — everything the confirmation screen needs to say, in the text, per retained
     /// item: what target(s), reversible or not, backup planned or not. Pure — no I/O, no side
     /// effect, safe to call to render a screen before anything is applied.
+    ///
+    /// <para>
+    /// Carries <see cref="RepairPlanItem.Missing"/> through too (13/08, ADR-006 gap closed) — a
+    /// <c>ManualOnly</c> item (no automatable change, e.g. ROM_MISSING: Repair cannot invent a ROM
+    /// dump) has nothing else to show, and before this it was dropped silently: the App only ever
+    /// rendered items with <c>ChangeCount &gt; 0</c>, so a real Critical finding could be invisible
+    /// in the Repair tab even though Scanner reported it and the engine had a step-by-step reason
+    /// ready. That filtering decision belongs to the caller now, with the full facts in hand.
+    /// </para>
     /// </summary>
     public static IReadOnlyList<ItemConfirmation> Describe(IReadOnlyList<RepairPlanItem> retainedItems)
         => retainedItems.Select(item =>
@@ -126,7 +135,7 @@ public sealed class RepairSession
             var backupPlanned = item.Summary?.BackupPlanned ?? item.Changes.Count > 0;
             return new ItemConfirmation(
                 item.ItemId, item.TargetCode, item.Mode, reversible, backupPlanned,
-                item.Changes.Count, targets);
+                item.Changes.Count, targets, item.Missing);
         }).ToList();
 
     /// <summary>
@@ -200,4 +209,5 @@ public sealed record ItemConfirmation(
     bool Reversible,
     bool BackupPlanned,
     int ChangeCount,
-    IReadOnlyList<string> Targets);
+    IReadOnlyList<string> Targets,
+    IReadOnlyList<string> Missing);

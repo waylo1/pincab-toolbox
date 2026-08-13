@@ -165,6 +165,51 @@ public static class RepairTests
         A.Equal(0, p.Items[0].Changes.Count, "no change planned");
     }
 
+    /// <summary>
+    /// ADR-006, gap found 13/08 on a real cab: a code with NO pack rule at all — the normal, permanent
+    /// case for something Repair can never automate (ROM_MISSING: it cannot invent a ROM dump) — used
+    /// to leave Missing empty, so the item carried no explanation whatsoever once the App stopped
+    /// filtering ManualOnly items out of view. The finding's own FixHint must fill that gap.
+    /// </summary>
+    public static void Test_Plan_CodeWithNoPackRuleAtAll_MissingCarriesTheFindingsOwnFixHint()
+    {
+        var fs = new FakeFs();
+        var pack = new KnowledgePack("2026.08", Array.Empty<RepairRule>());
+        var eng = Engine(fs, pack, new RepairActionRegistry(), out _, out _);
+
+        var finding = new Finding
+        {
+            Code = "ROM_MISSING", Severity = Severity.Critical, Category = "rom",
+            Subject = "Blood Machines", FilePath = @"C:\vpx\Tables\Blood Machines.vpx",
+            EnglishText = "\u00abBlood Machines\u00bb will not start: ROM \u00abbloodmach.zip\u00bb is missing.",
+            FixHint = "Place the ROM's .zip file (exact name, do not unzip it) in VPinMAME's roms folder.",
+        };
+
+        var p = eng.Plan("scan-1", new[] { finding }, licensed: true);
+        A.Equal(RepairMode.ManualOnly, p.Items[0].Mode, "no rule ever existed for this code");
+        A.Equal(0, p.Items[0].Changes.Count, "nothing automatable");
+        A.Equal(1, p.Items[0].Missing.Count, "the fix hint must surface, not disappear");
+        A.Equal(finding.FixHint, p.Items[0].Missing[0], "same text Scanner already shows");
+    }
+
+    /// <summary>Same case, but the finding has no FixHint either — must degrade to an empty list, never throw.</summary>
+    public static void Test_Plan_CodeWithNoPackRuleAndNoFixHint_MissingIsEmptyNotThrowing()
+    {
+        var fs = new FakeFs();
+        var pack = new KnowledgePack("2026.08", Array.Empty<RepairRule>());
+        var eng = Engine(fs, pack, new RepairActionRegistry(), out _, out _);
+
+        var finding = new Finding
+        {
+            Code = "SOME_FUTURE_CODE", Severity = Severity.Warning, Category = "misc",
+            EnglishText = "something the app does not know how to explain yet.",
+        };
+
+        var p = eng.Plan("scan-1", new[] { finding }, licensed: true);
+        A.Equal(RepairMode.ManualOnly, p.Items[0].Mode, "still manual");
+        A.Equal(0, p.Items[0].Missing.Count, "no hint to show, not a crash");
+    }
+
     // ═══════════════ 3. Preflight — five checks ═══════════════
 
     public static void Test_Preflight_RefusesWhileVpxIsRunning()

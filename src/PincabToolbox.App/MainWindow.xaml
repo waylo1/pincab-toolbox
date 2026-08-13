@@ -904,7 +904,10 @@
                                 <DataTemplate>
                                     <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1"
                                             CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
-                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalContentAlignment="Top">
+                                        <!-- CanApply=false (manual step, or locked behind a license) disables the checkbox rather
+                                             than hiding the row — the point of showing it at all (ADR-006) is that there is
+                                             nothing to tick here, only something to read. -->
+                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" IsEnabled="{Binding CanApply}" VerticalContentAlignment="Top">
                                             <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Foreground="{StaticResource Text}" MaxWidth="720"/>
                                         </CheckBox>
                                     </Border>

@@ -142,6 +142,15 @@ public sealed class RepairItemRow
     public required string ItemId { get; init; }
     public required string Description { get; init; }
     public bool IsSelected { get; set; }
+
+    /// <summary>
+    /// False for ManualOnly (no automatable change, e.g. ROM_MISSING) and Locked (a fix exists but
+    /// needs a licence) rows — added 13/08 alongside showing them at all (ADR-006 gap). The
+    /// checkbox stays visible but disabled for these so the row's presence and its explanation are
+    /// never mistaken for "nothing Repair can do here", while still making clear there is nothing
+    /// to select and apply.
+    /// </summary>
+    public bool CanApply { get; init; }
 }
 
 public partial class MainWindow : Window
@@ -1626,8 +1635,13 @@ public partial class MainWindow : Window
         RefreshRepairItemsList();
         RefreshRepairUndoList();
 
+        // 13/08 — the list now also carries ManualOnly/Locked rows (ADR-006), so "réparable(s)
+        // trouvé(s)" alone would misdescribe most of what's on screen for an install with real,
+        // non-automatable Criticals like ROM_MISSING. Two counts instead of one.
+        var fixableCount = _repairItemRows.Count(r => r.CanApply);
+        var manualCount = _repairItemRows.Count - fixableCount;
         RepairPlanStatus.Text = _repairItemRows.Count > 0
-            ? string.Format(Loc.Get("repair.plan.status"), _repairItemRows.Count)
+            ? string.Format(Loc.Get("repair.plan.status"), fixableCount, manualCount)
             : Loc.Get("repair.plan.empty");
 
         // 11/08/2026, ADR-012 "Suite" — never let this run silently: if the kill switch is on,
@@ -1637,17 +1651,25 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Only the items actually appliable (<c>Changes.Count > 0</c> — i.e. licensed AND not
-    /// ManualOnly/Locked) are shown as checkable rows; Locked/ManualOnly items have nothing a click
-    /// here could ever do. Text comes from <see cref="RepairSession.Describe"/>, the same pure facts
-    /// the confirmation screen must show per H.2 rule 3 — never re-derived by hand here.
+    /// Every retained item is shown, not just the ones with an automatic fix — ADR-006 gap closed
+    /// 13/08: before this, a ManualOnly item (e.g. ROM_MISSING — Repair cannot invent a ROM dump)
+    /// or a Locked one (fix exists, needs a licence) was filtered out entirely, so a real Critical
+    /// finding could be invisible in Repair even though Scanner reported it and the engine already
+    /// had a step-by-step reason ready (<see cref="RepairPlanItem.Missing"/>). Text comes from
+    /// <see cref="RepairSession.Describe"/>, the same pure facts the confirmation screen must show
+    /// per H.2 rule 3 — never re-derived by hand here. <see cref="RepairItemRow.CanApply"/> is what
+    /// now decides whether a row's checkbox can be ticked, not whether the row exists at all.
     /// </summary>
     private void RefreshRepairItemsList()
     {
-        var applicable = (_repairPreflight?.RetainedItems ?? Array.Empty<RepairPlanItem>())
-            .Where(i => i.Changes.Count > 0).ToList();
-        _repairItemRows = RepairSession.Describe(applicable)
-            .Select(ic => new RepairItemRow { ItemId = ic.ItemId, Description = BuildConfirmationText(ic) })
+        var retained = _repairPreflight?.RetainedItems ?? Array.Empty<RepairPlanItem>();
+        _repairItemRows = RepairSession.Describe(retained)
+            .Select(ic => new RepairItemRow
+            {
+                ItemId = ic.ItemId,
+                Description = BuildConfirmationText(ic),
+                CanApply = ic.Mode is RepairMode.Automatic or RepairMode.ConfirmationRequired,
+            })
             .ToList();
         ListRepairItems.ItemsSource = null;   // force the ItemsControl to re-bind (rows are mutable POCOs)
         ListRepairItems.ItemsSource = _repairItemRows;
@@ -1658,6 +1680,16 @@ public partial class MainWindow : Window
         var head = ic.Targets.Count > 0
             ? $"{ic.TargetCode} — {string.Join(", ", ic.Targets)}"
             : ic.TargetCode;
+
+        if (ic.Mode == RepairMode.ManualOnly)
+        {
+            var why = ic.Missing.Count > 0 ? string.Join(" ", ic.Missing) : Loc.Get("repair.manual.noreason");
+            return $"{head}\n{Loc.Get("repair.manual.label")} — {why}";
+        }
+
+        if (ic.Mode == RepairMode.Locked)
+            return $"{head}\n{Loc.Get("repair.locked.label")}";
+
         var reversible = ic.Reversible ? Loc.Get("repair.reversible.yes") : Loc.Get("repair.reversible.no");
         var backup = ic.BackupPlanned ? Loc.Get("repair.backup.yes") : Loc.Get("repair.backup.no");
         return $"{head}\n{reversible} · {backup}";

@@ -1,5 +1,51 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 🔧 MAJ 13/08 (decies) — point 6/6 : items manuels/verrouillés enfin visibles dans Repair (ADR-006), onglet Tables étendu, question ouverte sur le score
+
+> Suite immédiate du point précédent. Maxime a testé sur son vrai cab et signalé trois choses d'un
+> coup : l'onglet Tables laisse un grand vide noir à droite, Repair « ne trouve rien à réparer » alors
+> qu'il vient de scanner 8 ROM manquantes bien réelles (score 0/100, grade F), et la section Undo reste
+> confuse (bouton qui semble ne rien faire, intitulés illisibles, pas moyen de voir si un plan a
+> fonctionné avant de l'annuler).
+>
+> **1. Onglet Tables — corrigé.** `TablesTabCard` était capé à `MaxWidth="920"` +
+> `HorizontalAlignment="Left"`, hérité du même réglage que Composants/Système où ça convient pour du
+> texte court. Pour un tableau à 4 colonnes avec des noms de table potentiellement longs, ça tronquait
+> pour rien alors que l'écran avait de la place. Étendu à toute la largeur disponible.
+>
+> **2. Repair invisible pour de vrais problèmes — root cause confirmée et corrigée.** ROM_MISSING n'a
+> jamais eu de règle dans `knowledge/pack-2026.08.json`, à raison : Repair ne peut pas fabriquer un
+> dump de ROM, c'est un cas structurellement manuel, pas un oubli. Mais deux bugs cumulés le rendaient
+> invisible plutôt que juste manuel : (a) `RepairEngine.BuildFindingItem` laissait le champ `Missing`
+> vide quand aucune règle n'existe du tout pour un code (distinct du cas « règle connue, action
+> manquante », qui avait déjà un message) — corrigé, `Missing` reprend maintenant le `FixHint` du
+> finding, le même texte que Scanner affiche déjà ; (b) côté App, `RefreshRepairItemsList` ne rendait
+> que les items avec au moins un changement automatisable — les 8 ROM_MISSING (et tout item
+> ManualOnly/Locked) n'apparaissaient donc nulle part dans Repair, alors que Scanner les listait très
+> bien. Corrigé : Repair affiche maintenant tous les items retenus, avec une case à cocher désactivée
+> (pas grisée-disparue, juste non cochable) pour ce qui est manuel ou verrouillé derrière une licence,
+> et le texte d'explication toujours visible. Statut du plan reformulé en deux nombres (correctifs
+> automatiques / étapes manuelles) plutôt qu'un seul compte qui laissait croire que tout listé était
+> réparable.
+>
+> Diff : `RepairEngine.cs` (Missing), `RepairSession.cs` (`ItemConfirmation` porte maintenant `Missing`),
+> `MainWindow.xaml.cs` (`RefreshRepairItemsList` ne filtre plus, `BuildConfirmationText` distingue
+> Manuel/Verrouillé/Automatique, `RepairItemRow.CanApply`), `MainWindow.xaml` (case à cocher
+> `IsEnabled` liée à `CanApply`), + clés de localisation FR/EN. Core.Tests 494/494, Repair.Tests
+> 147/147 (2 nouveaux tests reproduisant exactement le cas ROM_MISSING).
+>
+> **3. Question ouverte, pas tranchée — le score.** 8 critiques réels sur ~500 tables donnent 0/100 :
+> la formule actuelle retire 15 points PAR INSTANCE de Critical (`ScanScoring.ComputeScore`), sans
+> distinguer 8 occurrences du même code (8 tables différentes, chacune avec sa propre ROM manquante)
+> de 8 problèmes totalement indépendants, et sans normaliser par la taille de l'installation. Maxime
+> demande qu'un même code Critical ne compte qu'une fois. Pas codé : ça change ce que "le score" veut
+> dire pour tout le monde, question renvoyée avec des options avant d'y toucher.
+>
+> **Pas encore fait, confirmé par Maxime :** remplacer la section "Historique d'annulation" (une liste
+> d'IDs de plans opaques) par trois colonnes claires — Réparé / À faire / Annulé — avec le détail de
+> chaque plan visible avant de cliquer Annuler, pour ne plus risquer d'annuler un plan qui a marché.
+> Plus gros chantier, pas commencé.
+
 ## 🐛 MAJ 13/08 (nonies) — point 6/6 : `$Recycle.Bin` exclu du scan (feu vert reçu), 2 diagnostics rendus sur Repair (pas encore codés)
 
 > Suite du point 6/6 (le premier vrai run de Repair sur le cab de Maxime continue de faire remonter du
