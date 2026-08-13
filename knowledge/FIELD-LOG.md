@@ -88,6 +88,31 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
   qui vérifie que les 7 codes annotés ont bien leurs 9 champs non vides. 501 Core + 156 Repair
   (+3), `selftest.py` 12/12 toujours vert après l'ajout des champs ES au JSON, App vérifiée par
   `csc -t:library` (0 erreur CS1xxx) et XAML relu (bien formé).
+
+## 2026-08-14 (extension) · Maxime, « build ok feu vert pour ton amélioration » — les 44 codes restants annotés
+- code:        les 44 codes qui manquaient (dont ROM_MISSING) — désormais les 51 codes de Knowledge.cs ont tous une entrée pack
+- bac:         FEATURE
+- contexte:    build local OK sur l'entrée précédente, feu vert de Maxime pour étoffer le pack au-delà des 7 codes déjà faits.
+- analyse:     chaque champ a été ancré dans le vrai code du scanner correspondant (`src/PincabToolbox.Core/Scanning/*.cs`)
+  avant d'être écrit — pas de paraphrase d'Impact/Cause à l'aveugle, en particulier pour Vérification qui affirme
+  un fait diagnostique précis (ex. VPINMAME_NOT_REGISTERED : « VPinMAME.Controller absent des deux vues COM 32/64-bit »,
+  vérifié ligne à ligne dans `ComHealthScanner.cs`, pas deviné). `ROM_MISSING` avait été oublié du premier passage
+  (44 restants comptés sur la liste de travail, mais Knowledge.cs en a 51 moins les 7 déjà faits = 44 exact, l'erreur
+  venait d'un doublon POPPER_NOT_REGISTERED dans la liste de recherche qui masquait l'absence réelle de ROM_MISSING) —
+  repéré par une vérification automatisée de parité contre Knowledge.cs, ajouté séparément avant de clore.
+- disposition: FEATURE, livré. Les 51 codes ont désormais une entrée pack avec les 9 champs (player/explanation/
+  verification × FR/EN/ES), aucun champ vide. **Bug de validateur découvert et corrigé en cours de route** :
+  `validate_pack.py` détectait un « TODO résiduel » à tort dès qu'un texte espagnol contenait le mot « todo »
+  (= « tout » en espagnol, un mot très courant) car le motif `TODO|FIXME|XXX` était insensible à la casse sans
+  délimitation de mot précise pour ce cas — 4 fausses alertes sur du texte ES parfaitement propre. Corrigé :
+  TODO/À MIGRER/A MIGRER exigent maintenant leur casse conventionnelle réelle (tout capitales), FIXME/XXX restent
+  insensibles à la casse (aucun mot naturel FR/EN/ES ne peut les déclencher par accident). Revérifié avec le test
+  existant `TODO résiduel → rejet` (toujours vert) plus le pack réel (plus aucune fausse alerte). Test étendu de
+  7 à 51 codes (`Test_ShippedPack_AllFiftyOneKnownCodesExposeEntryInAllThreeLanguages`), avec une assertion de
+  sanité sur la taille de la liste pour qu'un futur ajout de code dans Knowledge.cs sans entrée pack correspondante
+  échoue bruyamment au lieu de livrer silencieusement un panneau de détail incomplet. 501 Core + 156 Repair (inchangé
+  en nombre, un test étendu plutôt qu'ajouté), `selftest.py` 12/12, JSON revalidé, pack réel validé sans avertissement
+  bloquant (seuls les 4 avertissements pré-existants et déjà connus subsistent).
 - code:        BITNESS_DMD64_MISSING, B2S_MISSING, DPI_SCALING_NONSTANDARD, DISPLAY_SETUP_INCOMPLETE (et tout code sans règle du pack, ou étape manuelle de scénario)
 - bac:         FP-langue (bug de traduction, pas de logique)
 - contexte:    Maxime, capture d'écran de son vrai cab en FR : sous « Aucune réparation automatique

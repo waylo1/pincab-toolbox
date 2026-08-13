@@ -56,19 +56,36 @@ public static class EndToEndTests
     }
 
     /// <summary>
-    /// 14/08/2026: the 7 codes the pack author has written editorial text for must load into
-    /// EntryFor, in all three languages, with no gap between the FR/EN pair that shipped earlier
-    /// and the ES pair added alongside this feature.
+    /// 14/08/2026 (extension, "si c'est une valeur produit on le fait"): every one of the 51 codes
+    /// Knowledge.cs documents Impact/Cause for now ALSO has a pack entry with player/explanation/
+    /// verification text, in all three languages. Started at 7 codes for the initial wiring; this
+    /// asserts the full set so a future code added to Knowledge.cs without a matching pack entry
+    /// fails loudly here instead of silently shipping a code with no detail-panel richness.
     /// </summary>
-    public static void Test_ShippedPack_TheSevenAnnotatedCodesExposeEntryInAllThreeLanguages()
+    public static void Test_ShippedPack_AllFiftyOneKnownCodesExposeEntryInAllThreeLanguages()
     {
         var pack = KnowledgePack.Load(File.ReadAllText(PackPath()));
-        var annotated = new[]
+        var knownCodes = new[]
         {
-            "BLOCKED_DLL", "ROM_UNZIPPED", "POPPER_NOT_REGISTERED", "BITNESS_MISMATCH_VPM",
-            "PINUP_DISPLAY_ZOMBIE", "ORPHANED_MEDIA_FILE", "BITNESS_DMD64_MISSING",
+            "ROM_MISSING", "BITNESS_MISMATCH_VPM", "BITNESS_DMD64_MISSING", "BLOCKED_DLL",
+            "B2S_MISSING", "POPPER_NOT_REGISTERED", "COMPAT_SIGNATURE", "LOW_DISK_SPACE",
+            "SCANNER_ERROR", "COMPAT_MIN_VERSION", "ALTCOLOR_INCOMPLETE", "ALTSOUND_SAMPLE_MISSING",
+            "DISPLAY_OFFSCREEN", "BROKEN_JUNCTION", "B2S_MALFORMED", "POPPER_ORPHAN_PLAYLIST",
+            "NVRAM_EMPTY", "VPMALIAS_LOOP", "VPX_VERSION_OUTDATED", "UPDATE_AVAILABLE",
+            "BITNESS_MISMATCH_VPM32", "ROM_UNZIPPED", "POPPER_MEDIA_MISSING", "B2S_ORPHAN",
+            "B2S_SERVER_MISSING", "FLEXDMD_MISSING", "BITNESS_HYBRID_INSTALL", "SCRIPT_UNREADABLE",
+            "TABLES_DIR_NOT_FOUND", "ROMS_DIR_NOT_FOUND", "PINUP_DISPLAY_ZOMBIE",
+            "DISPLAY_SETUP_INCOMPLETE", "ORPHANED_MEDIA_FILE", "VPT_LEGACY_PRESENT",
+            "AUDIO_DEFAULT_SUSPECT", "DPI_SCALING_NONSTANDARD", "DMD_COM_PORT_NOT_FOUND",
+            "LOCALE_DECIMAL_SEPARATOR", "VPINMAME_CONFIG_PHANTOM", "COM_NOT_REGISTERED",
+            "COM_STALE_PATH", "COM_BITNESS_GAP", "VPINMAME_NOT_REGISTERED", "CHAIN_BITNESS_GAP",
+            "DMD_POSITION_OFFSCREEN", "NVRAM_FOLDER_NOT_WRITABLE", "COM_PATH_OUTSIDE_INSTALL",
+            "DMD_VIRTUAL_DISABLED", "ALTSOUND_PRESENT_NOT_ENABLED", "ALTCOLOR_PRESENT_NOT_ENABLED",
+            "SCREENRES_UNPARSED",
         };
-        foreach (var code in annotated)
+        A.Equal(51, knownCodes.Length, "sanity: this list must track Knowledge.cs's 51 entries");
+
+        foreach (var code in knownCodes)
         {
             var e = pack.EntryFor(code);
             A.True(e is not null, $"{code}: must have a pack entry");

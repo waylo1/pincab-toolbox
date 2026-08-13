@@ -1,5 +1,38 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 14/08/2026
 
+## 🧠 MAJ 14/08 (ter) — les 44 codes restants annotés, les 51 codes de Knowledge.cs ont maintenant un panneau de détail complet
+
+> Suite de l'entrée juste en dessous, qui n'avait câblé que 7 codes sur 51. Maxime, après avoir vu
+> le build local : « build ok feu vert pour ton amélioration » — feu vert pour étoffer le pack au
+> reste des codes, comme proposé dans la revue CTO+Produit de l'entrée précédente.
+>
+> **Méthode :** chaque champ ancré dans le vrai code du scanner correspondant
+> (`src/PincabToolbox.Core/Scanning/*.cs`) avant d'être écrit, pas de paraphrase à l'aveugle
+> d'Impact/Cause — en particulier pour Vérification, qui affirme un fait diagnostique précis
+> (ex. `VPINMAME_NOT_REGISTERED` : « VPinMAME.Controller absent des deux vues COM 32/64-bit »,
+> vérifié ligne à ligne dans `ComHealthScanner.cs`, pas deviné).
+>
+> **Bug trouvé et corrigé en cours de route :** `validate_pack.py` signalait un faux « TODO
+> résiduel » dès qu'un texte espagnol contenait le mot « todo » (= « tout », un mot espagnol très
+> courant) — le motif `TODO|FIXME|XXX` était insensible à la casse sans lien avec la convention
+> réelle (tout capitales) qui distingue un vrai marqueur d'un mot de la langue. 4 fausses alertes
+> sur du texte ES pourtant propre. Corrigé : `TODO`/`À MIGRER`/`A MIGRER` exigent maintenant leur
+> casse conventionnelle réelle, `FIXME`/`XXX` restent insensibles à la casse (aucun mot naturel
+> FR/EN/ES ne les déclenche par accident). Revérifié : le test existant du faux TODO reste vert, le
+> pack réel ne déclenche plus aucune fausse alerte.
+>
+> **Livré :** `ROM_MISSING` (oublié du premier passage, repéré par une vérification de parité
+> automatisée contre `Knowledge.cs` avant de clore) + 43 autres codes, tous avec leurs 9 champs
+> (player/explanation/verification × FR/EN/ES), zéro champ vide. Test étendu de 7 à 51 codes
+> (`Test_ShippedPack_AllFiftyOneKnownCodesExposeEntryInAllThreeLanguages`), avec une assertion de
+> taille de liste pour qu'un futur code ajouté à `Knowledge.cs` sans entrée pack échoue bruyamment
+> plutôt que de livrer un panneau de détail incomplet en silence. 501 Core + 156 Repair,
+> `selftest.py` 12/12, JSON revalidé, pack réel validé sans avertissement bloquant.
+>
+> **Résultat pour l'utilisateur :** les 3 sections optionnelles du panneau de détail (« Ce que vous
+> remarquerez », « Bon à savoir », « Comment vérifier ») apparaissent désormais pour n'importe
+> quelle panne détectée par le scanner, plus seulement pour les 7 codes du premier lot.
+
 ## 🧠 MAJ 14/08 (bis) — les champs riches du pack JSON, jugés « morts » ce matin, sont câblés dans le panneau de détail
 
 > Suite directe de l'entrée juste en dessous : son encadré « hors périmètre » disait que

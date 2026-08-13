@@ -35,7 +35,13 @@ TRANSLATED = ("title", "player", "explanation", "impact", "cause",
               "verification", "manualProcedure", "reason")
 
 PLACEHOLDER = re.compile(r"\{\d+\}")
-TODO = re.compile(r"TODO|À MIGRER|A MIGRER|FIXME|XXX", re.IGNORECASE)
+# 14/08/2026: word-bounding alone isn't enough here — the Spanish word "todo" ("everything") is a
+# complete standalone word that IS "TODO" case-insensitively, so \bTODO\b (IGNORECASE) still flags
+# ordinary Spanish prose the moment ES entries exist in this file. TODO/À MIGRER/A MIGRER now
+# require their real, conventional ALL-CAPS form — no natural FR/EN/ES sentence produces that by
+# accident. FIXME/XXX stay case-insensitive: neither is a real word in any of the three languages,
+# so there's nothing legitimate for them to collide with.
+TODO = re.compile(r"\b(TODO|À MIGRER|A MIGRER)\b|\b(?i:FIXME|XXX)\b")
 
 
 # ── 1. registre d'actions, lu dans le CODE (ADR-005) ────────────────────────
