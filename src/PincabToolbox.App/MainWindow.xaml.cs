@@ -13,6 +13,7 @@ using Microsoft.Win32;
 using PincabToolbox.App.Localization;
 using PincabToolbox.Core.Models;
 using PincabToolbox.Core.Profiles;
+using PincabToolbox.Core.Reporting;
 using PincabToolbox.Core.Scanning;
 using PincabToolbox.Core.Services;
 using PincabToolbox.Repair;
@@ -1790,7 +1791,7 @@ public partial class MainWindow : Window
         {
             FileName = $"pincab-toolbox-report-{DateTime.Now:yyyyMMdd-HHmm}",
             DefaultExt = ".html",
-            Filter = "HTML report (*.html)|*.html|Text report (*.txt)|*.txt|Markdown for forums (*.md)|*.md|BBCode for forums (*.bbcode)|*.bbcode|JSON report (*.json)|*.json",
+            Filter = "HTML report (*.html)|*.html|PDF report (*.pdf)|*.pdf|Text report (*.txt)|*.txt|Markdown for forums (*.md)|*.md|BBCode for forums (*.bbcode)|*.bbcode|JSON report (*.json)|*.json",
         };
         if (dlg.ShowDialog(this) != true) return;
 
@@ -1814,6 +1815,13 @@ public partial class MainWindow : Window
             else if (file.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
             {
                 File.WriteAllText(file, Public(BuildHtmlReport()), Encoding.UTF8);
+            }
+            else if (file.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                // Binary output: nothing to run Public() on afterwards, so every line is scrubbed
+                // on the way in instead — same guarantee (ADR-003) as the text-based formats above.
+                var scrubbedLines = BuildPdfLines().Select(Public).ToList();
+                File.WriteAllBytes(file, PdfDocumentBuilder.Build("Pincab Toolbox - Scan Report", scrubbedLines));
             }
             else if (file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
             {
@@ -1872,6 +1880,38 @@ public partial class MainWindow : Window
             catch { /* fall back to absolute */ }
         }
         return path;
+    }
+
+    /// <summary>
+    /// Same content and the same completeness contract as <see cref="BuildTextReport"/> — full
+    /// <see cref="ScanReport.Ordered"/>, nothing collapsed — but as loose lines instead of one
+    /// string, since <see cref="PdfDocumentBuilder"/> word-wraps and paginates line by line. PDF
+    /// deliberately does NOT use <c>Rolled()</c> like HTML/MD/BBCode: it is meant to be the
+    /// "give me everything" printable format alongside TXT/JSON, not a forum-sized summary — see
+    /// FIELD-LOG 2026-08-13 for why that distinction matters (a prior reply told Gregg every
+    /// format was complete, which was wrong for HTML/MD/BBCode).
+    /// </summary>
+    private List<string> BuildPdfLines()
+    {
+        var r = _report!;
+        var lines = new List<string>
+        {
+            $"Pincab Toolbox — Free Scanner 0.1.1 — {DateTime.Now:yyyy-MM-dd HH:mm}",
+            $"Health score: {r.Score}/100 ({r.Grade})",
+            $"Root: {r.Layout.RootPath}",
+            "",
+        };
+        foreach (var f in r.Ordered())
+        {
+            lines.Add($"[{f.Severity.ToString().ToUpperInvariant()}] ({f.Category}) {Loc.FindingText(f)}");
+            var rel = Rel(f.FilePath);
+            if (!string.IsNullOrEmpty(rel)) lines.Add($"   .\\{rel}");
+            var fix = Loc.FixHintText(f);
+            if (!string.IsNullOrEmpty(fix)) lines.Add($"   fix: {fix}");
+            lines.Add("");
+        }
+        lines.Add($"{r.Count(Severity.Critical)} critical, {r.Count(Severity.Warning)} warnings, {r.Count(Severity.Note)} notes, {r.Count(Severity.Info)} info, {r.Count(Severity.Ok)} ok");
+        return lines;
     }
 
     private string BuildTextReport()

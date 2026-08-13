@@ -557,7 +557,11 @@ public static class Loc
     private static readonly Dictionary<string, string> FrFindings = new()
     {
         // Ligne de regroupement (ScanReport.Rolled) — {0} = nombre, {1} = code regroupé.
-        ["GROUPED"] = "{0} résultats similaires ({1}) — regroupés pour garder la liste lisible. Le rapport texte complet les contient tous.",
+        // FIELD-LOG 2026-08-13 : nommer les formats .txt/.pdf/.json explicitement (au lieu d'un
+        // vague « rapport texte complet ») — un utilisateur terrain a exporté en HTML (le choix
+        // par défaut du dialogue) sur la foi d'une réponse leur disant que tous les formats sont
+        // complets, ce qui était faux pour HTML/MD/BBCode.
+        ["GROUPED"] = "{0} résultats similaires ({1}) — regroupés pour garder la liste lisible. Exporte en .txt, .pdf ou .json pour les voir tous individuellement.",
         // Tier A (handoff Sonnet 5, 06/08) — B1. {0} = nom de la ROM.
         ["ALTCOLOR_INCOMPLETE"] = "« {0} » a un jeu de colorisation AltColor/Serum incomplet — des fichiers existent dans altcolor/{0}/ mais ne forment pas une paire complète (.vni+.pal, ou un fichier Serum+.pal). Le DMD risque de s'afficher en mono, ou la colorisation peut ne pas se charger du tout.",
         // Tier A (handoff Sonnet 5, 06/08) — B2. {0}=ROM, {1}=nb absents, {2}=nb total référencés.

@@ -68,7 +68,12 @@ public static class ScanScoring
                 Category = representative.Category,
                 Subject = "",
                 Args = new[] { members.Count.ToString(), representative.Code },
-                EnglishText = $"{members.Count} similar findings ({representative.Code}) — collapsed to keep this list readable. The full text report has every one of them.",
+                // FIELD-LOG 2026-08-13: a prior forum reply told a user every export format has
+                // the full detail — false for HTML/Markdown/BBCode, which also call Rolled() and
+                // hit this exact message. Name the formats that actually don't collapse, by their
+                // file extension, so the message is actionable from inside the same Export dialog
+                // rather than pointing at a vague "full text report" the user has to guess at.
+                EnglishText = $"{members.Count} similar findings ({representative.Code}) — collapsed to keep this list readable. Export as .txt, .pdf or .json to see every one individually.",
             };
         }
     }

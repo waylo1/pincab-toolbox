@@ -26,6 +26,38 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 (session éco) · Point 2/6 revue CTO+Produit — export PDF (générateur maison, zéro dépendance) + fold-in wording GROUPED
+- code:        aucun nouveau code de finding ; message `GROUPED` (rollup) reformulé
+- bac:         FEATURE (export PDF, chantier planifié) + WORDING (fold-in accepté par Maxime le
+  13/08, voir l'entrée Gregg juste au-dessus)
+- contexte:    point 2/6 de la revue CTO+Produit qui suit le portage Scanner du 12/08 ;
+  `NuGet.Config` = zéro dépendance pour tout le repo, `PincabToolbox.App.csproj` n'a aucun
+  `PackageReference` → pas de lib PDF tierce disponible
+- analyse:     générateur PDF minimal écrit à la main dans
+  `PincabToolbox.Core/Reporting/PdfDocumentBuilder.cs` (objets/xref/trailer, police Helvetica
+  standard + WinAnsiEncoding, retour à la ligne glouton avec coupure dure des mots trop longs,
+  pagination A4). Décision d'architecture délibérée, notée comme incohérence assumée : contrairement
+  aux 5 autres formats (tous dans `MainWindow.xaml.cs`, jamais testés dans ce sandbox — l'App ne
+  compile pas, NU1100), la mécanique PDF pure vit dans Core parce que c'est la partie la plus
+  risquée (format binaire fait main) et la seule qui peut être réellement testée ici. Deux bugs
+  trouvés en écrivant les tests, avant tout envoi : `Encoding.ASCII` aurait mangé tout caractère
+  accentué en `?` (corrigé en `Encoding.Latin1`, 1:1 avec WinAnsi 0x00-0xFF) ; le positionnement des
+  lignes traitait `Td` (déplacement RELATIF) comme absolu, ce qui aurait fait dériver chaque ligne
+  de plus en plus à droite et vers le haut. PDF n'utilise pas `Rolled()` comme HTML/MD/BBCode — comme
+  TXT/JSON, tout est affiché, c'est le format "je veux tout voir". Message `GROUPED` (rollup, visible
+  sur les captures de Gregg — "273 similar findings") reformulé pour nommer explicitement .txt/.pdf/
+  .json au lieu d'un vague "rapport texte complet" (En + Fr).
+- disposition: livré (bundle) · Core 439/439 (412 + 27 nouveaux tests PDF), Repair 145/145, `csc
+  -t:library` sur l'App entière (7 fichiers .cs) : uniquement CS0234/CS0246/CS0518/CS0656, zéro
+  CS1xxx. Vérification supplémentaire au-delà des tests propres : un vrai PDF généré (rapport
+  simulé, 80 findings, accents français, guillemets, tiret, glyphe ✓) relu par `pypdf` (lib tierce
+  utilisée uniquement pour cette vérification ponctuelle en sandbox, hors périmètre du produit
+  livré) — 7 pages, texte extrait lisible, accents corrects, ✓ transformé en "OK", pieds de page
+  présents. Amélioration à faible coût repérée, NON codée : migrer les 5 autres builders d'export
+  vers Core suivrait le même raisonnement et leur donnerait enfin une vraie couverture de test — pas
+  fait ici, hors périmètre de ce point, gros changement pour du code qui marche déjà sans
+  signalement de bug.
+
 ## 2026-08-13 · Gregg (forum, suite du 12/08) · possible FP ROM sur EM/homebrew + notre propre réponse du 12/08 était fausse sur le contenu des exports
 - code:        ROM_MISSING (2 cas signalés) + export HTML/MD/BBCode (rollup non mentionné dans notre
   réponse du 12/08)

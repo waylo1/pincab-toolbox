@@ -1,5 +1,56 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 📄 MAJ 13/08 (ter) — point 2/6 : export PDF, écrit à la main (zéro dépendance), avec de vrais tests Core
+
+> **Plus gros que prévu, dit clairement plutôt que découpé en silence** (non-négociable du point 6) :
+> `NuGet.Config` du repo est explicite — « Zero-dependency build: no package sources needed » — et
+> ça vaut pour `PincabToolbox.App` aussi (son `.csproj` n'a AUCUN `PackageReference`). Pas de
+> PdfSharp/QuestPDF/iTextSharp disponibles : il a fallu écrire un générateur PDF minimal à la main
+> (objets, xref, trailer, police Helvetica standard, WinAnsiEncoding, retour à la ligne, pagination).
+>
+> **Décision d'architecture délibérée** : contrairement à HTML/TXT/MD/BBCode/JSON (tous dans
+> `MainWindow.xaml.cs`, jamais compilés ni testés dans ce sandbox), la mécanique PDF pure — pas de
+> connaissance de `Finding`/`Loc`, juste "ces lignes de texte, en PDF" — vit dans
+> `PincabToolbox.Core/Reporting/PdfDocumentBuilder.cs`. Choix assumé, pas neutre : ça crée une
+> incohérence (certains exports dans Core, d'autres dans App) que je note ici plutôt que de la
+> cacher. Raison : c'est le morceau le plus risqué de ce point (format binaire, zéro filet de
+> sécurité d'une lib tierce) et le seul qui PEUT être réellement testé dans ce sandbox (l'App ne
+> compile toujours pas, NU1100). App garde tout ce qui a besoin de `Loc`/`Finding` (composition des
+> lignes, localisation, scrub) ; Core ne reçoit que du texte déjà prêt à afficher.
+>
+> **Deux bugs trouvés et corrigés avant tout test** (donc jamais montés à Maxime dans cet état) :
+> `Encoding.ASCII.GetBytes` sur le contenu de page aurait transformé chaque caractère accentué
+> (é, à, œ…) en `?` — remplacé par `Encoding.Latin1` (1:1 avec WinAnsi pour les octets 0x00-0xFF).
+> Et le positionnement des lignes utilisait `Td` (déplacement RELATIF) comme s'il était absolu — les
+> lignes auraient dérivé de plus en plus à droite et vers le haut au fil du texte. Les deux étaient
+> invisibles à la simple lecture du code, trouvés en écrivant les tests.
+>
+> **Vérifié, au-delà de la méthodologie habituelle** : 27 nouveaux tests dans
+> `PincabToolbox.Core.Tests` (métriques Helvetica, encodage WinAnsi caractère par caractère,
+> retour à la ligne glouton + coupure dure d'un mot trop long, structure PDF — xref/trailer/nombre
+> de pages/cohérence Kids-Count). **Core 439/439** (412 + 27), **Repair 145/145**, inchangés.
+> En plus des tests : un vrai PDF généré via un harnais jetable (rapport simulé, 80 findings avec
+> accents français, guillemets, tiret cadratin, glyphe ✓) puis **relu par `pypdf`** (bibliothèque
+> tierce, utilisée uniquement pour cette vérification ponctuelle en sandbox — n'entre pas dans le
+> produit livré) : 7 pages, texte extrait lisible, accents corrects, ✓ bien transformé en « OK »,
+> pieds de page « page N » présents et incrémentés. Vérification indépendante du code qui a produit
+> le fichier, pas juste "le code compile et mes propres tests passent". Passe `csc -t:library` sur
+> les 7 fichiers `.cs` de l'App (MainWindow.xaml.cs + Loc.cs modifiés, et l'ensemble du projet en
+> contrôle) : uniquement CS0234/CS0246/CS0518/CS0656, **zéro CS1xxx**.
+>
+> **Corrigé au passage (fold-in accepté par Maxime le 13/08)** : le message de regroupement
+> (`ScanScoring.RollupCode`/`GROUPED`, visible sur les captures de Gregg — « 273 similar findings ») disait
+> vaguement « the full text report has every one of them » ; dit maintenant explicitement
+> « Export as .txt, .pdf or .json to see every one individually » (idem Fr). PDF **n'utilise PAS
+> `Rolled()`** comme HTML/MD/BBCode — comme TXT/JSON, tout est affiché (`Ordered()`), c'est
+> délibérément le format « je veux tout voir, imprimable/archivable », pas un résumé forum.
+>
+> **Amélioration à faible coût repérée, NON codée** : les 5 autres builders (HTML/TXT/MD/BBCode/JSON)
+> restent non testés et non déplacés — les migrer vers Core suivrait exactement le même
+> raisonnement que ci-dessus et donnerait une vraie couverture de test à *tous* les exports, pas
+> seulement PDF. Pas fait ici : hors périmètre de ce point, gros changement pour du code qui marche
+> déjà et n'a reçu aucun signalement de bug depuis son écriture.
+
 ## 💬 MAJ 13/08 (bis) — réponse à Gregg (suite du 12/08) : notre réponse précédente avait tort sur l'export, ROM pas codé sans vérif
 
 > Gregg a répondu au message du 12/08, avec captures d'écran, sur 3 points. **Notre propre réponse du
