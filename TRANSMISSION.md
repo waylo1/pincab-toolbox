@@ -1,5 +1,30 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 💬 MAJ 13/08 (bis) — réponse à Gregg (suite du 12/08) : notre réponse précédente avait tort sur l'export, ROM pas codé sans vérif
+
+> Gregg a répondu au message du 12/08, avec captures d'écran, sur 3 points. **Notre propre réponse du
+> 12/08 était fausse sur un point, corrigée ici** : on avait affirmé que HTML/MD/BBCode contiennent
+> "the full detail […] not just what's shown in the table" — faux, ces 3 formats appellent
+> `r.Rolled()` qui regroupe les findings répétitifs (273×`B2S_ORPHAN` chez Gregg) sous une ligne
+> résumé ; seuls **TXT et JSON** utilisent `Ordered()` (rien de regroupé). Gregg a très probablement
+> exporté en HTML (le choix par défaut du dialogue) et n'a logiquement rien trouvé de plus détaillé.
+>
+> **Sur les 2 signalements ROM (Full House 1966 = EM sans ROM digitale ; un homebrew qui tourne
+> visiblement bien sans sa ROM) : AUCUN CODE TOUCHÉ.** Vérifié dans `ScriptAnalyzer.AnalyzeRomUsage` —
+> `UsesController` n'est vrai que sur un `CreateObject("VPinMAME.Controller")` réel, non commenté
+> (commentaires retirés avant analyse). Si ces tables sortent Critical, leur script appelle donc
+> vraiment VPinMAME — pas un artefact de mot-clé. Hypothèse la plus probable, NON vérifiée : ces
+> scripts créent le contrôleur pour une fonctionnalité optionnelle (son/DMD additionnel) et protègent
+> le chargement de la ROM, si bien que la table tourne quand même sans elle — nuance que
+> `ScriptAnalyzer` ne fait pas aujourd'hui. Pas de correctif à l'aveugle : la dernière fois qu'une
+> détection ROM a été détendue sur une hypothèse non vérifiée (KPI#1), ça a rouvert un vrai faux
+> positif ailleurs. Question de clarification renvoyée à Gregg avant tout changement (voir brouillon).
+>
+> Brouillon prêt : `docs/reply-gregg-2026-08-13.md`. Entrée détaillée dans `knowledge/FIELD-LOG.md`
+> (2026-08-13). Correctif à faible coût identifié pour la clarté du message de regroupement (nommer
+> explicitement .txt/.json au lieu de « rapport texte complet ») — prévu pour le point 2 (export PDF)
+> puisque c'est la même zone de code, PAS mélangé dans ce commit-ci.
+
 ## 📀 MAJ 13/08 — point 1/6 : zips ROM factices dans le DemoData, le mode démo raconte enfin une vraie histoire
 
 > **Premier des 6 chantiers de la revue CTO+Produit qui suit le portage Scanner du 12/08**, traité

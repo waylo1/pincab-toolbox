@@ -26,6 +26,51 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 · Gregg (forum, suite du 12/08) · possible FP ROM sur EM/homebrew + notre propre réponse du 12/08 était fausse sur le contenu des exports
+- code:        ROM_MISSING (2 cas signalés) + export HTML/MD/BBCode (rollup non mentionné dans notre
+  réponse du 12/08)
+- bac:         FP (à investiguer, PAS codé — règle des 48h) + WORDING (confirmé, celui-ci vient de
+  nous)
+- contexte:    Gregg répond à la réponse du 12/08 avec captures d'écran d'un nouveau scan
+- verbatim:    « The Full House pinball machine released by Williams in March 1966 is an
+  electro-mechanical (EM) game with no digital rom chip. » · « For the homebrew tables […] there is
+  a 'rom' mentioned in the vp-script […] but not present in the vpinmame/rom folder. The report
+  states that the table will not start, but it runs smoothly without the actual rom. […] These
+  tables don't touch VPinMAME, but are flagged? » · « I've downloaded the full report […] but it
+  seems that there's no way to open the 'detailed report'? »
+- analyse:     **ROM (2 cas, non codé)** — `ScriptAnalyzer.AnalyzeRomUsage` exige un
+  `CreateObject("VPinMAME.Controller")` réel et non commenté (regex `VpinmameCreate()`, commentaires
+  déjà retirés par `StripComments`) pour poser `UsesController = true` ; un nom de ROM seul
+  (`cGameName`) sans cet appel donne `ROM_NOT_REQUIRED`, pas Critical. Donc SI ces tables sont
+  vraiment flaggées Critical, leur script contient bien un vrai `CreateObject("VPinMAME.Controller")`
+  — pas un artefact de détection sur un mot-clé. L'hypothèse la plus probable : ces scripts créent le
+  contrôleur pour une fonctionnalité optionnelle (DMD/son additionnel sur une table EM reproduite en
+  VBScript pur, ou reprise homebrew) et encadrent l'appel réel (`Controller.run`/chargement ROM) dans
+  une gestion d'erreur qui permet à la table de tourner quand même sans le ROM — ce que
+  `ScriptAnalyzer` ne regarde pas aujourd'hui (il détecte l'intention d'utiliser VPinMAME, pas si
+  l'appel est protégé). Impossible à confirmer sans le script réel de Gregg (ni Full House ni le
+  homebrew ne sont dans `DemoData`). **Ne pas coder une détection de `On Error Resume Next`/
+  try-guard à l'aveugle** : bon candidat pour réintroduire un faux négatif sur les tables qui
+  plantent vraiment sans ROM (le cas Full House d'origine, KPI#1, était déjà de cette famille).
+  Question de clarification à renvoyer à Gregg avant tout code.
+  **Export (confirmé, notre erreur)** — la réponse du 12/08 affirmait que "each format includes the
+  full detail […] not just what's shown in the table". **Faux pour HTML/MD/BBCode** :
+  `BuildHtmlReport`/`BuildForumMarkdown`/`BuildBBCode` appellent tous `r.Rolled()`, qui regroupe les
+  findings répétitifs (ex. 273×`B2S_ORPHAN`) sous une seule ligne « collapsed to keep this list
+  readable. The full text report has every one of them. » (`ScanScoring.Rolled`, même texte en
+  Fr : « Le rapport texte complet les contient tous. »). Seuls **TXT et JSON** utilisent `Ordered()`
+  (aucun regroupement). Gregg a très probablement exporté en HTML (option par défaut du dialogue de
+  sauvegarde), vu la ligne "273 similar findings" et cherché en vain où voir les 273 — le message ne
+  dit pas explicitement "choisis .txt ou .json dans le menu déroulant du dialogue d'export", il dit
+  juste "rapport texte complet", ambigu si on ne sait pas que TXT est un format au choix dans le
+  MÊME bouton "Export report" qu'il vient d'utiliser.
+- disposition: à répondre (brouillon `docs/reply-gregg-2026-08-13.md`, à valider par Maxime avant
+  envoi) · ROM : aucun code touché, question de clarification renvoyée à Gregg d'abord · Export :
+  correctif de formulation candidat à faible coût (pas de changement de `Rolled()`/`Ordered()`,
+  juste rendre le message de regroupement actionnable — ex. nommer explicitement le format .txt/.json
+  dans le dialogue), à faire quand le point 2 (export PDF) sera traité puisque c'est la même zone de
+  code, PAS mélangé dans ce commit-ci
+
 ## 2026-08-13 (session éco) · Point 1/6 revue CTO+Produit — zips ROM factices dans le DemoData
 - code:        aucun nouveau code de finding (`ROM_OK`/`ROM_MISSING`/`ROM_NOT_REQUIRED` existaient
   déjà) ; les résultats concernés changent : `ROMS_DIR_NOT_FOUND` disparaît du démo, remplacé par
