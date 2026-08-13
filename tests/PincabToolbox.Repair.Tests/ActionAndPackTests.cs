@@ -136,6 +136,48 @@ public static class ActionAndPackTests
         A.Equal(1, pack.Scenarios.Count, "scenario loaded");
     }
 
+    /// <summary>
+    /// 14/08/2026 (Maxime, "si c'est une valeur produit on le fait"): the pack's plain-language
+    /// player/explanation/verification text — previously parsed by nothing — is now exposed via
+    /// EntryFor for the Écran 1 detail panel. impactFr/impactEn/causeFr/causeEn stay unread here
+    /// on purpose (Knowledge.cs is the single source of truth for those two fields, see FIELD-LOG).
+    /// </summary>
+    public static void Test_Pack_LoadsEntryEditorialTextInAllThreeLanguages()
+    {
+        var pack = KnowledgePack.Load("""
+        { "packVersion": "2026.08", "entries": [
+          { "code": "BLOCKED_DLL",
+            "playerFr": "fr-player", "playerEn": "en-player", "playerEs": "es-player",
+            "explanationFr": "fr-expl", "explanationEn": "en-expl", "explanationEs": "es-expl",
+            "verificationFr": "fr-verif", "verificationEn": "en-verif", "verificationEs": "es-verif",
+            "impactFr": "should not be read here", "impactEn": "should not be read here",
+            "repairRules": [] }
+        ] }
+        """);
+
+        var entry = pack.EntryFor("BLOCKED_DLL");
+        A.True(entry is not null, "entry loaded");
+        A.Equal("fr-player", entry!.PlayerFr, "player fr");
+        A.Equal("en-player", entry.PlayerEn, "player en");
+        A.Equal("es-player", entry.PlayerEs, "player es");
+        A.Equal("fr-expl", entry.ExplanationFr, "explanation fr");
+        A.Equal("en-expl", entry.ExplanationEn, "explanation en");
+        A.Equal("es-expl", entry.ExplanationEs, "explanation es");
+        A.Equal("fr-verif", entry.VerificationFr, "verification fr");
+        A.Equal("en-verif", entry.VerificationEn, "verification en");
+        A.Equal("es-verif", entry.VerificationEs, "verification es");
+    }
+
+    /// <summary>An entry with only repairRules and no editorial text must not fabricate one — the
+    /// detail panel's new sections stay hidden for the 44 codes the pack author hasn't written
+    /// this content for yet, same ADR-005 tolerance as everything else in the pack.</summary>
+    public static void Test_Pack_EntryWithNoEditorialTextStaysAbsent()
+    {
+        var pack = KnowledgePack.Load(SamplePack);
+        A.True(pack.EntryFor("BLOCKED_DLL") is null, "no editorial text in SamplePack, so no entry");
+        A.True(pack.EntryFor("UNKNOWN_CODE") is null, "unknown code, still no crash");
+    }
+
     /// <summary>A bad pack must never stop the free scanner from running.</summary>
     public static void Test_Pack_SkipsMalformedRulesInsteadOfCrashing()
     {

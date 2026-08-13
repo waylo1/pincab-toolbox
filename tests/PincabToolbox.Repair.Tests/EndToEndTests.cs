@@ -55,6 +55,35 @@ public static class EndToEndTests
         }
     }
 
+    /// <summary>
+    /// 14/08/2026: the 7 codes the pack author has written editorial text for must load into
+    /// EntryFor, in all three languages, with no gap between the FR/EN pair that shipped earlier
+    /// and the ES pair added alongside this feature.
+    /// </summary>
+    public static void Test_ShippedPack_TheSevenAnnotatedCodesExposeEntryInAllThreeLanguages()
+    {
+        var pack = KnowledgePack.Load(File.ReadAllText(PackPath()));
+        var annotated = new[]
+        {
+            "BLOCKED_DLL", "ROM_UNZIPPED", "POPPER_NOT_REGISTERED", "BITNESS_MISMATCH_VPM",
+            "PINUP_DISPLAY_ZOMBIE", "ORPHANED_MEDIA_FILE", "BITNESS_DMD64_MISSING",
+        };
+        foreach (var code in annotated)
+        {
+            var e = pack.EntryFor(code);
+            A.True(e is not null, $"{code}: must have a pack entry");
+            A.True(!string.IsNullOrWhiteSpace(e!.PlayerFr), $"{code}: playerFr");
+            A.True(!string.IsNullOrWhiteSpace(e.PlayerEn), $"{code}: playerEn");
+            A.True(!string.IsNullOrWhiteSpace(e.PlayerEs), $"{code}: playerEs");
+            A.True(!string.IsNullOrWhiteSpace(e.ExplanationFr), $"{code}: explanationFr");
+            A.True(!string.IsNullOrWhiteSpace(e.ExplanationEn), $"{code}: explanationEn");
+            A.True(!string.IsNullOrWhiteSpace(e.ExplanationEs), $"{code}: explanationEs");
+            A.True(!string.IsNullOrWhiteSpace(e.VerificationFr), $"{code}: verificationFr");
+            A.True(!string.IsNullOrWhiteSpace(e.VerificationEn), $"{code}: verificationEn");
+            A.True(!string.IsNullOrWhiteSpace(e.VerificationEs), $"{code}: verificationEs");
+        }
+    }
+
     /// <summary>Knowledge.cs marks it AutoFixable, but no action ships in v1 — see ADR-007.</summary>
     public static void Test_ShippedPack_PopperRegistrationIsManualInV1()
     {

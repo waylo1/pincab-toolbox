@@ -59,6 +59,35 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
   scénario, `Blocker.MessageEs` jamais vide). Pack JSON revérifié avec `selftest.py` (12/12
   garde-fous toujours verts) après ajout des champs `*Es`. App vérifiée par `csc -t:library`
   (0 erreur CS1xxx).
+
+## 2026-08-14 · Décision produit Maxime — champs riches du pack JSON câblés dans le panneau de détail
+- code:        BLOCKED_DLL, ROM_UNZIPPED, POPPER_NOT_REGISTERED, BITNESS_MISMATCH_VPM, PINUP_DISPLAY_ZOMBIE, ORPHANED_MEDIA_FILE, BITNESS_DMD64_MISSING
+- bac:         FEATURE
+- contexte:    suite de l'entrée précédente — Maxime, sur les champs riches du pack laissés morts : « si c'est une valeur produit on le fait ».
+- analyse:     avant de coder, revérifié quels champs sont VRAIMENT nouveaux vs déjà couverts
+  ailleurs. `impactFr/impactEn` et `causeFr/causeEn` du pack sont des doublons mot pour mot de
+  `Knowledge.cs` (comparé BLOCKED_DLL ligne à ligne — texte identique), qui en plus couvre 51 codes
+  contre 7 dans le pack : les câbler aurait créé deux sources de vérité pour la même info sans
+  aucun bénéfice. `titleFr/titleEn` fait doublon avec la ligne Sujet déjà affichée. Les 3 champs
+  génuinement nouveaux — `playerFr/playerEn` (reformulation grand public de ce que le joueur
+  remarque), `explanationFr/explanationEn` (mécanisme expliqué simplement, complémentaire à Cause
+  qui reste technique) et `verificationFr/verificationEn` (le contrôle diagnostique qui confirme
+  vraiment la panne, inédit — rien d'autre dans l'app ne dit comment vérifier) — sont ceux qui
+  apportent une vraie valeur utilisateur, notamment pour l'audience non technique.
+- disposition: FEATURE, livré. `KnowledgePack` expose désormais `EntryFor(code)` (nouveau record
+  `PackEntry`, lu depuis un `EntryDto` élargi) ; nouvelle classe `PackKnowledge` côté App fait le
+  choix de langue EN/FR/ES avec repli sur l'anglais, séparée à dessein de `Knowledge.cs` (doc en
+  tête de fichier expliquant pourquoi Impact/Cause n'y sont pas dupliqués). Panneau de détail
+  (Écran 1) : 3 nouvelles sections optionnelles — « Ce que vous remarquerez » juste après le
+  message, « Bon à savoir » après Cause, « Comment vérifier » après le correctif recommandé —
+  chacune cachée si absente pour ce code (même tolérance ADR-005 que le reste du pack ; les 44
+  codes sans annotation ne changent pas visuellement). Espagnol ajouté directement dans
+  `pack-2026.08.json` pour les 7 codes (traduit à la main, pas de repli manquant). 3 nouveaux
+  tests : parsing des 9 champs (FR/EN/ES) depuis un pack de test, absence gracieuse quand
+  l'entrée n'a pas de texte éditorial, et un test de bout en bout sur le pack RÉELLEMENT livré
+  qui vérifie que les 7 codes annotés ont bien leurs 9 champs non vides. 501 Core + 156 Repair
+  (+3), `selftest.py` 12/12 toujours vert après l'ajout des champs ES au JSON, App vérifiée par
+  `csc -t:library` (0 erreur CS1xxx) et XAML relu (bien formé).
 - code:        BITNESS_DMD64_MISSING, B2S_MISSING, DPI_SCALING_NONSTANDARD, DISPLAY_SETUP_INCOMPLETE (et tout code sans règle du pack, ou étape manuelle de scénario)
 - bac:         FP-langue (bug de traduction, pas de logique)
 - contexte:    Maxime, capture d'écran de son vrai cab en FR : sous « Aucune réparation automatique

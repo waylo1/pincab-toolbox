@@ -1528,14 +1528,23 @@ public partial class MainWindow : Window
         DetailSubject.Text = $"{row.SevLabel} · {row.Category} · {row.Subject}";
         DetailMessage.Text = row.Message;
 
+        DetailSymptomLabel.Text = Loc.Get("detail.symptom");
+        SetSection(DetailSymptomLabel, DetailSymptom, PackKnowledge.Player(row.Code));
+
         DetailImpactLabel.Text = Loc.Get("detail.impact");
         SetSection(DetailImpactLabel, DetailImpact, Knowledge.Impact(row.Code));
 
         DetailCauseLabel.Text = Loc.Get("detail.cause");
         SetSection(DetailCauseLabel, DetailCause, Knowledge.Cause(row.Code));
 
+        DetailExplanationLabel.Text = Loc.Get("detail.explanation");
+        SetSection(DetailExplanationLabel, DetailExplanation, PackKnowledge.Explanation(row.Code));
+
         DetailFixLabel.Text = Loc.Get("detail.fix");
         SetSection(DetailFixLabel, DetailFix, row.FixHint);
+
+        DetailVerifyLabel.Text = Loc.Get("detail.verify");
+        SetSection(DetailVerifyLabel, DetailVerify, PackKnowledge.Verification(row.Code));
 
         // Écran 1 — real per-code facts from the computed plan, not the static Knowledge.cs
         // approximation: only a code the engine actually resolved to Locked+fixable shows the tag.

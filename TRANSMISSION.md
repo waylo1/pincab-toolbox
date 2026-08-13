@@ -1,5 +1,35 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 14/08/2026
 
+## 🧠 MAJ 14/08 (bis) — les champs riches du pack JSON, jugés « morts » ce matin, sont câblés dans le panneau de détail
+
+> Suite directe de l'entrée juste en dessous : son encadré « hors périmètre » disait que
+> `titleFr/impactFr/causeFr/playerFr/explanationFr/verificationFr` du pack n'étaient lus par rien.
+> Maxime, une fois l'explication donnée : « si c'est une valeur produit on le fait ».
+>
+> **Ce qui était vraiment nouveau vs déjà couvert ailleurs** — vérifié avant de coder une ligne :
+> `impactFr/impactEn` et `causeFr/causeEn` sont des doublons mot pour mot de `Knowledge.cs`
+> (comparaison ligne à ligne sur BLOCKED_DLL), qui en plus couvre 51 codes contre 7 dans le pack —
+> les câbler aurait juste créé deux sources de vérité pour la même phrase. `titleFr/titleEn` fait
+> doublon avec la ligne Sujet déjà affichée. Restent 3 champs génuinement inédits : `player`
+> (reformulation grand public de ce que le joueur remarque), `explanation` (le mécanisme expliqué
+> simplement, complémentaire à Cause qui reste technique) et `verification` (le contrôle
+> diagnostique qui confirme vraiment la panne — rien d'autre dans l'app ne dit comment vérifier).
+>
+> **Livré :** `KnowledgePack.EntryFor(code)` (nouveau record `PackEntry`) + nouvelle classe App
+> `PackKnowledge` (choix de langue EN/FR/ES, repli anglais, doc en tête expliquant pourquoi
+> Impact/Cause n'y sont pas dupliqués). Panneau de détail (Écran 1) : 3 sections optionnelles —
+> « Ce que vous remarquerez » après le message, « Bon à savoir » après Cause, « Comment vérifier »
+> après le correctif — chacune cachée si absente pour ce code, mêmes tolérance et dégradation que
+> le reste du pack (ADR-005). Espagnol ajouté à la main dans `pack-2026.08.json` pour les 7 codes
+> annotés. 3 nouveaux tests (parsing FR/EN/ES, absence gracieuse, bout-en-bout sur le pack
+> réellement livré). 501 Core + 156 Repair, `selftest.py` 12/12 toujours vert, `csc -t:library`
+> 0 erreur CS1xxx, XAML relu bien formé.
+>
+> **Reste hors périmètre, sans changement :** seuls ces 7 codes ont ce contenu éditorial pour
+> l'instant — les 44 autres codes du reste de l'app n'affichent pas ces 3 sections tant que
+> personne n'écrit le texte correspondant dans le pack. Ce n'est pas un bug, juste le pack qui n'a
+> pas encore été étoffé au-delà de ces 7 entrées.
+
 ## 🌍 MAJ 14/08 — anglais par défaut au premier lancement + espagnol ajouté comme 3ᵉ langue
 
 > Décision de Maxime : le public anglophone du pincab est plus large que le francophone, donc

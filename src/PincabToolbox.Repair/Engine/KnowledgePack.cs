@@ -30,6 +30,31 @@ public sealed record PackScenario
 }
 
 /// <summary>
+/// Plain-language, per-code editorial content for the Écran 1 finding detail panel — deliberately
+/// separate from <c>Knowledge.cs</c>'s hardcoded Impact/Cause table (that one covers all 51 known
+/// codes and stays the single source of truth for those two fields; duplicating it here from the
+/// pack would create two sources of truth for the same text). What's here is genuinely new and
+/// pack-only: <see cref="Player"/> restates the problem the way the cabinet owner would describe
+/// it, <see cref="Explanation"/> gives the plain-language mental model, and <see cref="Verification"/>
+/// gives the diagnostic check that confirms the finding for real. Only present for the subset of
+/// codes the pack author has actually written this content for (7 as of pack-2026.08) — a missing
+/// entry degrades to nothing shown, same tolerance as the rest of the pack (ADR-005).
+/// </summary>
+public sealed record PackEntry
+{
+    public required string Code { get; init; }
+    public string? PlayerFr { get; init; }
+    public string? PlayerEn { get; init; }
+    public string? PlayerEs { get; init; }
+    public string? ExplanationFr { get; init; }
+    public string? ExplanationEn { get; init; }
+    public string? ExplanationEs { get; init; }
+    public string? VerificationFr { get; init; }
+    public string? VerificationEn { get; init; }
+    public string? VerificationEs { get; init; }
+}
+
+/// <summary>
 /// The knowledge, as DATA. Rules may only compose capabilities from the compiled
 /// registry — they can never define one (ADR-005).
 /// </summary>
@@ -39,18 +64,21 @@ public interface IKnowledgePack
     RepairRule? RuleFor(string code);
     RepairRule? RuleById(string ruleId);
     IReadOnlyList<PackScenario> Scenarios { get; }
+    PackEntry? EntryFor(string code);
 }
 
 public sealed class KnowledgePack : IKnowledgePack
 {
     private readonly Dictionary<string, RepairRule> _byCode = new(StringComparer.Ordinal);
     private readonly Dictionary<string, RepairRule> _byId = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PackEntry> _entriesByCode = new(StringComparer.Ordinal);
 
     public string PackVersion { get; }
     public IReadOnlyList<PackScenario> Scenarios { get; }
 
     public KnowledgePack(string packVersion, IEnumerable<RepairRule> rules,
-                         IEnumerable<PackScenario>? scenarios = null)
+                         IEnumerable<PackScenario>? scenarios = null,
+                         IEnumerable<PackEntry>? entries = null)
     {
         PackVersion = packVersion;
         foreach (var r in rules)
@@ -60,10 +88,13 @@ public sealed class KnowledgePack : IKnowledgePack
             if (!_byCode.ContainsKey(r.TargetCode)) _byCode[r.TargetCode] = r;
         }
         Scenarios = (scenarios ?? Array.Empty<PackScenario>()).ToList();
+        foreach (var e in entries ?? Array.Empty<PackEntry>())
+            _entriesByCode[e.Code] = e;
     }
 
     public RepairRule? RuleFor(string code) => _byCode.TryGetValue(code, out var r) ? r : null;
     public RepairRule? RuleById(string ruleId) => _byId.TryGetValue(ruleId, out var r) ? r : null;
+    public PackEntry? EntryFor(string code) => _entriesByCode.TryGetValue(code, out var e) ? e : null;
 
     /// <summary>Empty pack: everything falls back to ManualOnly. Used before a pack is shipped.</summary>
     public static KnowledgePack Empty { get; } = new("0000.00", Array.Empty<RepairRule>());
@@ -87,9 +118,28 @@ public sealed class KnowledgePack : IKnowledgePack
                   ?? throw new InvalidDataException("empty knowledge pack");
 
         var rules = new List<RepairRule>();
+        var entries = new List<PackEntry>();
         foreach (var e in dto.Entries ?? new List<EntryDto>())
         {
             if (string.IsNullOrWhiteSpace(e.Code)) { warnings?.Add("entry without code, skipped"); continue; }
+
+            if (!string.IsNullOrWhiteSpace(e.PlayerEn) || !string.IsNullOrWhiteSpace(e.ExplanationEn) ||
+                !string.IsNullOrWhiteSpace(e.VerificationEn))
+            {
+                entries.Add(new PackEntry
+                {
+                    Code = e.Code!,
+                    PlayerFr = e.PlayerFr,
+                    PlayerEn = e.PlayerEn,
+                    PlayerEs = e.PlayerEs,
+                    ExplanationFr = e.ExplanationFr,
+                    ExplanationEn = e.ExplanationEn,
+                    ExplanationEs = e.ExplanationEs,
+                    VerificationFr = e.VerificationFr,
+                    VerificationEn = e.VerificationEn,
+                    VerificationEs = e.VerificationEs,
+                });
+            }
 
             foreach (var r in e.RepairRules ?? new List<RuleDto>())
             {
@@ -155,7 +205,7 @@ public sealed class KnowledgePack : IKnowledgePack
             });
         }
 
-        return new KnowledgePack(dto.PackVersion ?? "0000.00", rules, scenarios);
+        return new KnowledgePack(dto.PackVersion ?? "0000.00", rules, scenarios, entries);
     }
 
     // DTOs — deliberately permissive; validation lives in the CI validator.
@@ -170,6 +220,15 @@ public sealed class KnowledgePack : IKnowledgePack
     {
         public string? Code { get; set; }
         public List<RuleDto>? RepairRules { get; set; }
+        public string? PlayerFr { get; set; }
+        public string? PlayerEn { get; set; }
+        public string? PlayerEs { get; set; }
+        public string? ExplanationFr { get; set; }
+        public string? ExplanationEn { get; set; }
+        public string? ExplanationEs { get; set; }
+        public string? VerificationFr { get; set; }
+        public string? VerificationEn { get; set; }
+        public string? VerificationEs { get; set; }
     }
 
     private sealed class RuleDto

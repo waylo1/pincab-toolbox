@@ -654,14 +654,23 @@
                                 <TextBlock x:Name="DetailSubject" FontWeight="Bold" FontSize="14" TextWrapping="Wrap"/>
                                 <TextBlock x:Name="DetailMessage" Foreground="{StaticResource TextDim}" TextWrapping="Wrap" Margin="0,6,0,0"/>
 
+                                <TextBlock x:Name="DetailSymptomLabel" Foreground="{StaticResource TextDim}" FontSize="10.5" FontWeight="Bold" Margin="0,13,0,0" Visibility="Collapsed"/>
+                                <TextBlock x:Name="DetailSymptom" Foreground="{StaticResource Text}" TextWrapping="Wrap" Margin="0,2,0,0" Visibility="Collapsed"/>
+
                                 <TextBlock x:Name="DetailImpactLabel" Foreground="{StaticResource TextDim}" FontSize="10.5" FontWeight="Bold" Margin="0,13,0,0" Visibility="Collapsed"/>
                                 <TextBlock x:Name="DetailImpact" Foreground="{StaticResource Text}" TextWrapping="Wrap" Margin="0,2,0,0" Visibility="Collapsed"/>
 
                                 <TextBlock x:Name="DetailCauseLabel" Foreground="{StaticResource TextDim}" FontSize="10.5" FontWeight="Bold" Margin="0,11,0,0" Visibility="Collapsed"/>
                                 <TextBlock x:Name="DetailCause" Foreground="{StaticResource Text}" TextWrapping="Wrap" Margin="0,2,0,0" Visibility="Collapsed"/>
 
+                                <TextBlock x:Name="DetailExplanationLabel" Foreground="{StaticResource TextDim}" FontSize="10.5" FontWeight="Bold" Margin="0,11,0,0" Visibility="Collapsed"/>
+                                <TextBlock x:Name="DetailExplanation" Foreground="{StaticResource Text}" TextWrapping="Wrap" Margin="0,2,0,0" Visibility="Collapsed"/>
+
                                 <TextBlock x:Name="DetailFixLabel" Foreground="{StaticResource TextDim}" FontSize="10.5" FontWeight="Bold" Margin="0,11,0,0" Visibility="Collapsed"/>
                                 <TextBlock x:Name="DetailFix" Foreground="{StaticResource OkSev}" TextWrapping="Wrap" Margin="0,2,0,0" Visibility="Collapsed"/>
+
+                                <TextBlock x:Name="DetailVerifyLabel" Foreground="{StaticResource TextDim}" FontSize="10.5" FontWeight="Bold" Margin="0,11,0,0" Visibility="Collapsed"/>
+                                <TextBlock x:Name="DetailVerify" Foreground="{StaticResource Text}" TextWrapping="Wrap" Margin="0,2,0,0" Visibility="Collapsed"/>
 
                                 <Button x:Name="DetailActionBtn" HorizontalAlignment="Left" Margin="0,13,0,0" Padding="14,7"
                                         FontWeight="SemiBold" Click="DetailAction_Click"/>
