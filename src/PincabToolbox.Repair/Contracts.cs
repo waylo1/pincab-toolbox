@@ -107,6 +107,28 @@ public sealed record Blocker
 }
 
 /// <summary>
+/// One reason a step stayed manual (ADR-006). Bilingual by construction, same shape as
+/// <see cref="Blocker"/> — the engine must never hand the App an English-only sentence to
+/// display verbatim (13/08/2026, FIELD-LOG: the ADR-006 "not automatable" line and the manual-item
+/// confirmation text both leaked raw English into the FR UI because <c>Missing</c> used to be a
+/// plain <c>string</c>).
+/// <para>
+/// <see cref="MessageFr"/> is null when the engine only has an English source at hand (e.g. a
+/// <see cref="Finding.FixHint"/> — Core has no FR text for those, only the App's Loc table does,
+/// keyed by <see cref="Code"/>). The App resolves the final display string: prefer
+/// <see cref="MessageFr"/>, else look up <see cref="Code"/> in its own FR table, else fall back to
+/// <see cref="MessageEn"/>.
+/// </para>
+/// </summary>
+public sealed record RepairLimitation
+{
+    /// <summary>Finding code or rule id, when there is one — lets the App look up its own FR text. Null for purely technical/internal reasons.</summary>
+    public string? Code { get; init; }
+    public required string MessageEn { get; init; }
+    public string? MessageFr { get; init; }
+}
+
+/// <summary>
 /// The unit of TRANSACTION. A scenario playbook is ONE item with several ordered changes —
 /// that is what gives compensation the right granularity.
 /// </summary>
@@ -137,7 +159,7 @@ public sealed record RepairPlanItem
     public Completeness Completeness { get; init; } = Completeness.Full;
 
     /// <summary>What cannot be automated, and why. Shown BEFORE acting.</summary>
-    public IReadOnlyList<string> Missing { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<RepairLimitation> Missing { get; init; } = Array.Empty<RepairLimitation>();
 
     public IReadOnlyList<Blocker> Blockers { get; init; } = Array.Empty<Blocker>();
 

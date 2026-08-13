@@ -70,8 +70,10 @@ public sealed record RepairOffer
     /// <summary>
     /// What Repair will NOT do, gathered from the items. Surfaced before purchase, not after:
     /// a limitation discovered post-payment is a refund, a limitation stated up front is trust.
+    /// Bilingual (<see cref="RepairLimitation"/>) so the App can render it in the user's language
+    /// instead of the raw English fallback (13/08/2026 fix — it used to leak English into the FR UI).
     /// </summary>
-    public required IReadOnlyList<string> NotAutomatable { get; init; }
+    public required IReadOnlyList<RepairLimitation> NotAutomatable { get; init; }
 
     /// <summary>Nothing to sell on this install. The UI must then show no pitch at all.</summary>
     public bool IsEmpty => FixableCount == 0;
@@ -97,11 +99,15 @@ public sealed record RepairOffer
             .Where(i => i.Mode == RepairMode.Locked && i.Summary is { ChangeCount: > 0 })
             .ToList();
 
+        // Grouped by Code (falling back to the English text when there is none) rather than by
+        // raw string: two items sharing the same underlying reason must collapse to one line
+        // regardless of which language it renders in later.
         var notAutomatable = plan.Items
             .SelectMany(i => i.Missing)
-            .Where(m => !string.IsNullOrWhiteSpace(m))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(m => m, StringComparer.OrdinalIgnoreCase)
+            .Where(m => !string.IsNullOrWhiteSpace(m.MessageEn))
+            .GroupBy(m => m.Code ?? m.MessageEn, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .OrderBy(m => m.Code ?? m.MessageEn, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         var totalSeconds = fixable.Sum(i => i.Summary!.EstimatedDuration switch

@@ -113,8 +113,10 @@ public sealed class RepairEngine : IRepairEngine
                 SourceFinding = f,
                 RuleId = rule?.Id,
                 Missing = rule is null
-                    ? (string.IsNullOrWhiteSpace(f.FixHint) ? Array.Empty<string>() : new[] { f.FixHint })
-                    : new[] { $"action '{rule.ActionId}' not available in this version" },
+                    ? (string.IsNullOrWhiteSpace(f.FixHint)
+                        ? Array.Empty<RepairLimitation>()
+                        : new[] { new RepairLimitation { Code = f.Code, MessageEn = f.FixHint } })
+                    : new[] { new RepairLimitation { Code = f.Code, MessageEn = $"action '{rule.ActionId}' not available in this version" } },
             };
         }
 
@@ -157,8 +159,8 @@ public sealed class RepairEngine : IRepairEngine
             RuleId = rule.Id,
             Completeness = changes.Count == 0 ? Completeness.Partial : Completeness.Full,
             Missing = changes.Count == 0
-                ? new[] { $"action '{rule.ActionId}' found nothing it could safely change on this install" }
-                : Array.Empty<string>(),
+                ? new[] { new RepairLimitation { Code = f.Code, MessageEn = $"action '{rule.ActionId}' found nothing it could safely change on this install" } }
+                : Array.Empty<RepairLimitation>(),
         };
     }
 
@@ -167,7 +169,7 @@ public sealed class RepairEngine : IRepairEngine
                                               HashSet<Finding> consumed)
     {
         var changes = new List<PlannedChange>();
-        var missing = new List<string>();
+        var missing = new List<RepairLimitation>();
         var used = new List<Finding>();
         var minConfidence = 100;
         var allReversible = true;
@@ -176,23 +178,28 @@ public sealed class RepairEngine : IRepairEngine
         {
             if (step.ManualOnly)
             {
-                missing.Add(step.ReasonEn ?? step.RuleId);
+                missing.Add(new RepairLimitation
+                {
+                    Code = step.RuleId,
+                    MessageEn = step.ReasonEn ?? step.RuleId,
+                    MessageFr = step.ReasonFr,
+                });
                 continue;
             }
 
             var rule = _pack.RuleById(step.RuleId);
             if (rule is null || !_registry.TryGet(rule.ActionId, out var action))
             {
-                missing.Add($"step {step.Step}: no action available");
+                missing.Add(new RepairLimitation { Code = step.RuleId, MessageEn = $"step {step.Step}: no action available" });
                 continue;
             }
 
             var f = findings.FirstOrDefault(x => x.Code == rule.TargetCode);
-            if (f is null) { missing.Add($"step {step.Step}: finding {rule.TargetCode} absent"); continue; }
+            if (f is null) { missing.Add(new RepairLimitation { Code = rule.TargetCode, MessageEn = $"step {step.Step}: finding {rule.TargetCode} absent" }); continue; }
 
             if (!action.ValidateParameters(rule.Parameters).IsValid)
             {
-                missing.Add($"step {step.Step}: invalid parameters"); continue;
+                missing.Add(new RepairLimitation { Code = rule.TargetCode, MessageEn = $"step {step.Step}: invalid parameters" }); continue;
             }
 
             changes.AddRange(action.Plan(Context(f), rule.Parameters));

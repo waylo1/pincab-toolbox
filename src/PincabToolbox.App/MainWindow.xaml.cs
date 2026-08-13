@@ -1129,7 +1129,7 @@ public partial class MainWindow : Window
             var shown = items.Take(maxShown).ToList();
             var suffix = items.Count > maxShown ? $" (+{items.Count - maxShown})" : "";
             RepairNotAutomatableLine.Text = Loc.Get("repair.notautomatable") + " " +
-                string.Join(" · ", shown) + suffix;
+                string.Join(" · ", shown.Select(Loc.MissingReasonText)) + suffix;
             RepairNotAutomatableLine.Visibility = Visibility.Visible;
         }
         else
@@ -1702,7 +1702,9 @@ public partial class MainWindow : Window
 
         if (ic.Mode == RepairMode.ManualOnly)
         {
-            var why = ic.Missing.Count > 0 ? string.Join(" ", ic.Missing) : Loc.Get("repair.manual.noreason");
+            var why = ic.Missing.Count > 0
+                ? string.Join(" ", ic.Missing.Select(Loc.MissingReasonText))
+                : Loc.Get("repair.manual.noreason");
             return $"{head}\n{Loc.Get("repair.manual.label")} — {why}";
         }
 

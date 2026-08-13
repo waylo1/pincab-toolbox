@@ -1,5 +1,39 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 🌐 MAJ 13/08 (terdecies) — point 6/6 : le bloc « pas automatisable » de Repair montrait 4 phrases entières en anglais dans l'UI FR
+
+> Signalé par capture d'écran de Maxime après build local : sous « Aucune réparation automatique
+> disponible sur ce scan », la ligne d'intro était bien en FR mais les 4 phrases qui suivaient
+> (dmddevice64.dll, .directb2s, échelle Windows, câblage moniteurs) étaient en anglais brut,
+> collées avec « · ». "vérifie que la traduction soit correcte des deux côtés".
+>
+> **Root cause, trouvée dans le code, pas devinée :** `RepairPlanItem.Missing` (ADR-006) était un
+> `IReadOnlyList<string>` rempli côté `PincabToolbox.Repair` — un projet qui n'a et ne doit pas avoir
+> de référence vers `Loc`/App — soit avec `Finding.FixHint` (fallback anglais du Core, par design),
+> soit avec `PackStep.ReasonEn` pour une étape manuelle de scénario, en ignorant complètement
+> `PackStep.ReasonFr` qui existait déjà dans le pack et n'était simplement jamais lu. L'App affichait
+> ensuite ce texte brut tel quel (résumé ADR-006 + détail d'un item manuel dans l'onglet Repair) sans
+> jamais consulter `Loc.FrFixHints`, la table de traduction par code que l'App a déjà et qui contenait
+> déjà les 4 phrases FR correctes, juste jamais branchées à cet endroit. Le commentaire déjà présent
+> sur `ItemConfirmation` ("Deliberately carries no formatted/localized text — that stays in the App's
+> Loc layer") décrivait la bonne architecture ; il manquait le dernier maillon.
+>
+> **Fix.** Nouveau type `RepairLimitation` (bilingue : `Code`, `MessageEn`, `MessageFr?` — même forme
+> que `Blocker`, qui existait déjà pour un autre usage) remplace `string` dans `Missing` /
+> `RepairOffer.NotAutomatable`. Le pack alimente `MessageFr` directement pour les étapes de scénario ;
+> pour le cas "aucune règle" (ex. ROM_MISSING, seul l'anglais existe côté Core), `Code` est transporté
+> et l'App résout via `Loc.MissingReasonText` : `MessageFr` du reason s'il existe, sinon
+> `FrFixHints[Code]`, sinon l'anglais — jamais de ligne vide. Dédoublonnage de `NotAutomatable` changé
+> de "par texte brut" à "par Code" au passage (plus honnête : une même raison en deux formulations ne
+> comptait pas comme deux limitations avant).
+>
+> Diff : `RepairLimitation` dans `Contracts.cs`, 4 sites de construction dans `RepairEngine.cs`,
+> dédoublonnage dans `RepairOffer.cs`, type de `ItemConfirmation.Missing` dans `RepairSession.cs`,
+> `Loc.MissingReasonText` + 2 sites d'appel dans `MainWindow.xaml.cs`. 152 tests Repair (2 nouveaux :
+> le code est bien transporté, et le FR d'une étape de scénario n'est plus perdu), 498 Core, tous
+> verts. App vérifiée par `csc -t:library` (0 erreur CS1xxx). Les 4 traductions FR de la capture
+> existaient déjà mot pour mot dans `Loc.cs` — aucune nouvelle traduction à écrire, juste le branchement.
+
 ## 🔁 MAJ 13/08 (duodecies) — point 6/6 : la section Undo devient Réparé / Annulé
 
 > Dernier point du batch du jour, demandé explicitement par Maxime après le fix du score : la

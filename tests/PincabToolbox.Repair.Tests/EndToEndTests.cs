@@ -121,7 +121,7 @@ public static class EndToEndTests
         A.True(scenario is not null, "the scenario fires when both bitness codes are present");
         A.Equal(Completeness.Partial, scenario!.Completeness, "it is partial");
         A.Equal(2, scenario.Missing.Count, "two steps cannot be automated");
-        A.True(scenario.Missing.All(m => !string.IsNullOrWhiteSpace(m)), "and each says why");
+        A.True(scenario.Missing.All(m => !string.IsNullOrWhiteSpace(m.MessageEn)), "and each says why");
 
         // The two bitness findings have no rule of their own → manual, never silently ignored.
         foreach (var code in new[] { "BITNESS_MISMATCH_VPM", "BITNESS_DMD64_MISSING" })

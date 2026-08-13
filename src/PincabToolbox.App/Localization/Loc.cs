@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 using PincabToolbox.Core.Models;
+using PincabToolbox.Repair;
 
 namespace PincabToolbox.App.Localization;
 
@@ -58,6 +59,21 @@ public static class Loc
         if (f.FixHint is null) return null;
         if (Lang == "fr" && FrFixHints.TryGetValue(f.Code, out var fr)) return fr;
         return f.FixHint;
+    }
+
+    /// <summary>
+    /// Localized text for a <see cref="RepairLimitation"/> (13/08/2026 fix — the ADR-006
+    /// "not automatable" line and the manual-item confirmation text were both showing raw English
+    /// in the FR UI). Priority: the reason's own FR text (scenario steps carry one from the pack),
+    /// then this table's FR fix-hint keyed by the same code (findings without a pack rule, e.g.
+    /// ROM_MISSING), then the English fallback — never a blank line.
+    /// </summary>
+    public static string MissingReasonText(RepairLimitation m)
+    {
+        if (Lang != "fr") return m.MessageEn;
+        if (!string.IsNullOrWhiteSpace(m.MessageFr)) return m.MessageFr;
+        if (m.Code is not null && FrFixHints.TryGetValue(m.Code, out var fr)) return fr;
+        return m.MessageEn;
     }
 
     public static string SeverityLabel(Severity s) => Get("sev." + s);

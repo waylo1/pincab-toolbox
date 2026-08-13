@@ -296,4 +296,4 @@ public sealed record ItemConfirmation(
     bool BackupPlanned,
     int ChangeCount,
     IReadOnlyList<string> Targets,
-    IReadOnlyList<string> Missing);
+    IReadOnlyList<RepairLimitation> Missing);

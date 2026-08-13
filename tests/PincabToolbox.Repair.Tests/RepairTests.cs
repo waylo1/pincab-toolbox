@@ -144,6 +144,31 @@ public static class RepairTests
         A.Equal(0, item.Changes.Count, "while the how-to stays behind the licence");
     }
 
+    /// <summary>
+    /// 13/08/2026 fix: a manual scenario step used to discard <see cref="PackStep.ReasonFr"/> and
+    /// keep only the English reason, so a FR-language user saw the FR UI with an English sentence
+    /// stapled into it. The pack already carries both languages — the engine must carry both through.
+    /// </summary>
+    public static void Test_Plan_ScenarioManualStep_CarriesBothLanguagesNotJustEnglish()
+    {
+        var fs = new FakeFs();
+        fs.AddFile(@"C:\vpx\1", "a");
+        var pack = new KnowledgePack("2026.08",
+            new[] { Build.Rule("auto", "CODE_A", "scripted") },
+            new[] { Scenario("MIG", new[] { "CODE_A", "CODE_B" }, ("auto", false), ("manual", true)) });
+        var eng = Engine(fs, pack, new RepairActionRegistry(new ScriptedAction(fs)), out _, out _);
+
+        var item = eng.Plan("scan-1", new[]
+        {
+            Build.Finding("CODE_A", @"C:\vpx\1"),
+            Build.Finding("CODE_B", @"C:\vpx\2"),
+        }, licensed: false).Items.First(i => i.TargetCode == "MIG");
+
+        var manualStep = item.Missing.Single();
+        A.Equal("cannot be supplied", manualStep.MessageEn, "English reason still there");
+        A.Equal("non fournissable", manualStep.MessageFr, "and the FR reason must survive too, not be dropped");
+    }
+
     public static void Test_Plan_ItemsAreNotSelectedByDefault()
     {
         var (_, eng, _) = Setup(blocked: @"C:\vpx\a.dll");
@@ -189,7 +214,8 @@ public static class RepairTests
         A.Equal(RepairMode.ManualOnly, p.Items[0].Mode, "no rule ever existed for this code");
         A.Equal(0, p.Items[0].Changes.Count, "nothing automatable");
         A.Equal(1, p.Items[0].Missing.Count, "the fix hint must surface, not disappear");
-        A.Equal(finding.FixHint, p.Items[0].Missing[0], "same text Scanner already shows");
+        A.Equal(finding.FixHint, p.Items[0].Missing[0].MessageEn, "same text Scanner already shows");
+        A.Equal(finding.Code, p.Items[0].Missing[0].Code, "code carried through so the App can localize it");
     }
 
     /// <summary>Same case, but the finding has no FixHint either — must degrade to an empty list, never throw.</summary>

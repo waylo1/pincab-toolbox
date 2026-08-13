@@ -26,7 +26,37 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
-## 2026-08-13 (session éco, encore) · Point 6/6 — la section Undo devient Réparé / Annulé, avec le détail de chaque plan
+## 2026-08-13 (session éco, encore encore) · Point 6/6 — le bloc « pas automatisable » de Repair parlait anglais en pleine UI FR
+- code:        BITNESS_DMD64_MISSING, B2S_MISSING, DPI_SCALING_NONSTANDARD, DISPLAY_SETUP_INCOMPLETE (et tout code sans règle du pack, ou étape manuelle de scénario)
+- bac:         FP-langue (bug de traduction, pas de logique)
+- contexte:    Maxime, capture d'écran de son vrai cab en FR : sous « Aucune réparation automatique
+  disponible sur ce scan », la phrase « Certaines étapes resteront toujours manuelles, licence ou pas : »
+  (bien en FR) était suivie de 4 phrases entières en anglais collées bout à bout avec « · »
+  (dmddevice64.dll, .directb2s, échelle Windows, câblage moniteurs) — « verifie que la traduction soit
+  correcte des deux côté ».
+- analyse:     `RepairPlanItem.Missing` (ADR-006 : ce qui restera manuel, montré avant achat) était un
+  simple `IReadOnlyList<string>`, rempli à la source (`RepairEngine`, dans `PincabToolbox.Repair`, qui
+  n'a et ne doit pas avoir de dépendance vers `Loc`/App) soit avec `Finding.FixHint` (toujours en
+  anglais, c'est le fallback du Core), soit avec `PackStep.ReasonEn` pour une étape manuelle de
+  scénario — en ignorant totalement `PackStep.ReasonFr`, qui existe et était déjà rempli dans le pack,
+  juste jamais lu. L'App affichait ensuite ce texte brut tel quel à deux endroits (le résumé ADR-006 et
+  le détail d'un item manuel dans l'onglet Repair), sans jamais passer par la table de traduction
+  `Loc.FrFixHints` que l'App a pourtant déjà, par code de finding, et qui contenait déjà les 4 phrases
+  FR correctes — elles n'étaient simplement jamais consultées pour ce texte-là. Le commentaire déjà
+  présent sur `ItemConfirmation` (« Deliberately carries no formatted/localized text — that stays in
+  the App's Loc layer ») disait la bonne architecture ; il manquait juste le dernier maillon.
+- disposition: FIX. Nouveau type `RepairLimitation` (Core-side, bilingue : `Code`, `MessageEn`,
+  `MessageFr?` — même forme que `Blocker` qui existait déjà pour un autre usage) remplace `string` dans
+  `Missing`/`NotAutomatable`. Le pack alimente `MessageFr` directement pour les étapes de scénario
+  (`ReasonFr`, enfin lu) ; pour le cas "pas de règle du tout" (ex. ROM_MISSING), le Core ne peut fournir
+  que l'anglais (`FixHint`), donc `Code` est transporté et l'App résout via `Loc.MissingReasonText` :
+  `MessageFr` du reason si présent, sinon `FrFixHints[Code]`, sinon l'anglais en dernier recours —
+  jamais de ligne vide. Dédoublonnage de `RepairOffer.NotAutomatable` changé de "par texte brut" à
+  "par Code" au passage — plus honnête (même raison, deux formulations, ne comptait pas comme deux
+  limitations avant). Vérifié pièce par pièce sur les 4 codes de la capture : les 4 traductions FR
+  existaient déjà telles quelles dans `Loc.cs`, jamais branchées. 152 tests Repair (dont 2 nouveaux
+  verrouillant le passage bilingue), 498 tests Core, tous verts. App vérifiée par `csc -t:library`
+  (0 erreur CS1xxx, sandbox ne peut pas builder le WPF). répondu ✔ (bundle livré, à rebuild côté cab).
 - code:        aucun nouveau code de finding
 - bac:         FIX (Repair, UI)
 - contexte:    Maxime, sur son vrai cab : « ya un bouton pour annuler un plan historique et il annule

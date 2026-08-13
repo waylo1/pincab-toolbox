@@ -127,7 +127,7 @@ public static class RepairOfferTests
         var offer = RepairOffer.From(plan, findings.Count);
 
         var rendered = string.Join("|", offer.FixableCodes)
-                     + "|" + string.Join("|", offer.NotAutomatable)
+                     + "|" + string.Join("|", offer.NotAutomatable.Select(m => m.MessageEn + "|" + m.MessageFr))
                      + "|" + offer.PlanId;
 
         A.False(rendered.Contains(@"C:\", StringComparison.OrdinalIgnoreCase),
