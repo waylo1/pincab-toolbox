@@ -1,5 +1,47 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 🧪 MAJ 13/08 (quater) — point 3/6 : tests `Scenarios.DetectAll` faits (18, réels) ; les `Build*` de MainWindow, structurellement impossibles à tester dans ce sandbox — décision à prendre
+
+> **Moitié claire, moitié bloquée — dit maintenant plutôt que découpé en silence.** Le point 3
+> demandait des tests pour `Scenarios.DetectAll` ET les méthodes `Build*` de `MainWindow.xaml.cs`.
+> Après investigation, ce sont deux problèmes de nature complètement différente.
+>
+> **`Scenarios.DetectAll` : fait, 18 tests réels, tous exécutés et verts.** Le fichier ne dépend que
+> de `Loc.Lang` (simple champ statique) — zéro type WPF. Nouveau projet
+> `tests/PincabToolbox.App.Tests/` (câblé dans `PincabToolbox.sln` et `build.cmd`, étape [4/6]) qui
+> compile `Scenarios.cs` et `Loc.cs` **par lien de fichier direct** (`<Compile Include>` vers les
+> fichiers de l'App, pas de `ProjectReference` vers `PincabToolbox.App.csproj`, qui exige le SDK
+> Windows Desktop absent ici). Couverture : MinMatch respecté par scénario, chaîne causale filtrée
+> aux seuls codes réellement matchés, confiance qui grandit avec le nombre de codes ET plafonne à 96,
+> un code hors scénario n'inflate rien, tri par confiance, FR/EN, `Detect` vs `DetectAll`.
+>
+> **Les `Build*` de `MainWindow.xaml.cs` : structurellement impossible à tester dans CE sandbox
+> aujourd'hui — pas une histoire de "pas encore essayé", une histoire de "ne peut pas".** Deux
+> blocages qui se cumulent : (1) le SDK Windows Desktop (`net8.0-windows` + `UseWPF`) est requis
+> pour ne serait-ce que compiler `Brush`/`SolidColorBrush` (utilisés par `BuildCauseCard`,
+> `BuildChainRows`, `BuildComponentRows`, `BuildTableRows`) — inobtenable ici, `nuget.org` est
+> bloqué par le proxy du sandbox (testé : 403 sur `api.nuget.org`), donc même le paquet de
+> référence WPF (sans exécution, juste pour compiler) est hors de portée. (2) Plus fondamental et
+> qui touche TOUS les `Build*`, même ceux qui ne touchent aucun `Brush` (`BuildTextReport`,
+> `BuildForumMarkdown`, `BuildBBCode`, `BuildHtmlReport`, `BuildPdfLines`,
+> `BuildConfirmationText`) : `MainWindow` est la moitié d'une `partial class` dont l'autre moitié
+> (tous les champs `TxtRoot`/`BtnScan`/…) est générée par la compilation du XAML — il n'existe pas de
+> fichier source à lier séparément comme pour `Scenarios.cs`. Le compilateur doit voir TOUTE la
+> classe en un bloc, XAML généré compris. Rien à voir avec le point 2 (l'export PDF a pu être vérifié
+> par lecture indépendante `pypdf` justement parce qu'il ne dépend d'aucun état WPF).
+>
+> **Décision qui revient à Maxime, pas prise seul** : trois options posées en question ci-dessous —
+> extraire maintenant la logique de décision pure de ces 4 méthodes vers des fonctions testables
+> (mini-tranche anticipée du point 5), reporter entièrement cette moitié du point 3 pour qu'elle se
+> résolve naturellement quand le point 5 déplace `Scenarios.cs` et la decision-logic vers Core, ou se
+> contenter d'une vérification `csc` + relecture manuelle (pas de vrais tests, juste ce qui existait
+> déjà comme filet de sécurité).
+>
+> **Vérifié** : Core 439/439, Repair 145/145, **App.Tests 18/18** (nouveau, réel, exécuté — pas du
+> syntax-check). `.sln` et `build.cmd` mis à jour et cohérents (renumérotation [1/6]→[6/6], le
+> script avait déjà une incohérence [1/4]→[5/5] avant ce point, corrigée au passage puisque j'y
+> touchais de toute façon).
+
 ## 📄 MAJ 13/08 (ter) — point 2/6 : export PDF, écrit à la main (zéro dépendance), avec de vrais tests Core
 
 > **Plus gros que prévu, dit clairement plutôt que découpé en silence** (non-négociable du point 6) :

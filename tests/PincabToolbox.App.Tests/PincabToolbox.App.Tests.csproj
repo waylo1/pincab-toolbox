@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <!-- Zero-dependency micro test runner, same pattern as PincabToolbox.Core.Tests: no xunit needed. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PincabToolbox.Core\PincabToolbox.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Linked source, not a ProjectReference to PincabToolbox.App: that project targets
+      net8.0-windows with UseWPF, which needs the Windows Desktop SDK — unavailable in the cloud
+      sandbox this test suite is written and run in (NU1100, same documented fact as everywhere
+      else in this repo). Scenarios.cs and Loc.cs are the two files point 3 (CTO+Produit review,
+      13/08) needed to test and the only App-owned decision-logic files with zero WPF dependency
+      today, so they're compiled here directly by path instead of dragging in the whole App
+      project. This is a deliberate, temporary bridge: point 5 (moving Scenarios.cs and
+      decision-logic to PincabToolbox.Core) should retire this link-by-path setup in favour of a
+      normal reference once Scenarios.cs lives in Core. If either file ever starts using a WPF
+      type, this project will simply fail to build — a tripwire, not a bug, and the sign that this
+      bridge needs to be reconsidered.
+
+      MainWindow.xaml.cs's Build* methods are NOT here for a different, harder reason than WPF
+      references: MainWindow is one half of a partial class whose other half (all the TxtRoot/
+      BtnScan/... field declarations) is generated from MainWindow.xaml at compile time. There is
+      no source file to link — testing it for real needs either the full WPF build (blocked here)
+      or extracting its decision logic into WPF-free helpers first. See TRANSMISSION.md 13/08.
+    -->
+    <Compile Include="..\..\src\PincabToolbox.App\Scenarios.cs" Link="LinkedFromApp\Scenarios.cs" />
+    <Compile Include="..\..\src\PincabToolbox.App\Localization\Loc.cs" Link="LinkedFromApp\Loc.cs" />
+  </ItemGroup>
+
+</Project>

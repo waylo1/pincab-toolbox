@@ -26,6 +26,31 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 (session éco) · Point 3/6 revue CTO+Produit — tests Scenarios.DetectAll (fait) ; Build* de MainWindow (bloqué, décision à prendre)
+- code:        aucun nouveau code de finding
+- bac:         FEATURE (tests, chantier planifié) — point livré à moitié, l'autre moitié posée en
+  question à Maxime plutôt que devinée
+- contexte:    point 3/6 de la revue CTO+Produit ; portée initiale = tests pour
+  `Scenarios.DetectAll` ET les `Build*` de `MainWindow.xaml.cs`
+- analyse:     `Scenarios.DetectAll` ne dépend que de `Loc.Lang` (champ statique, zéro WPF) → 18
+  tests réels écrits et exécutés dans un nouveau projet `tests/PincabToolbox.App.Tests/` qui lie
+  `Scenarios.cs`/`Loc.cs` par fichier plutôt que de référencer `PincabToolbox.App.csproj` (lequel
+  exige le SDK Windows Desktop, absent ici). Les `Build*` de `MainWindow.xaml.cs`, en revanche, sont
+  structurellement intestables dans ce sandbox aujourd'hui, pour deux raisons cumulées : le SDK
+  Windows Desktop est nécessaire même pour compiler les types `Brush` qu'utilisent 4 des méthodes
+  (`BuildCauseCard`, `BuildChainRows`, `BuildComponentRows`, `BuildTableRows`) et `nuget.org` est
+  bloqué par le proxy du sandbox (vérifié : 403) donc impossible d'aller chercher même le paquet de
+  référence WPF ; ET, plus fondamental, `MainWindow` est une moitié de `partial class` — l'autre
+  moitié (champs `TxtRoot`/`BtnScan`/…) vient du XAML compilé, donc même les `Build*` sans aucun
+  `Brush` (`BuildTextReport`, `BuildPdfLines`, etc.) ne peuvent pas être isolés par lien de fichier
+  comme `Scenarios.cs` l'a été — il n'y a pas de fichier à lier séparément de la classe entière.
+- disposition: livré (bundle) pour la moitié faite · Core 439/439, Repair 145/145, App.Tests 18/18
+  (nouveau, réel). `.sln` et `build.cmd` mis à jour ([4/6] nouvelle étape, renumérotation complète
+  au passage — le script avait déjà [1/4]→[5/5] avant ce point). Décision demandée à Maxime pour la
+  moitié `Build*` : extraire la logique de décision maintenant (mini-tranche anticipée du point 5),
+  reporter au point 5 en entier, ou se contenter d'une vérification `csc`/relecture manuelle sans
+  vrais tests.
+
 ## 2026-08-13 (session éco) · Point 2/6 revue CTO+Produit — export PDF (générateur maison, zéro dépendance) + fold-in wording GROUPED
 - code:        aucun nouveau code de finding ; message `GROUPED` (rollup) reformulé
 - bac:         FEATURE (export PDF, chantier planifié) + WORDING (fold-in accepté par Maxime le
