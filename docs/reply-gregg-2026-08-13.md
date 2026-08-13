@@ -58,3 +58,23 @@ actually look or sound different in-game (missing sound, dead DMD/score display)
 completely identically to when the ROM is present? That tells me whether "will not start" should
 become something softer like "some sound/display may not work" instead of just going quiet for these
 cases — I'd rather get this right than fast.
+
+---
+
+## Suite (13/08, plus tard) — Gregg répond, redirige vers JPSalas
+
+Contexte : Gregg confirme n'avoir aucun fichier ROM (.zip) pour ces deux tables, mais ne peut pas
+expliquer pourquoi le script les mentionne quand même, il ne fait pas de scripting VPX lui-même, et
+suggère de contacter JPSalas (auteur de nombreuses tables originales) pour la réponse technique.
+
+Toujours pas de script réel entre les mains, toujours pas assez pour toucher au code (voir l'analyse
+du 12/08 ci-dessus, elle tient telle quelle). On ferme le fil poliment plutôt que d'insister, il a dit
+clairement ne pas pouvoir aider davantage.
+
+### Texte prêt à poster (anglais)
+
+Thanks Gregg, that actually confirms what I needed, no ROM file at all and the table still runs
+fine. I don't want to guess at what that script call is doing without seeing it, so I won't ask you
+to dig further since you've said scripting isn't your thing, thanks for trying. Reaching out to
+JPSalas is a good idea, I might do that myself down the line. For now I'm leaving the wording as it
+is until I actually understand the mechanism, I'd rather stay accurate than guess again.

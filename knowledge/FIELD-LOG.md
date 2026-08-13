@@ -190,6 +190,27 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
   fait ici, hors périmètre de ce point, gros changement pour du code qui marche déjà sans
   signalement de bug.
 
+## 2026-08-13 (suite) · Gregg répond à la question de clarification ROM · pas assez pour coder, redirige vers JPSalas
+- code:        ROM_MISSING (mêmes 2 cas que l'entrée juste en dessous)
+- bac:         FP (toujours pas codé — toujours pas assez d'info pour changer la détection en confiance)
+- contexte:    réponse de Gregg à la question posée dans `docs/reply-gregg-2026-08-13.md` (« quand tu
+  retires le zip, quelque chose change à l'écran ou au son, ou la table tourne identique ? »)
+- verbatim:    « That's it .. I do not have any roms (.zip) as mentioned for those tables in my
+  vpinmame/roms folder .. so that being mentioned in the tablescript is for ..? As I don't do intens
+  vpx scripting I can not answer you I'm affraid. You might get your answer by contacting JPSalas ..
+  who did a lot of original tables. »
+- analyse:     confirme explicitement l'absence totale du fichier ROM (déjà implicite avant, main-
+  tenant sans ambiguïté) et que la table tourne quand même — mais ne répond pas à la question posée
+  (rien vu/entendu de différent) et ne peut pas expliquer pourquoi le script appelle quand même
+  VPinMAME.Controller, il n'écrit pas de script lui-même. Toujours aucun accès au script réel des deux
+  tables. La règle du 12/08 tient : pas de détection `On Error Resume Next`/try-guard codée sur une
+  hypothèse non vérifiée, le risque est de rouvrir un vrai faux négatif sur les tables qui plantent
+  réellement sans ROM.
+- disposition: réponse de clôture de fil rédigée (le remercier, ne pas le relancer puisqu'il a dit ne
+  pas pouvoir aider davantage, mention que JPSalas est une piste si Maxime veut la suivre plus tard) —
+  à valider par Maxime avant envoi. Wording ROM laissé tel quel, aucun code touché. Fil en pause tant
+  qu'on n'a pas le script réel ou un retour de quelqu'un qui sait le lire.
+
 ## 2026-08-13 · Gregg (forum, suite du 12/08) · possible FP ROM sur EM/homebrew + notre propre réponse du 12/08 était fausse sur le contenu des exports
 - code:        ROM_MISSING (2 cas signalés) + export HTML/MD/BBCode (rollup non mentionné dans notre
   réponse du 12/08)
