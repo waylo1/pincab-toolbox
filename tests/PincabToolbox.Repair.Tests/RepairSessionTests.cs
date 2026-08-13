@@ -332,4 +332,104 @@ public static class RepairSessionTests
         A.False(desc[0].BackupPlanned, "nothing planned -> no backup claim");
         A.False(desc[0].Reversible, "nothing planned -> no reversibility claim");
     }
+
+    // ───────────────────────── Summarize (13/08 — Réparé / Annulé lists, replaces raw plan IDs) ─────────────────────────
+
+    public static void Test_Summarize_UnknownPlanId_IsNothingAppliedWithNoData()
+    {
+        var root = NewTempRoot();
+        try
+        {
+            var session = new RepairSession(KnowledgePack.Empty, new[] { root }, appDataRoot: root);
+            var s = session.Summarize("plan-never-seen");
+            A.Equal(PlanOutcome.NothingApplied, s.Outcome, "a plan the journal never heard of has nothing applied");
+            A.Equal(0, s.ItemsCompleted, "zero completed");
+            A.Equal(0, s.ItemsUndone, "zero undone");
+            A.Equal(0, s.Targets.Count, "zero targets");
+            A.False(s.ForcedDryRun, "not a forced dry-run either");
+        }
+        finally { TryDelete(root); }
+    }
+
+    /// <summary>Real Apply, real action (restore_rom_archive — plain file I/O, no NTFS-specific feature to skip on Linux).</summary>
+    private static (RepairSession session, RepairPlan plan, string zipTarget) SetUpRealRestoreRomPlan(string root, string planId)
+    {
+        Directory.CreateDirectory(root);
+        var folder = Path.Combine(root, "roms", "somegame");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "a.bin"), "rom bytes");
+        var zipTarget = folder + ".zip";
+
+        var change = new PlannedChange
+        {
+            ActionId = "restore_rom_archive", Kind = ChangeKind.FileMove, Target = zipTarget,
+            Before = "extracted folder (1 file)", After = "archive restored, folder kept aside", Reversible = true,
+        };
+        var plan = new RepairPlan
+        {
+            PlanId = planId, CreatedAtUtc = DateTimeOffset.UtcNow, ScanReportId = "scan-1",
+            Items = new[] { Item("i1", RepairMode.Automatic, new[] { change }) },
+        };
+        var session = new RepairSession(KnowledgePack.Empty, new[] { root }, appDataRoot: root, forceDryRun: false);
+        return (session, plan, zipTarget);
+    }
+
+    public static void Test_Summarize_AfterRealApply_OutcomeIsApplied_TargetsListed()
+    {
+        var root = NewTempRoot();
+        try
+        {
+            var (session, plan, zipTarget) = SetUpRealRestoreRomPlan(root, "plan-summarize-applied");
+            var result = session.Apply(plan, new HashSet<string> { "i1" });
+            A.True(result.ItemOutcomes.TryGetValue("i1", out var ok) && ok, "sanity: the real action must actually succeed");
+
+            var s = session.Summarize(plan.PlanId);
+            A.Equal(PlanOutcome.Applied, s.Outcome, "applied, never undone -> Applied");
+            A.Equal(1, s.ItemsCompleted, "one item completed");
+            A.Equal(0, s.ItemsUndone, "nothing undone yet");
+            A.True(s.Targets.Contains(Path.GetFileName(zipTarget)), "the archived file name must be listed");
+            A.False(s.ForcedDryRun, "a real Apply, not a simulation");
+        }
+        finally { TryDelete(root); }
+    }
+
+    public static void Test_Summarize_AfterUndo_OutcomeIsFullyUndone()
+    {
+        var root = NewTempRoot();
+        try
+        {
+            var (session, plan, _) = SetUpRealRestoreRomPlan(root, "plan-summarize-undone");
+            session.Apply(plan, new HashSet<string> { "i1" });
+
+            var undo = session.Undo(plan.PlanId);
+            A.True(undo.Success, $"sanity: undo must succeed — {undo.Error}");
+
+            var s = session.Summarize(plan.PlanId);
+            A.Equal(PlanOutcome.FullyUndone, s.Outcome, "every applied item was undone -> FullyUndone");
+            A.Equal(1, s.ItemsCompleted, "still counts as having been completed once");
+            A.Equal(1, s.ItemsUndone, "and as undone");
+        }
+        finally { TryDelete(root); }
+    }
+
+    public static void Test_Summarize_ForcedDryRun_NeverReadsAsARealApply()
+    {
+        var root = NewTempRoot();
+        try
+        {
+            var session = new RepairSession(KnowledgePack.Empty, new[] { root }, appDataRoot: root, forceDryRun: true);
+            var plan = new RepairPlan
+            {
+                PlanId = "plan-summarize-dryrun", CreatedAtUtc = DateTimeOffset.UtcNow, ScanReportId = "scan-1",
+                Items = new[] { Item("i1", RepairMode.Automatic, new[] { Change("/x/a", true) }) },
+            };
+            var result = session.Apply(plan, new HashSet<string> { "i1" });
+            A.True(result.ForcedDryRun, "sanity: this Apply call must be the forced dry-run path");
+
+            var s = session.Summarize(plan.PlanId);
+            A.Equal(PlanOutcome.ForcedDryRun, s.Outcome,
+                "must read as a simulation, never as Applied — even though ItemOutcomes reported the item as ok");
+        }
+        finally { TryDelete(root); }
+    }
 }

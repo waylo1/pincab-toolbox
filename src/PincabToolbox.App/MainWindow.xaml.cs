@@ -153,6 +153,22 @@ public sealed class RepairItemRow
     public bool CanApply { get; init; }
 }
 
+/// <summary>
+/// 13/08 — one row of the "Réparé" or "Annulé" list, replacing a single raw-plan-ID ListBox. Built
+/// from <see cref="PlanSummary"/>, never re-derives facts the engine already computed.
+/// </summary>
+public sealed class RepairPlanSummaryRow
+{
+    public required string PlanId { get; init; }
+    public required string Description { get; init; }
+
+    /// <summary>Button text — empty for an "Annulé" row, which carries no button at all (see the DataTemplate).</summary>
+    public required string UndoLabel { get; init; }
+
+    /// <summary>True only for a "Réparé" row (Applied/PartiallyUndone) — an "Annulé" row has nothing left to undo.</summary>
+    public bool CanUndo { get; init; }
+}
+
 public partial class MainWindow : Window
 {
     private ScanReport? _report;
@@ -451,8 +467,11 @@ public partial class MainWindow : Window
         BtnRepairVerifyLicense.Content = Loc.Get("repair.license.verify");
         BtnRepairBuildPlan.Content = Loc.Get("repair.plan.build");
         BtnRepairApply.Content = Loc.Get("repair.apply.button");
-        LblRepairUndo.Text = Loc.Get("repair.undo.label");
-        BtnRepairUndo.Content = Loc.Get("repair.undo.button");
+        LblRepairDone.Text = Loc.Get("repair.done.label");
+        RepairDoneEmpty.Text = Loc.Get("repair.done.empty");
+        LblRepairUndone.Text = Loc.Get("repair.undone.label");
+        RepairUndoneEmpty.Text = Loc.Get("repair.undone.empty");
+        if (_repairSession is not null) RefreshRepairUndoList();   // re-render row text (button label included) in the new language
         if (string.IsNullOrEmpty(RepairPlanStatus.Text)) RepairPlanStatus.Text = Loc.Get("repair.needscan");
         OnbTitle.Text = Loc.Get("onb.title");
         OnbLead.Text = Loc.Get("onb.lead");
@@ -1695,12 +1714,61 @@ public partial class MainWindow : Window
         return $"{head}\n{reversible} · {backup}";
     }
 
+    /// <summary>
+    /// 13/08 — replaces a single "Historique d'annulation" list of raw plan IDs with two clear,
+    /// described lists. Maxime, testing on his real cab: "les intitulés sont pas parlants, on voit
+    /// pas le detail du plan donc on pourrait très bien annuler un plan qui a fonctionné [...] tu
+    /// fais une colonne plan fait avec les corectifs faits, et plan annulé de l'autre, pour
+    /// l'utilisateur c'est plus simple." "Plan à faire" is not a third list here — that is the
+    /// live checklist <see cref="RefreshRepairItemsList"/> already renders above; nothing new to
+    /// build for it. Plans where nothing was ever really applied (blocked at preflight, or only a
+    /// <c>PINCAB_REPAIR_FORCE_DRYRUN</c> test run) are left out of both — neither "repaired" nor
+    /// "undone" honestly describes them, and showing them would just be noise.
+    /// </summary>
     private void RefreshRepairUndoList()
     {
         _repairSession ??= NewRepairSessionForBrowsing();
-        ListRepairUndo.ItemsSource = null;
-        ListRepairUndo.ItemsSource = _repairSession.KnownPlanIds();
+        var summaries = _repairSession.AllPlanSummaries();
+
+        var done = summaries.Where(s => s.Outcome is PlanOutcome.Applied or PlanOutcome.PartiallyUndone)
+            .Select(s => new RepairPlanSummaryRow
+            {
+                PlanId = s.PlanId,
+                Description = BuildPlanSummaryText(s),
+                UndoLabel = Loc.Get("repair.undo.button"),
+                CanUndo = true,
+            }).ToList();
+        var undone = summaries.Where(s => s.Outcome == PlanOutcome.FullyUndone)
+            .Select(s => new RepairPlanSummaryRow
+            {
+                PlanId = s.PlanId,
+                Description = BuildPlanSummaryText(s),
+                UndoLabel = "",
+                CanUndo = false,
+            }).ToList();
+
+        ListRepairDone.ItemsSource = null;
+        ListRepairDone.ItemsSource = done;
+        RepairDoneEmpty.Visibility = done.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        ListRepairUndone.ItemsSource = null;
+        ListRepairUndone.ItemsSource = undone;
+        RepairUndoneEmpty.Visibility = undone.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
         RepairUndoStatus.Text = _repairSession.LastJournalWriteFailed ? Loc.Get("repair.undo.journalwarning") : "";
+    }
+
+    private static string BuildPlanSummaryText(PlanSummary s)
+    {
+        var when = s.CreatedAtUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? "?";
+        var targets = s.Targets.Count > 0 ? " — " + string.Join(", ", s.Targets) : "";
+        var head = string.Format(Loc.Get("repair.done.count"), when, s.ItemsCompleted) + targets;
+
+        if (s.Outcome == PlanOutcome.PartiallyUndone)
+            return head + "\n" + string.Format(Loc.Get("repair.done.partiallyundone"), s.ItemsUndone);
+        if (s.Outcome == PlanOutcome.FullyUndone)
+            return head + "\n" + Loc.Get("repair.done.fullyundone");
+        return head;
     }
 
     /// <summary>
@@ -1776,16 +1844,16 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>H.2 rule 5 — works even for a plan from a previous app session, because the journal is on disk.</summary>
-    private void BtnRepairUndo_Click(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// H.2 rule 5 — works even for a plan from a previous app session, because the journal is on
+    /// disk. One button per row now (13/08) instead of a shared button + separate list selection —
+    /// the plan being undone is read straight off the button that was clicked (<c>Tag</c>), so
+    /// there is no separate "select a plan first" step left to forget or misuse.
+    /// </summary>
+    private void BtnRepairUndoRow_Click(object sender, RoutedEventArgs e)
     {
+        if (sender is not FrameworkElement { Tag: string planId }) return;
         _repairSession ??= NewRepairSessionForBrowsing();
-
-        if (ListRepairUndo.SelectedItem is not string planId)
-        {
-            RepairUndoStatus.Text = Loc.Get("repair.undo.noneselected");
-            return;
-        }
 
         var result = _repairSession.Undo(planId);
         RepairUndoStatus.Text = result.Success

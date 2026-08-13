@@ -26,6 +26,30 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 (session éco, encore) · Point 6/6 — la section Undo devient Réparé / Annulé, avec le détail de chaque plan
+- code:        aucun nouveau code de finding
+- bac:         FIX (Repair, UI)
+- contexte:    Maxime, sur son vrai cab : « ya un bouton pour annuler un plan historique et il annule
+  rien tout simplement [...] les intitulés sont pas parlants, on voit pas le detail du plan donc on
+  pourrait très bien annuler un plan qui a fonctionné [...] tu fais une colonne plan fait avec les
+  corectifs faits, et plan annulé de l'autre, pour l'utilisateur c'est plus simple »
+- analyse:     l'ancien "Historique d'annulation" était une seule ListBox de PlanId bruts
+  (`plan-20260813-184700-1234`) + un bouton partagé "Annuler le plan sélectionné" qui exigeait de
+  sélectionner une ligne d'abord — deux causes réelles à "ça n'annule rien" : (1) VPX/le frontend
+  tournait, `RepairEngine.Undo` refuse dans ce cas (même règle que Preflight), message facile à rater ;
+  (2) certains plans de l'historique venaient du tout premier test en
+  `PINCAB_REPAIR_FORCE_DRYRUN=1` et n'avaient donc jamais rien appliqué pour de vrai — Undo répondait
+  "ok" (rien à annuler, correct) sans dire pourquoi. Nouvelle méthode `RepairSession.Summarize(planId)`
+  dérive tout du journal seul (jamais un état séparé à tenir synchronisé) : combien d'items complétés,
+  combien annulés, quels fichiers touchés, et un `PlanOutcome` (Applied / PartiallyUndone /
+  FullyUndone / NothingApplied / ForcedDryRun). Côté App : deux listes distinctes, "Réparé" (bouton
+  Annuler individuel par ligne, plus de sélection séparée à oublier) et "Annulé" (lecture seule,
+  rien à annuler). Les plans `ForcedDryRun`/`NothingApplied` sont exclus des deux, ni "réparé" ni
+  "annulé" ne les décrirait honnêtement.
+- disposition: corrigé et livré. 4 nouveaux tests `RepairSessionTests` (plan inconnu, apply réel,
+  apply puis undo réel via `restore_rom_archive`, forced-dry-run jamais confondu avec un vrai apply).
+  Core.Tests 498/498, Repair.Tests 151/151.
+
 ## 2026-08-13 (session éco, fin de journée) · Point 6/6 — le score ne s'effondre plus à 0 pour un même code Critical répété
 - code:        aucun nouveau code de finding
 - bac:         FIX (ScanScoring)

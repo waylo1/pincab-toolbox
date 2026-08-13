@@ -1,5 +1,47 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 🔁 MAJ 13/08 (duodecies) — point 6/6 : la section Undo devient Réparé / Annulé
+
+> Dernier point du batch du jour, demandé explicitement par Maxime après le fix du score : la
+> refonte de la section Undo qu'il avait décrite plus tôt dans la session — remplacer une seule liste
+> de PlanId bruts par des colonnes claires. "À faire" n'est pas une troisième liste nouvelle : c'est
+> déjà le checklist Repair au-dessus, rien à construire pour ça.
+>
+> **Root cause du "le bouton n'annule rien" — deux causes réelles, aucune n'était un vrai bug de
+> logique :**
+> 1. `RepairEngine.Undo` refuse tant qu'un logiciel du cab tourne (même règle que Preflight,
+>    `Test_Undo_IsRefusedWhileVpxIsRunning` le couvrait déjà) — sur un pincab c'est souvent le cas,
+>    et l'ancien message texte sous le bouton était facile à rater.
+> 2. Des plans de l'historique de Maxime venaient du tout premier test en
+>    `PINCAB_REPAIR_FORCE_DRYRUN=1` (kickoff du point 6) : rien n'avait jamais été écrit pour de vrai,
+>    donc Undo répondait "ok" (rien à annuler, ce qui est correct) sans jamais dire pourquoi — lu
+>    comme "le bouton ne fait rien".
+>
+> **Ce qui change.** Nouvelle méthode `RepairSession.Summarize(string planId)` : dérive tout du
+> journal seul (jamais un état séparé à tenir synchronisé avec Undo lui-même) — nombre d'items
+> complétés, nombre annulés, fichiers touchés, et un `PlanOutcome` à 5 valeurs (Applied,
+> PartiallyUndone, FullyUndone, NothingApplied, ForcedDryRun). Côté App, la section Undo devient deux
+> listes distinctes avec le détail de chaque plan écrit en toutes lettres (date, nombre de correctifs,
+> fichiers concernés) : "Réparé" (Applied/PartiallyUndone), un bouton "Annuler" individuel par ligne —
+> plus de sélection séparée dans une ListBox à oublier avant de cliquer — et "Annulé" (FullyUndone),
+> lecture seule puisqu'il n'y a plus rien à annuler. Les plans `ForcedDryRun`/`NothingApplied` sont
+> exclus des deux listes : ni "réparé" ni "annulé" ne les décrirait honnêtement, les montrer serait du
+> bruit.
+>
+> Diff : nouveau `PlanSummary`/`PlanOutcome` + `RepairSession.Summarize`/`AllPlanSummaries` dans
+> `RepairSession.cs`, `RefreshRepairUndoList` réécrit et `BtnRepairUndo_Click` remplacé par
+> `BtnRepairUndoRow_Click` (lit le PlanId sur le `Tag` du bouton cliqué) dans `MainWindow.xaml.cs`,
+> nouvelle classe `RepairPlanSummaryRow`, XAML (deux `ItemsControl` avec bouton par ligne au lieu
+> d'une `ListBox` + bouton partagé), clés de localisation FR/EN. 4 nouveaux tests
+> `RepairSessionTests` (plan inconnu, apply réel via `restore_rom_archive`, apply puis undo réel,
+> forced-dry-run jamais confondu avec un vrai apply). Core.Tests 498/498, Repair.Tests 151/151.
+>
+> Ce point clôt le batch de retours terrain du point 6/6 pour aujourd'hui : `$Recycle.Bin` exclu,
+> onglet Tables étendu, items manuels visibles dans Repair (ADR-006), score qui ne s'effondre plus
+> pour un même Critical répété, et maintenant Undo lisible. Prochaine étape côté Maxime : tout
+> retester sur le vrai cab (select-all et "supprimer le plan" restent hors scope, pas redemandés
+> depuis, "supprimer le plan" toujours pas clarifié).
+
 ## 📊 MAJ 13/08 (undecies) — point 6/6 : le score ne s'effondre plus à 0 pour un même Critical répété
 
 > Suite du point précédent (qui laissait la question du score ouverte, sans trancher). Décision prise

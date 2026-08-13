@@ -193,8 +193,94 @@ public sealed class RepairSession
     /// <summary>Every plan this session's journal has a record of, most recent first — the accessible Undo surface (H.2 rule 5) needs this to list what CAN be undone.</summary>
     public IReadOnlyList<string> KnownPlanIds() => _journal.KnownPlanIds();
 
+    /// <summary>
+    /// 13/08 — replaces a raw list of plan IDs as the Undo surface. Maxime, testing on his real cab:
+    /// "les intitulés sont pas parlants, on voit pas le detail du plan donc on pourrait très bien
+    /// annuler un plan qui a fonctionné" — a plan ID like "plan-20260813-184700-1234" says nothing
+    /// about what it did, whether it already ran, or whether Undo would even change anything. This
+    /// derives that from the journal alone (no extra state to keep in sync), the same source Undo
+    /// itself reads, so the summary can never claim something different from what Undo would do.
+    /// </summary>
+    public PlanSummary Summarize(string planId)
+    {
+        var entries = _journal.Read(planId);
+
+        var createdAt = entries.FirstOrDefault(e => e.Event == JournalEvent.PlanCreated)?.AtUtc
+                        ?? entries.Select(e => (DateTimeOffset?)e.AtUtc).FirstOrDefault();
+
+        var forcedDryRun = entries.Any(e => e.Event == JournalEvent.ForcedDryRunApplied);
+
+        var completedItemIds = entries
+            .Where(e => e.Event == JournalEvent.ItemCompleted && e.ItemId is not null)
+            .Select(e => e.ItemId!).Distinct(StringComparer.Ordinal).ToHashSet(StringComparer.Ordinal);
+
+        // ItemUndone is written even for a no-op ("nothing to undo" — e.g. a forced-dry-run plan
+        // that never really applied anything), so it alone cannot mean "this item was reverted".
+        // A real revert always writes at least one ChangeReverted first.
+        var revertedItemIds = entries
+            .Where(e => e.Event == JournalEvent.ChangeReverted && e.ItemId is not null)
+            .Select(e => e.ItemId!).Distinct(StringComparer.Ordinal).ToHashSet(StringComparer.Ordinal);
+
+        var targets = entries
+            .Where(e => e.Event == JournalEvent.ChangeApplied && e.Change is not null)
+            .Select(e => LastSegment(e.Change!.Target))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var stillApplied = completedItemIds.Except(revertedItemIds).Count();
+
+        var outcome = forcedDryRun ? PlanOutcome.ForcedDryRun
+            : completedItemIds.Count == 0 ? PlanOutcome.NothingApplied
+            : revertedItemIds.Count == 0 ? PlanOutcome.Applied
+            : stillApplied == 0 ? PlanOutcome.FullyUndone
+            : PlanOutcome.PartiallyUndone;
+
+        return new PlanSummary(planId, createdAt, completedItemIds.Count, revertedItemIds.Count, targets, forcedDryRun, outcome);
+    }
+
+    /// <summary>Every known plan, summarized, most recent first — what the App's Réparé/Annulé lists render from.</summary>
+    public IReadOnlyList<PlanSummary> AllPlanSummaries() => KnownPlanIds().Select(Summarize).ToList();
+
+    /// <summary>Same convention as <c>RepairEngine.ProcessNameFromPath</c> — splits by hand so it also works off Windows.</summary>
+    private static string LastSegment(string path)
+    {
+        var i = path.LastIndexOfAny(new[] { '/', '\\' });
+        return i < 0 ? path : path[(i + 1)..];
+    }
+
     /// <summary>True if the journal's most recent write to disk failed — surfaced so the UI can warn rather than silently pretend Undo is guaranteed.</summary>
     public bool LastJournalWriteFailed => _journal.LastWriteFailed;
+}
+
+/// <summary>
+/// What a plan did, in facts derived purely from the journal — see <see cref="RepairSession.Summarize"/>.
+/// </summary>
+public sealed record PlanSummary(
+    string PlanId,
+    DateTimeOffset? CreatedAtUtc,
+    int ItemsCompleted,
+    int ItemsUndone,
+    IReadOnlyList<string> Targets,
+    bool ForcedDryRun,
+    PlanOutcome Outcome);
+
+/// <summary>
+/// Which of the three lists (Réparé / À faire / Annulé, per Maxime's 13/08 request) a plan belongs
+/// in. "À faire" itself is not here — that is the live, not-yet-applied checklist the App already
+/// renders from <see cref="RepairSession.Describe"/>, never something the journal would know about.
+/// </summary>
+public enum PlanOutcome
+{
+    /// <summary>Nothing was ever completed for this plan (blocked at preflight, or every item was manual/skipped).</summary>
+    NothingApplied,
+    /// <summary>At least one item applied, nothing undone since — belongs in "Réparé".</summary>
+    Applied,
+    /// <summary>Some applied items were undone, some are still standing — still "Réparé" for what remains, Undo still offered.</summary>
+    PartiallyUndone,
+    /// <summary>Every applied item has since been undone — belongs in "Annulé", nothing left to undo.</summary>
+    FullyUndone,
+    /// <summary>PINCAB_REPAIR_FORCE_DRYRUN was active — nothing was ever really written, shown separately so it can never be mistaken for a real repair.</summary>
+    ForcedDryRun,
 }
 
 /// <summary>
