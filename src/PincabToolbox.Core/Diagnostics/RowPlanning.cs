@@ -2,13 +2,15 @@ using System.Collections.Generic;
 using System.Linq;
 using PincabToolbox.Core.Models;
 
-namespace PincabToolbox.App;
+namespace PincabToolbox.Core.Diagnostics;
 
 /// <summary>
 /// Decision logic pulled out of MainWindow.xaml.cs's Brush-touching Build* methods so it can be
-/// unit tested — mini-slice of point 5 done early inside point 3 (TRANSMISSION 13/08), because
-/// MainWindow itself can't be: it's one half of a partial class whose other half is XAML-generated,
-/// so nothing inside it is testable in a sandbox without the Windows Desktop SDK.
+/// unit tested — started as a mini-slice of point 5 done early inside point 3 (TRANSMISSION 13/08),
+/// moved here properly as part of point 5/6 itself (ADR-012: decision logic belongs in a testable
+/// assembly, not App). MainWindow itself can't host this: it's one half of a partial class whose
+/// other half is XAML-generated, so nothing inside it is testable in a sandbox without the Windows
+/// Desktop SDK.
 ///
 /// Every type here answers "what happened" (which finding won, what severity applies), never "how
 /// does it look" — no Brush, no Loc text, no glyph. MainWindow.BuildChainRows/BuildTableRows call
@@ -57,7 +59,7 @@ public static class ChainRowPlanner
 public enum RomColumnStatus { Unknown, Ok, Missing, NotRequired, Unzipped }
 
 /// <summary>Which of the (at most one) ROM_* findings for this table won, and the ROM name that
-/// goes into the format string — <see cref="MainWindow"/> owns the string/Brush, this owns the pick.</summary>
+/// goes into the format string — the caller (MainWindow) owns the string/Brush, this owns the pick.</summary>
 public sealed record RomColumnPlan
 {
     public required RomColumnStatus Status { get; init; }

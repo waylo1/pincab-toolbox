@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Input;
 using Microsoft.Win32;
 using PincabToolbox.App.Localization;
+using PincabToolbox.Core.Diagnostics;
 using PincabToolbox.Core.Models;
 using PincabToolbox.Core.Profiles;
 using PincabToolbox.Core.Reporting;
@@ -809,7 +810,7 @@ public partial class MainWindow : Window
         RefreshMetaRow();
 
         var present = new HashSet<string>(_report.Findings.Select(f => f.Code));
-        var scenarios = Scenarios.DetectAll(present);
+        var scenarios = Scenarios.DetectAll(present, Loc.Lang == "fr");
         // Sous-titre du bandeau : le nombre de causes de fond réellement détectées ; sinon la
         // phrase de score existante. Pas de « tout se règle en cascade » — on n'affirme que la
         // relation cause → symptômes, pas la disparition de résultats non liés (ADR-010).
@@ -1052,8 +1053,8 @@ public partial class MainWindow : Window
 
     /// <summary>« ✕→ » rouge sur la première rupture bon→cassé, « → » discret ailleurs — même
     /// convention que la maquette. The cut-point/arrow decision itself lives in
-    /// <see cref="ChainRowPlanner"/> (point 3, 13/08) — real, tested, WPF-free; this method only
-    /// maps the plan to Brushes.</summary>
+    /// <see cref="ChainRowPlanner"/> (PincabToolbox.Core.Diagnostics — point 3, moved to Core at
+    /// point 5, 13/08) — real, tested, WPF-free; this method only maps the plan to Brushes.</summary>
     private static List<CauseChainRow> BuildChainRows(IReadOnlyList<ChainStepMatch> steps) =>
         ChainRowPlanner.Plan(steps).Select(p => new CauseChainRow
         {

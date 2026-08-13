@@ -1,6 +1,7 @@
+using PincabToolbox.Core.Diagnostics;
 using PincabToolbox.Core.Models;
 
-namespace PincabToolbox.App.Tests;
+namespace PincabToolbox.Core.Tests;
 
 public static class ChainRowPlannerTests
 {

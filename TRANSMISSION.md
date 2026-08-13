@@ -1,5 +1,48 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 🧪 MAJ 13/08 (septies) — point 5/6 : `Scenarios.cs` + `RowPlanning.cs` déplacés dans `PincabToolbox.Core.Diagnostics`, `PincabToolbox.App.Tests` retiré
+
+> Point 4/6 clos, signal « GO » de Maxime reçu (avec une note : les autres pistes repérées en cours
+> de route — `COM_BITNESS_GAP` notamment — seront reprises après le point 6/6, pas oubliées).
+>
+> Point 5/6, tel que prévu depuis le départ : `Scenarios.cs` (créé point 3, enrichi point 4) et
+> `RowPlanning.cs` (`ChainRowPlanner`/`TableRowPlanner`, extraits point 3 en mini-tranche anticipée)
+> déménagent de `PincabToolbox.App` vers **`PincabToolbox.Core.Diagnostics`** (nouveau dossier,
+> même convention qu'`Models`/`Scanning`/`Reporting`). Conforme à l'ADR-012 : la logique de décision
+> vit dans un assembly testable, pas dans l'App.
+>
+> **Seul changement de comportement fait par ce déplacement** (et strictement nécessaire, pas un
+> effet de bord) : `Scenarios.DetectAll`/`Detect` lisaient `PincabToolbox.App.Localization.Loc.Lang`
+> directement. Core ne peut pas référencer App (la dépendance va dans l'autre sens), donc les deux
+> méthodes prennent maintenant un paramètre `bool fr` explicite. Le seul appelant
+> (`MainWindow.xaml.cs`, ligne ~812) passe maintenant `Loc.Lang == "fr"` — comportement utilisateur
+> strictement identique, juste la façon dont la langue voyage jusqu'à la fonction.
+>
+> **`ChainRowPlanner`/`TableRowPlanner` (RowPlanning.cs) n'ont demandé aucun changement de
+> comportement** — ils ne dépendaient déjà que de `PincabToolbox.Core.Models`, le déplacement est un
+> simple changement de namespace.
+>
+> **`PincabToolbox.App.Tests` retiré en entier** (projet, dossier, entrée `.sln`) — c'était
+> explicitement un pont temporaire (son propre commentaire de `.csproj` le disait : « point 5 devrait
+> retirer ce lien-par-fichier ») dont le seul travail était de tester ces deux fichiers sans le SDK
+> Windows Desktop. Une fois les deux dans Core, `PincabToolbox.Core.Tests` les couvre nativement —
+> plus besoin du pont. `ScenariosTests.cs`/`RowPlanningTests.cs` déménagent tels quels dans
+> `tests/PincabToolbox.Core.Tests/`. Bonus du passage à `fr: bool` explicite : le vieux helper
+> `WithLang`/`Loc.SetLang` (qui manipulait un état statique process-wide, documenté comme source de
+> fragilité potentielle par le fichier lui-même) disparaît — les tests FR/EN passent juste `fr: true`/
+> `fr: false` directement, plus robuste et plus court.
+>
+> `build.cmd` : étape `[4/6]` (App.Tests) supprimée, renumérotation `[1/5]`→`[5/5]`, commentaire ajouté
+> à l'étape Core pour expliquer où vit désormais cette couverture.
+>
+> Vérifications avant livraison : Core.Tests **488/488** (439 + 49, migration exacte du compte
+> App.Tests d'avant), Repair 145/145. Bonus inattendu et bienvenu : `PincabToolbox.Core` compile
+> maintenant pour de vrai dans ce sandbox (`dotnet build`, 0 warning/0 erreur) — contrairement à
+> l'App, Core n'a jamais eu de dépendance WPF, donc ce déplacement lui fait gagner une vérification
+> plus forte que le `csc -t:library` syntax-only utilisé jusqu'ici pour tout le reste. `csc
+> -t:library` sur l'App (6 fichiers .cs restants, 2 de moins qu'avant) : toujours uniquement
+> CS0234/CS0246/CS0518/CS0656, zéro CS1xxx.
+
 ## 🧪 MAJ 13/08 (sexies) — point 4/6 : 3 nouveaux scénarios dans `Scenarios.cs`, 11 tests
 
 > Point 3/6 est clos (signal « GO » de Maxime reçu). Point 4/6 : ajouter des scénarios à

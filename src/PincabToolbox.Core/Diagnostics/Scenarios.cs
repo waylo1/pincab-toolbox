@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PincabToolbox.App.Localization;
 
-namespace PincabToolbox.App;
+namespace PincabToolbox.Core.Diagnostics;
 
 /// <summary>Tone of one causal-chain box — drives the border/status colour in the card.</summary>
 public enum ChainTone { Good, Bad, Warn }
@@ -38,6 +37,15 @@ public sealed record ScenarioMatch
 /// the leap from "here is a list of symptoms" to "here is the underlying problem". Conservative
 /// by design: a scenario only surfaces when enough related codes co-occur, otherwise the UI
 /// falls back to the single most severe finding. Data-driven and easy to grow (add a Def).
+///
+/// <para>
+/// Point 5/6 (13/08) — moved here from PincabToolbox.App per ADR-012 ("decision logic belongs in a
+/// testable assembly, not App"). The only real change made in the move: <see cref="DetectAll"/> and
+/// <see cref="Detect"/> now take an explicit <c>fr</c> parameter instead of reading
+/// PincabToolbox.App.Localization.Loc.Lang directly — Core cannot reference App (App references
+/// Core, never the other way), so the language choice has to arrive as an argument. The one caller
+/// (MainWindow.xaml.cs) now passes <c>Loc.Lang == "fr"</c> explicitly; behaviour is unchanged.
+/// </para>
 /// </summary>
 public static class Scenarios
 {
@@ -214,9 +222,11 @@ public static class Scenarios
     /// racines (N)" list of the 11/08 mockup. The screen shows real detections only: no minimum,
     /// no padding, an empty list means the UI falls back to the single most severe finding.
     /// </summary>
-    public static IReadOnlyList<ScenarioMatch> DetectAll(ISet<string> present)
+    /// <param name="present">The set of finding codes present in this scan.</param>
+    /// <param name="fr">True to return French text, false for English — the caller's own language
+    /// choice (Core has no notion of "current UI language" of its own).</param>
+    public static IReadOnlyList<ScenarioMatch> DetectAll(ISet<string> present, bool fr)
     {
-        var fr = Loc.Lang == "fr";
         var matches = new List<ScenarioMatch>();
         foreach (var d in Defs)
         {
@@ -227,7 +237,7 @@ public static class Scenarios
                 Title = fr ? d.TitleFr : d.TitleEn,
                 Player = fr ? d.PlayerFr : d.PlayerEn,
                 Explanation = fr ? d.ExplFr : d.ExplEn,
-                Confidence = System.Math.Min(96, d.BaseConfidence + matched.Count * d.PerCode),
+                Confidence = Math.Min(96, d.BaseConfidence + matched.Count * d.PerCode),
                 TriggeredBy = matched,
                 Chain = d.Chain
                     .Where(s => matched.Contains(s.RequiresCode))
@@ -244,5 +254,5 @@ public static class Scenarios
     }
 
     /// <summary>The single best scenario — kept for callers that only want the headline diagnosis.</summary>
-    public static ScenarioMatch? Detect(ISet<string> present) => DetectAll(present).FirstOrDefault();
+    public static ScenarioMatch? Detect(ISet<string> present, bool fr) => DetectAll(present, fr).FirstOrDefault();
 }

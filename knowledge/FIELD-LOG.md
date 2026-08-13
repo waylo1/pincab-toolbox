@@ -26,6 +26,37 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 (session éco) · Point 5/6 revue CTO+Produit — Scenarios.cs + RowPlanning.cs déplacés vers PincabToolbox.Core.Diagnostics, PincabToolbox.App.Tests retiré
+- code:        aucun nouveau code de finding
+- bac:         FEATURE (chantier planifié, point 5/6, signal « GO » de Maxime reçu après clôture du
+  point 4/6)
+- contexte:    point 5/6 de la revue CTO+Produit ; portée = déplacer Scenarios.cs et la logique de
+  décision vers PincabToolbox.Core (ADR-012), avec tests
+- analyse:     déplacement propre de `Scenarios.cs` et `RowPlanning.cs`
+  (`ChainRowPlanner`/`TableRowPlanner`, extraits en mini-tranche anticipée au point 3) vers un
+  nouveau dossier `PincabToolbox.Core/Diagnostics/`, même convention que `Models`/`Scanning`. Seul
+  changement de comportement, strictement nécessaire : `Scenarios.DetectAll`/`Detect` lisaient
+  `PincabToolbox.App.Localization.Loc.Lang` directement, ce qui n'est plus possible depuis Core (App
+  référence Core, jamais l'inverse) — les deux méthodes prennent maintenant un `bool fr` explicite,
+  le seul appelant (`MainWindow.xaml.cs`) passe `Loc.Lang == "fr"`, comportement utilisateur
+  identique. `RowPlanning.cs` n'a demandé aucun changement, il ne dépendait déjà que de
+  `PincabToolbox.Core.Models`. `PincabToolbox.App.Tests` (le projet-pont temporaire créé au point 3
+  spécifiquement pour tester ces deux fichiers sans le SDK Windows Desktop) est retiré en entier —
+  projet, dossier, entrée `.sln` — conformément à ce que son propre commentaire de `.csproj`
+  annonçait déjà. Les deux fichiers de tests migrent tels quels dans
+  `tests/PincabToolbox.Core.Tests/`. Effet de bord positif du passage à `fr: bool` explicite : le
+  vieux helper `WithLang`/`Loc.SetLang` (état statique process-wide, source de fragilité documentée
+  par le fichier lui-même) disparaît des tests, remplacé par un simple `fr: true`/`fr: false` passé
+  directement à chaque appel.
+- disposition: livré (bundle) · Core.Tests 488/488 (439 + 49, migration exacte du compte App.Tests
+  d'avant ce point), Repair 145/145. `PincabToolbox.Core` compile maintenant pour de vrai dans ce
+  sandbox (`dotnet build`, 0 warning/0 erreur) — Core n'a jamais eu de dépendance WPF, donc ce
+  déplacement lui fait gagner une vérification plus forte que le `csc -t:library` syntax-only utilisé
+  pour le reste. `csc -t:library` sur l'App (6 fichiers .cs restants) : toujours uniquement
+  CS0234/CS0246/CS0518/CS0656, zéro CS1xxx. `build.cmd` renumérotation `[1/5]`→`[5/5]`. En attente du
+  signal de Maxime avant le point 6 (premier run Repair réel sur son cab,
+  PINCAB_REPAIR_FORCE_DRYRUN=1).
+
 ## 2026-08-13 (session éco) · Point 4/6 revue CTO+Produit — 3 nouveaux scénarios dans Scenarios.cs (BITNESS_MISMATCH_VPM32, COM_STALE_PATH, AltSound/AltColor désactivés)
 - code:        aucun nouveau code de finding (les 3 scénarios utilisent des codes existants,
   jusqu'ici non repris par aucun scénario)
