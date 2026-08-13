@@ -1053,6 +1053,53 @@ public static class ScoreTests
         Assert.Equal("F", Report(criticals: 5, warnings: 0).Grade);
         Assert.True(Report(criticals: 1, warnings: 0).Score < 100, "one critical must cost points");
     }
+
+    private static ScanReport ReportWithSameCode(string code, int count)
+    {
+        var report = new ScanReport { Layout = new InstallLayout { RootPath = "test" } };
+        for (var i = 0; i < count; i++)
+            report.Findings.Add(new Finding
+            {
+                Code = code, Severity = Severity.Critical, Category = "test",
+                Subject = $"Table {i}", EnglishText = "synthetic",
+            });
+        return report;
+    }
+
+    /// <summary>
+    /// FIELD-LOG 2026-08-13, real cab: 8 distinct tables each missing their own ROM (ROM_MISSING,
+    /// same code) used to cost 8×15=120 → clamped to 0/F, identical to a totally dead install, and
+    /// no different whether it was 8 tables or 80. Same code repeated must diminish, not multiply.
+    /// </summary>
+    public static void Test_Score_SameCriticalCode_Repeated_DoesNotCollapseTheScoreToZero()
+    {
+        var r = ReportWithSameCode("ROM_MISSING", 8);
+        Assert.True(r.Score > 0, $"8 real but same-cause criticals must not floor the score at 0, got {r.Score}");
+        Assert.True(r.Score < 100, "still real problems, must still cost something");
+    }
+
+    /// <summary>The old flat per-instance formula only ever grew — the new one must grow strictly slower for repeats.</summary>
+    public static void Test_Score_SameCriticalCode_Repeated_CostsLessThanTheOldFlatFormula()
+    {
+        var oldFormulaPenaltyFor8 = 8 * 15; // 120 — what every prior occurrence used to cost
+        var actualScore = ReportWithSameCode("ROM_MISSING", 8).Score;
+        Assert.True(actualScore > Math.Max(0, 100 - oldFormulaPenaltyFor8),
+            $"new score ({actualScore}) must beat what the old flat formula would have given (0)");
+    }
+
+    /// <summary>Distinct codes are NOT the same-code case — each genuinely different Critical still costs full price.</summary>
+    public static void Test_Score_DistinctCriticalCodes_EachStillCostsFullPrice()
+    {
+        var report = new ScanReport { Layout = new InstallLayout { RootPath = "test" } };
+        report.Findings.Add(new Finding { Code = "ROM_MISSING", Severity = Severity.Critical, Category = "rom", EnglishText = "x" });
+        report.Findings.Add(new Finding { Code = "BITNESS_MISMATCH_VPM", Severity = Severity.Critical, Category = "bitness", EnglishText = "x" });
+        // Two distinct codes, one occurrence each: no dedup logic applies, same as pre-fix (2×15=30).
+        Assert.Equal(70, report.Score);
+    }
+
+    /// <summary>A single occurrence of a code is unaffected by the grouping change — same cost as before.</summary>
+    public static void Test_Score_SingleOccurrence_SameAsBeforeTheFix()
+        => Assert.Equal(85, ReportWithSameCode("ROM_MISSING", 1).Score);
 }
 
 /// <summary>

@@ -26,6 +26,28 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 (session éco, fin de journée) · Point 6/6 — le score ne s'effondre plus à 0 pour un même code Critical répété
+- code:        aucun nouveau code de finding
+- bac:         FIX (ScanScoring)
+- contexte:    8 ROM_MISSING réels (8 tables différentes, même code) sur ~500 tables → score 0/100,
+  grade F, alors que <2% de l'install est concernée ; Maxime : « il faut désormais qu'un même critical
+  ne compte que 1, sinon la note s'effondre »
+- analyse:     `ScanScoring.ComputeScore` retirait 15 points PAR INSTANCE de Critical, sans regarder le
+  code. 8 occurrences du même code (8 tables cassées pour la même raison structurelle) coûtaient donc
+  8×15=120, déjà au-delà de l'échelle 0-100 à elles seules, plafonnant le score à 0 quel que soit le
+  reste de l'install, et de façon strictement identique que ce soit 8 ou 80 tables touchées — le score
+  ne pouvait plus bouger tant que la dernière occurrence n'était pas corrigée. Pas fait un dédoublonnage
+  strict (« ne compte qu'une fois, peu importe le nombre ») — ça rendrait 80 tables cassées identiques
+  à 1 seule, ce qui n'est pas honnête non plus. Fait plutôt : la PREMIÈRE occurrence d'un code Critical
+  distinct coûte toujours plein tarif (15 pts, un problème différent reste aussi grave qu'avant), les
+  répétitions du MÊME code diminuent ensuite de façon logarithmique — même philosophie que les
+  warnings plus bas dans le même fichier (`12*log(1+n)`, plafonné à 30). 8 ROM_MISSING coûtent
+  maintenant ~32 points au lieu de 120. Des codes Critical distincts (vrais problèmes différents)
+  continuent chacun de coûter plein tarif, inchangé.
+- disposition: corrigé et livré. 4 nouveaux tests dans `ScoreTests` (répétition même code, comparaison
+  explicite avec l'ancienne formule plate, codes distincts toujours plein tarif, occurrence unique
+  inchangée). Core.Tests 498/498, Repair.Tests 147/147.
+
 ## 2026-08-13 (session éco, encore plus tard) · Point 6/6 — items manuels/verrouillés enfin visibles dans Repair (ADR-006), largeur de l'onglet Tables corrigée
 - code:        aucun nouveau code de finding
 - bac:         FIX (Repair) + FIX (UI) + FN (score, non traité ici)

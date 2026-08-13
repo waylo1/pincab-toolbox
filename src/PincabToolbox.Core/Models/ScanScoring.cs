@@ -13,10 +13,39 @@ public static class ScanScoring
     /// <summary>Max total points warnings alone can subtract (keeps warning-only installs at grade B or better).</summary>
     private const int WarningPenaltyCap = 30;
 
+    /// <summary>What the FIRST occurrence of a distinct Critical code costs — unchanged since 2026-07.</summary>
+    private const int CriticalPenaltyPerCode = 15;
+
+    /// <summary>
+    /// FIELD-LOG 2026-08-13: on a real ~500-table install, 8 different tables each missing their
+    /// own ROM (same code, ROM_MISSING, 8 distinct real problems) used to cost 8×15=120 points —
+    /// past the 100-point scale on its own, so the score floors at 0/F regardless of anything else
+    /// on the install, and stays there exactly as flat whether 8 or 80 tables are affected. Two
+    /// real problems with that: an otherwise-healthy large library reads as totally broken from one
+    /// narrow, common issue, and the score cannot move as that issue gets fixed one table at a time
+    /// (it stays pinned at the 0 floor until the LAST occurrence is gone) — which is the opposite of
+    /// what a score is for. Same fix philosophy already applied to warnings below: the FIRST
+    /// occurrence of a given critical CODE still costs full price (a genuinely different kind of
+    /// problem is exactly as bad as it was), repeats of that SAME code diminish logarithmically
+    /// instead of linearly. Deliberately not a flat "count once regardless of volume" — that would
+    /// make 80 broken tables read identically to 1, which is not honest either; this keeps "more of
+    /// the same problem is worse" true while stopping it from swallowing the whole scale.
+    /// </summary>
     public static int ComputeScore(IEnumerable<Finding> findings)
     {
         var list = findings as IReadOnlyCollection<Finding> ?? findings.ToList();
-        var criticalPenalty = list.Count(f => f.Severity == Severity.Critical) * 15;
+
+        var criticalPenalty = list
+            .Where(f => f.Severity == Severity.Critical)
+            .GroupBy(f => f.Code)
+            .Sum(g =>
+            {
+                var n = g.Count();
+                return n <= 1
+                    ? CriticalPenaltyPerCode
+                    : CriticalPenaltyPerCode + (int)Math.Round(8 * Math.Log(n));
+            });
+
         var warnings = list.Count(f => f.Severity == Severity.Warning);
         var warningPenalty = warnings == 0
             ? 0

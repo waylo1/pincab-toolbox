@@ -1,5 +1,31 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 📊 MAJ 13/08 (undecies) — point 6/6 : le score ne s'effondre plus à 0 pour un même Critical répété
+
+> Suite du point précédent (qui laissait la question du score ouverte, sans trancher). Décision prise
+> sans attendre un nouvel aller-retour : Maxime a demandé explicitement « qu'un même critical ne compte
+> que 1 », et son cas réel (8 ROM_MISSING, score 0/100, grade F, alors que <2% de sa collection de
+> ~500 tables est concernée) est sans ambiguïté un vrai problème de formule, pas un cas limite.
+>
+> Implémenté une version qui répond à sa demande sans faire un dédoublonnage strict à 1, qu'un
+> dédoublonnage strict aurait rendu malhonnête (80 tables cassées identiques à 1 seule cassée) :
+> `ScanScoring.ComputeScore` groupe maintenant les Critical par code. La PREMIÈRE occurrence d'un code
+> distinct coûte toujours 15 points plein tarif — un problème réellement différent reste aussi grave
+> qu'avant. Les répétitions du MÊME code diminuent ensuite en `log`, même philosophie que le calcul des
+> warnings juste en dessous dans le même fichier. Concrètement : 8 ROM_MISSING (même code, 8 tables
+> différentes) coûtent maintenant ~32 points au lieu de 120 ; 3 codes Critical vraiment distincts
+> coûtent toujours 45 points, inchangé.
+>
+> 4 nouveaux tests dans `ScoreTests` : répétition du même code ne floor plus à 0, comparaison explicite
+> avec ce que l'ancienne formule plate aurait donné, codes distincts toujours plein tarif chacun (non
+> affecté par le changement), occurrence unique identique à avant. Diff scopé à `ScanScoring.cs` +
+> ses tests. Core.Tests 498/498, Repair.Tests 147/147.
+>
+> Si Maxime constate en usage réel que ça ne va pas encore assez loin (le score reste trop dur à son
+> goût sur un cas comme le sien), la prochaine option à essayer serait un dédoublonnage plus agressif
+> — pas fait par défaut ici, décision produit qui change ce que "le score" veut dire pour tout le
+> monde, laissée à trancher avec lui si le besoin se confirme après usage.
+
 ## 🔧 MAJ 13/08 (decies) — point 6/6 : items manuels/verrouillés enfin visibles dans Repair (ADR-006), onglet Tables étendu, question ouverte sur le score
 
 > Suite immédiate du point précédent. Maxime a testé sur son vrai cab et signalé trois choses d'un
