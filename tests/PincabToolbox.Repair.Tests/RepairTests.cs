@@ -167,6 +167,22 @@ public static class RepairTests
         var manualStep = item.Missing.Single();
         A.Equal("cannot be supplied", manualStep.MessageEn, "English reason still there");
         A.Equal("non fournissable", manualStep.MessageFr, "and the FR reason must survive too, not be dropped");
+        A.Equal("no se puede suministrar", manualStep.MessageEs, "14/08: same for the ES reason, added alongside Spanish support");
+    }
+
+    /// <summary>14/08/2026: Blockers gained MessageEs alongside Spanish support — locks in that
+    /// Preflight's own hand-authored blockers (never pack-driven) actually populate it.</summary>
+    public static void Test_Preflight_Blocker_CarriesSpanishText()
+    {
+        var (fs, eng, probe) = Setup(blocked: @"C:\vpx\a.dll");
+        probe.Blocking.Add("VPinballX");
+        var plan = Build.Select(eng.Plan("scan-1", new[] { Build.Finding("BLOCKED_DLL", @"C:\vpx\a.dll") }, true));
+
+        var result = eng.Preflight(plan);
+        A.False(result.Passed, "VPX is running, must be refused");
+        var blocker = result.Blockers.Single(b => b.Code == "VPX_RUNNING");
+        A.True(!string.IsNullOrWhiteSpace(blocker.MessageEs), "Spanish text must be populated, never blank");
+        A.True(blocker.MessageEs.Contains("VPinballX"), "Spanish text should still name the blocking process");
     }
 
     public static void Test_Plan_ItemsAreNotSelectedByDefault()
@@ -750,6 +766,7 @@ public static class RepairTests
                 Step = i + 1, RuleId = s.ruleId, ManualOnly = s.manual,
                 ReasonFr = s.manual ? "non fournissable" : null,
                 ReasonEn = s.manual ? "cannot be supplied" : null,
+                ReasonEs = s.manual ? "no se puede suministrar" : null,
             }).ToList(),
         };
 

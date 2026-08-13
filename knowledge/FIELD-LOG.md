@@ -26,7 +26,39 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
-## 2026-08-13 (session éco, encore encore) · Point 6/6 — le bloc « pas automatisable » de Repair parlait anglais en pleine UI FR
+## 2026-08-14 · Décision produit Maxime — anglais par défaut au premier lancement, espagnol ajouté comme 3ᵉ langue
+- code:        aucun code de finding, décision produit + feature de localisation
+- bac:         FEATURE
+- contexte:    Maxime : « on touche beaucoup plus le public qui parle anglais, même si ça me plaît
+  pas on va inverser, l'anglais passe en premier tout le temps sur pincab toolbox donc maintenant
+  en/fr. on ouvre l'app on arrive sur l'anglais pas le fr si les gens veulent le fr c'est en haut.
+  tu vas rajouter l'espagnol en langue sur le logiciel »
+- analyse:     deux changements distincts, livrés en 2 commits séparés (chacun revertible seul).
+  (1) `Loc.Lang` choisissait la langue de démarrage via `CultureInfo.CurrentUICulture` (FR si
+  Windows est en FR) — changé en constante `"en"` fixe : un Windows FR n'implique plus un cab FR.
+  Le choix sauvegardé d'un utilisateur qui revient (`Settings.Lang`, restauré au démarrage) prime
+  toujours dessus, seul le tout premier lancement change.
+  (2) Espagnol : recensé TOUS les points du code où une langue est choisie avant d'écrire une seule
+  ligne — `Loc.cs` (4 dictionnaires : En/Fr + FrFindings + FrFixHints, 340 clés), `Knowledge.cs`
+  (51 entrées Impact/Cause), `Scenarios.cs` dans Core (6 scénarios de cause racine + leurs chaînes
+  causales, `bool fr` → `string lang`), et côté Repair : `Blocker` (2 messages de blocage Preflight)
+  et `PackStep.ReasonFr/ReasonEn` dans le pack JSON (1 scénario, 3 étapes) qui alimentent
+  `RepairLimitation` depuis le fix du 13/08 (ADR-006). Un point resté hors périmètre, signalé
+  explicitement plutôt que traduit à moitié en silence : les champs riches par entrée du pack JSON
+  (`titleFr`/`impactFr`/`causeFr`/`playerFr`/`explanationFr`/`verificationFr`, un par code) ne sont
+  PAS lus par `KnowledgePack.Load` (son DTO ne déclare que `code` + `repairRules`) — seul
+  `knowledge/selftest.py` les valide, morte pour l'app tournante. Les traduire en espagnol n'aurait
+  eu aucun effet visible ; laissés tels quels.
+- disposition: FIX/FEATURE, livré. `Loc.Lang` passe de "en"/"fr" à "en"/"fr"/"es" partout où c'était
+  un switch binaire (`Toggle()` cycle désormais en→fr→es→en, le bouton affiche la langue active au
+  lieu d'un « FR / EN » statique). Vérification automatisée de la parité des clés (script Python,
+  pas une relecture à l'œil) : les 3 langues ont exactement le même jeu de clés dans les 4
+  dictionnaires de `Loc.cs`, et aucun mismatch de placeholder ({0}/{1}…) entre EN et ES sur aucune
+  des 340 entrées. 501 tests Core (3 nouveaux : sélection ES, chaîne causale ES, repli EN sur langue
+  inconnue), 153 tests Repair (2 nouveaux : `RepairLimitation.MessageEs` transporté depuis un
+  scénario, `Blocker.MessageEs` jamais vide). Pack JSON revérifié avec `selftest.py` (12/12
+  garde-fous toujours verts) après ajout des champs `*Es`. App vérifiée par `csc -t:library`
+  (0 erreur CS1xxx).
 - code:        BITNESS_DMD64_MISSING, B2S_MISSING, DPI_SCALING_NONSTANDARD, DISPLAY_SETUP_INCOMPLETE (et tout code sans règle du pack, ou étape manuelle de scénario)
 - bac:         FP-langue (bug de traduction, pas de logique)
 - contexte:    Maxime, capture d'écran de son vrai cab en FR : sous « Aucune réparation automatique

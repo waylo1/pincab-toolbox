@@ -104,6 +104,10 @@ public sealed record Blocker
     public required string Code { get; init; }
     public required string MessageFr { get; init; }
     public required string MessageEn { get; init; }
+    /// <summary>14/08/2026: added alongside Spanish support. Every Blocker is hand-authored in
+    /// RepairEngine.cs (never pack-driven), so this is always populated — required, like its
+    /// Fr/En siblings, not optional.</summary>
+    public required string MessageEs { get; init; }
 }
 
 /// <summary>
@@ -113,19 +117,20 @@ public sealed record Blocker
 /// confirmation text both leaked raw English into the FR UI because <c>Missing</c> used to be a
 /// plain <c>string</c>).
 /// <para>
-/// <see cref="MessageFr"/> is null when the engine only has an English source at hand (e.g. a
-/// <see cref="Finding.FixHint"/> — Core has no FR text for those, only the App's Loc table does,
-/// keyed by <see cref="Code"/>). The App resolves the final display string: prefer
-/// <see cref="MessageFr"/>, else look up <see cref="Code"/> in its own FR table, else fall back to
-/// <see cref="MessageEn"/>.
+/// <see cref="MessageFr"/>/<see cref="MessageEs"/> are null when the engine only has an English
+/// source at hand (e.g. a <see cref="Finding.FixHint"/> — Core has no FR/ES text for those, only
+/// the App's Loc tables do, keyed by <see cref="Code"/>). The App resolves the final display
+/// string: prefer the reason's own translation for the active language, else look up
+/// <see cref="Code"/> in its own table for that language, else fall back to <see cref="MessageEn"/>.
 /// </para>
 /// </summary>
 public sealed record RepairLimitation
 {
-    /// <summary>Finding code or rule id, when there is one — lets the App look up its own FR text. Null for purely technical/internal reasons.</summary>
+    /// <summary>Finding code or rule id, when there is one — lets the App look up its own FR/ES text. Null for purely technical/internal reasons.</summary>
     public string? Code { get; init; }
     public required string MessageEn { get; init; }
     public string? MessageFr { get; init; }
+    public string? MessageEs { get; init; }
 }
 
 /// <summary>

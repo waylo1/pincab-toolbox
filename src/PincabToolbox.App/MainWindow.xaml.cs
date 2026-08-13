@@ -403,6 +403,9 @@ public partial class MainWindow : Window
 
     private void ApplyTexts()
     {
+        // 14/08/2026: was a static "FR / EN" label (fine for a 2-way toggle) — with Spanish added
+        // as a third language, the button now shows the ACTIVE language; clicking cycles to the next.
+        BtnLang.Content = Loc.Lang.ToUpperInvariant();
         Title = Loc.Get("app.title");
         HeaderTagline.Text = Loc.Get("about.tagline");
         TabScannerHeader.Text = Loc.Get("tab.scanner");
@@ -838,7 +841,7 @@ public partial class MainWindow : Window
         RefreshMetaRow();
 
         var present = new HashSet<string>(_report.Findings.Select(f => f.Code));
-        var scenarios = Scenarios.DetectAll(present, Loc.Lang == "fr");
+        var scenarios = Scenarios.DetectAll(present, Loc.Lang);
         // Sous-titre du bandeau : le nombre de causes de fond réellement détectées ; sinon la
         // phrase de score existante. Pas de « tout se règle en cascade » — on n'affirme que la
         // relation cause → symptômes, pas la disparition de résultats non liés (ADR-010).
@@ -1642,8 +1645,7 @@ public partial class MainWindow : Window
 
         if (_repairPreflight.Blockers.Count > 0)
         {
-            var fr = Loc.Lang == "fr";
-            RepairBlockers.Text = string.Join("\n", _repairPreflight.Blockers.Select(b => "• " + (fr ? b.MessageFr : b.MessageEn)));
+            RepairBlockers.Text = string.Join("\n", _repairPreflight.Blockers.Select(b => "• " + BlockerText(b)));
             RepairBlockers.Visibility = Visibility.Visible;
         }
         else
@@ -1693,6 +1695,15 @@ public partial class MainWindow : Window
         ListRepairItems.ItemsSource = null;   // force the ItemsControl to re-bind (rows are mutable POCOs)
         ListRepairItems.ItemsSource = _repairItemRows;
     }
+
+    /// <summary>14/08/2026: Blocker gained MessageEs alongside Spanish support — was a binary
+    /// fr/en ternary before, now a 3-way switch matching Loc.MissingReasonText's shape.</summary>
+    private static string BlockerText(Blocker b) => Loc.Lang switch
+    {
+        "fr" => b.MessageFr,
+        "es" => b.MessageEs,
+        _ => b.MessageEn,
+    };
 
     private static string BuildConfirmationText(ItemConfirmation ic)
     {

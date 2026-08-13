@@ -172,6 +172,7 @@
       "id": "MIGRATION_32_TO_64_INCOMPLETE",
       "titleFr": "Migration 32→64 incomplète",
       "titleEn": "Incomplete 32→64 migration",
+      "titleEs": "Migración 32→64 incompleta",
       "requires": [
         "BITNESS_MISMATCH_VPM",
         "BITNESS_DMD64_MISSING"
@@ -182,26 +183,30 @@
       "baseConfidence": 90,
       "explanationFr": "Plusieurs signes convergent vers une même cause : le passage en 64-bit a été entamé mais pas terminé. Corriger les fichiers un par un ne suffira pas — c'est la chaîne entière qui doit être cohérente, et l'ordre des étapes compte.",
       "explanationEn": "Several signs point to a single cause: the move to 64-bit was started but never finished. Fixing files one by one will not be enough — the whole chain must be consistent, and the order of the steps matters.",
+      "explanationEs": "Varios indicios apuntan a una misma causa: el paso a 64 bits se empezó pero nunca se terminó. Corregir los archivos uno por uno no bastará — es toda la cadena la que debe ser coherente, y el orden de los pasos importa.",
       "repairPlaybook": [
         {
           "step": 1,
           "ruleId": "unblock-dll",
           "reasonFr": "Débloquer d'abord : un fichier en quarantaine fausse tous les contrôles suivants.",
-          "reasonEn": "Unblock first: a quarantined file distorts every check that follows."
+          "reasonEn": "Unblock first: a quarantined file distorts every check that follows.",
+          "reasonEs": "Desbloquear primero: un archivo en cuarentena falsea todas las comprobaciones siguientes."
         },
         {
           "step": 2,
           "ruleId": "manual-vpm64",
           "manualOnly": true,
           "reasonFr": "Réinstaller VPinMAME dans la même architecture que Visual Pinball. Nous ne téléchargeons aucun composant (ADR-004).",
-          "reasonEn": "Reinstall VPinMAME in the same architecture as Visual Pinball. We download no components (ADR-004)."
+          "reasonEn": "Reinstall VPinMAME in the same architecture as Visual Pinball. We download no components (ADR-004).",
+          "reasonEs": "Reinstala VPinMAME en la misma arquitectura que Visual Pinball. No descargamos ningún componente (ADR-004)."
         },
         {
           "step": 3,
           "ruleId": "manual-dmd64",
           "manualOnly": true,
           "reasonFr": "dmddevice64.dll provient d'un projet tiers : voir le lien indiqué dans les références du finding.",
-          "reasonEn": "dmddevice64.dll comes from a third-party project: see the link in the finding's references."
+          "reasonEn": "dmddevice64.dll comes from a third-party project: see the link in the finding's references.",
+          "reasonEs": "dmddevice64.dll proviene de un proyecto de terceros: consulta el enlace indicado en las referencias del resultado."
         }
       ]
     }

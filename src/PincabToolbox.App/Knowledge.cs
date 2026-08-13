@@ -11,8 +11,10 @@ public sealed record KnowledgeEntry
 {
     public string? ImpactEn { get; init; }
     public string? ImpactFr { get; init; }
+    public string? ImpactEs { get; init; }
     public string? CauseEn { get; init; }
     public string? CauseFr { get; init; }
+    public string? CauseEs { get; init; }
     public string[] Refs { get; init; } = System.Array.Empty<string>();
 
     /// <summary>
@@ -44,14 +46,24 @@ public static class Knowledge
     {
         var e = For(code);
         if (e is null) return null;
-        return Loc.Lang == "fr" ? (e.ImpactFr ?? e.ImpactEn) : (e.ImpactEn ?? e.ImpactFr);
+        return Loc.Lang switch
+        {
+            "fr" => e.ImpactFr ?? e.ImpactEn,
+            "es" => e.ImpactEs ?? e.ImpactEn,
+            _ => e.ImpactEn ?? e.ImpactFr,
+        };
     }
 
     public static string? Cause(string? code)
     {
         var e = For(code);
         if (e is null) return null;
-        return Loc.Lang == "fr" ? (e.CauseFr ?? e.CauseEn) : (e.CauseEn ?? e.CauseFr);
+        return Loc.Lang switch
+        {
+            "fr" => e.CauseFr ?? e.CauseEn,
+            "es" => e.CauseEs ?? e.CauseEn,
+            _ => e.CauseEn ?? e.CauseFr,
+        };
     }
 
     /// <summary>
@@ -67,44 +79,56 @@ public static class Knowledge
         {
             ImpactEn = "The table won't boot — VPinMAME can't find the ROM it needs to emulate the game.",
             ImpactFr = "La table ne démarrera pas — VPinMAME ne trouve pas la ROM nécessaire pour émuler le jeu.",
+            ImpactEs = "La tabla no arrancará: VPinMAME no encuentra la ROM que necesita para emular el juego.",
             CauseEn = "The ROM zip is absent from the VPinMAME roms folder, misnamed, or was never downloaded.",
             CauseFr = "Le zip de la ROM est absent du dossier roms de VPinMAME, mal nommé, ou n'a jamais été téléchargé.",
+            CauseEs = "El zip de la ROM no está en la carpeta roms de VPinMAME, tiene un nombre incorrecto, o nunca se descargó.",
         },
         ["BITNESS_MISMATCH_VPM"] = new()
         {
             ImpactEn = "Every ROM-based table will fail to start: 64-bit VPX cannot load the 32-bit VPinMAME COM server.",
             ImpactFr = "Toutes les tables à ROM échoueront au démarrage : le VPX 64-bit ne peut pas charger le serveur COM VPinMAME 32-bit.",
+            ImpactEs = "Todas las tablas con ROM fallarán al arrancar: el VPX de 64 bits no puede cargar el servidor COM de VPinMAME de 32 bits.",
             CauseEn = "Visual Pinball was updated to 64-bit but VPinMAME was left in its 32-bit version (or the 64-bit VPinMAME was never registered).",
             CauseFr = "Visual Pinball est passé en 64-bit mais VPinMAME est resté en 32-bit (ou le VPinMAME 64-bit n'a jamais été enregistré).",
+            CauseEs = "Visual Pinball se actualizó a 64 bits pero VPinMAME se quedó en su versión de 32 bits (o el VPinMAME de 64 bits nunca se registró).",
         },
         ["BITNESS_DMD64_MISSING"] = new()
         {
             ImpactEn = "External DMDs won't display from 64-bit VPX — the 64-bit renderer is missing.",
             ImpactFr = "Les DMD externes ne s'afficheront pas depuis le VPX 64-bit — le moteur de rendu 64-bit est absent.",
+            ImpactEs = "Los DMD externos no se mostrarán desde el VPX de 64 bits: falta el renderizador de 64 bits.",
             CauseEn = "The install was migrated to 64-bit but dmddevice64.dll (Freezy dmd-extensions) was not added next to the 64-bit VPinMAME.",
             CauseFr = "L'install est passée en 64-bit mais dmddevice64.dll (Freezy dmd-extensions) n'a pas été ajouté à côté du VPinMAME 64-bit.",
+            CauseEs = "La instalación se migró a 64 bits pero dmddevice64.dll (Freezy dmd-extensions) no se añadió junto al VPinMAME de 64 bits.",
         },
         ["BLOCKED_DLL"] = new()
         {
             ImpactEn = "Windows silently blocks the DLL from loading, so the plugin it belongs to (VPinMAME, B2S, DMD…) fails without a clear error.",
             ImpactFr = "Windows empêche silencieusement le chargement de la DLL, donc le plugin concerné (VPinMAME, B2S, DMD…) échoue sans erreur claire.",
+            ImpactEs = "Windows bloquea silenciosamente la carga de la DLL, así que el plugin al que pertenece (VPinMAME, B2S, DMD…) falla sin un error claro.",
             CauseEn = "The file was extracted from a downloaded ZIP; Windows attaches a 'Mark of the Web' that blocks it until unblocked.",
             CauseFr = "Le fichier a été extrait d'un ZIP téléchargé ; Windows y attache une « Mark of the Web » qui le bloque tant qu'il n'est pas débloqué.",
+            CauseEs = "El archivo se extrajo de un ZIP descargado; Windows le añade una 'Mark of the Web' que lo bloquea hasta desbloquearlo.",
             AutoFixable = true,
         },
         ["B2S_MISSING"] = new()
         {
             ImpactEn = "No backglass will show for this table on the backglass screen.",
             ImpactFr = "Aucun backglass ne s'affichera pour cette table sur l'écran backglass.",
+            ImpactEs = "No se mostrará ningún backglass para esta tabla en la pantalla de backglass.",
             CauseEn = "The .directb2s file is missing next to the table, or is named differently from the .vpx.",
             CauseFr = "Le fichier .directb2s est absent à côté de la table, ou porte un nom différent du .vpx.",
+            CauseEs = "Falta el archivo .directb2s junto a la tabla, o tiene un nombre distinto al del .vpx.",
         },
         ["POPPER_NOT_REGISTERED"] = new()
         {
             ImpactEn = "The table is on disk but won't appear in the PinUP Popper frontend menu.",
             ImpactFr = "La table est sur le disque mais n'apparaîtra pas dans le menu du frontend PinUP Popper.",
+            ImpactEs = "La tabla está en el disco pero no aparecerá en el menú del frontend PinUP Popper.",
             CauseEn = "It was added to the tables folder but never imported/registered in the Popper database.",
             CauseFr = "Elle a été ajoutée au dossier des tables mais jamais importée/enregistrée dans la base Popper.",
+            CauseEs = "Se añadió a la carpeta de tablas pero nunca se importó/registró en la base de datos de Popper.",
             AutoFixable = false, // Repair v1 ne reecrit pas la base Popper (SQLite, ADR-007) -- pas de reparation un-clic promise
         },
         // Trois avertissements affichés à l'utilisateur qui n'avaient aucune explication :
@@ -114,15 +138,19 @@ public static class Knowledge
         {
             ImpactEn = "A known problem pattern was matched inside the table script. Depending on the pattern this ranges from a cosmetic quirk to a table that will not start — the message itself says which.",
             ImpactFr = "Un motif de problème connu a été reconnu dans le script de la table. Selon le motif, ça va du détail cosmétique à une table qui ne démarre pas — le message lui-même précise lequel.",
+            ImpactEs = "Se detectó un patrón de problema conocido dentro del script de la tabla. Según el patrón, esto va desde un detalle cosmético hasta una tabla que no arranca — el propio mensaje indica cuál.",
             CauseEn = "The signature list in the ecosystem profile (profiles/vpx-popper.json) matched a line of this table's script. Signatures come from community troubleshooting threads, so a match means somebody has already hit this exact pattern.",
             CauseFr = "La liste de signatures du profil d'écosystème (profiles/vpx-popper.json) a reconnu une ligne du script de cette table. Les signatures viennent de fils de dépannage communautaires : une correspondance veut dire que quelqu'un a déjà rencontré exactement ce motif.",
+            CauseEs = "La lista de firmas del perfil de ecosistema (profiles/vpx-popper.json) coincidió con una línea del script de esta tabla. Las firmas vienen de hilos de soporte de la comunidad, así que una coincidencia significa que alguien ya se topó exactamente con este patrón.",
         },
         ["LOW_DISK_SPACE"] = new()
         {
             ImpactEn = "Visual Pinball allocates large textures and streams video at launch. On a nearly full disk this fails in ways that look like a broken table rather than a full drive — \"Unable to Create Offscreen Texture\", missing backglass video, a table that hangs on load.",
             ImpactFr = "Visual Pinball alloue de grosses textures et lit des vidéos au lancement. Sur un disque presque plein, ça échoue d'une manière qui ressemble à une table cassée plutôt qu'à un disque plein — « Unable to Create Offscreen Texture », vidéo de backglass manquante, table qui se fige au chargement.",
+            ImpactEs = "Visual Pinball reserva texturas grandes y reproduce vídeo al iniciar. Con el disco casi lleno, esto falla de una forma que parece una tabla rota más que un disco lleno — \"Unable to Create Offscreen Texture\", vídeo de backglass ausente, una tabla que se queda colgada al cargar.",
             CauseEn = "A pincab fills up quietly: tables, backglasses, PUP packs and media weigh tens of gigabytes, and Popper's media cache grows on its own. The drive holding the install has dropped below a comfortable margin.",
             CauseFr = "Un pincab se remplit sans bruit : tables, backglasses, PUP packs et médias pèsent des dizaines de Go, et le cache média de Popper grossit tout seul. Le disque qui porte l'installation est passé sous une marge confortable.",
+            CauseEs = "Un pincab se llena sin hacer ruido: tablas, backglasses, PUP packs y medios pesan decenas de gigas, y la caché de medios de Popper crece por sí sola. El disco que aloja la instalación ha bajado por debajo de un margen cómodo.",
             // Pas de règle de réparation, et c'est volontaire : on ne supprime pas des fichiers
             // à la place de l'utilisateur pour libérer de la place.
         },
@@ -130,71 +158,89 @@ public static class Knowledge
         {
             ImpactEn = "One check could not finish, so its part of the diagnosis is missing. Everything else in this report is still valid — but treat the missing module as \"unknown\", not as \"fine\".",
             ImpactFr = "Un contrôle n'a pas pu aller au bout : sa partie du diagnostic manque. Tout le reste du rapport reste valable — mais considère le module absent comme « inconnu », pas comme « bon ».",
+            ImpactEs = "Un control no pudo terminar, así que falta esa parte del diagnóstico. Todo lo demás en este informe sigue siendo válido — pero trata el módulo ausente como \"desconocido\", no como \"correcto\".",
             CauseEn = "Usually a permissions problem, a path that disappeared mid-scan, or a file the module could not read. The scanner isolates each module on purpose so one failure never takes the whole scan down with it.",
             CauseFr = "Le plus souvent un souci de permissions, un chemin disparu en cours de scan, ou un fichier illisible par le module. Le scanner isole chaque module exprès pour qu'un échec n'emporte jamais tout le scan avec lui.",
+            CauseEs = "Normalmente un problema de permisos, una ruta que desapareció a mitad del escaneo, o un archivo que el módulo no pudo leer. El escáner aísla cada módulo a propósito para que un fallo nunca arrastre todo el escaneo con él.",
         },
         ["COMPAT_MIN_VERSION"] = new()
         {
             ImpactEn = "The table may render incorrectly — or not launch — on an older Visual Pinball version.",
             ImpactFr = "La table peut mal s'afficher — voire ne pas se lancer — sur une version de Visual Pinball plus ancienne.",
+            ImpactEs = "La tabla puede renderizarse mal — o no arrancar — en una versión más antigua de Visual Pinball.",
             CauseEn = "The table script declares a minimum VPX version newer than the one that may be installed.",
             CauseFr = "Le script de la table déclare une version VPX minimale plus récente que celle potentiellement installée.",
+            CauseEs = "El script de la tabla declara una versión mínima de VPX más reciente que la que puede estar instalada.",
         },
         // Tier A (handoff Sonnet 5, 06/08) — B1 AltColor/SERum Pair Integrity.
         ["ALTCOLOR_INCOMPLETE"] = new()
         {
             ImpactEn = "The DMD is likely to show in mono instead of full color, or the colorization plugin may fail to load this ROM's set at all.",
             ImpactFr = "Le DMD risque de s'afficher en mono au lieu de la colorisation complète, ou le plugin de colorisation peut échouer à charger le jeu de fichiers de cette ROM.",
+            ImpactEs = "Es probable que el DMD se muestre en mono en lugar de a todo color, o que el plugin de colorización no consiga cargar el set de esta ROM.",
             CauseEn = "Only part of a colorization set was extracted into altcolor/<rom>/ — e.g. the .pal without its matching .vni, or a Serum file without its .pal. A common result of extracting a downloaded archive without its subfolder, or an interrupted download.",
             CauseFr = "Seule une partie d'un jeu de colorisation a été extraite dans altcolor/<rom>/ — par ex. le .pal sans son .vni, ou un fichier Serum sans son .pal. Résultat fréquent d'une extraction d'archive sans son sous-dossier, ou d'un téléchargement interrompu.",
+            CauseEs = "Solo se extrajo parte de un set de colorización en altcolor/<rom>/ — por ejemplo el .pal sin su .vni correspondiente, o un archivo Serum sin su .pal. Un resultado frecuente de extraer un archivo descargado sin su subcarpeta, o de una descarga interrumpida.",
         },
         // Tier A (handoff Sonnet 5, 06/08) — B2 AltSound Structural Linter.
         ["ALTSOUND_SAMPLE_MISSING"] = new()
         {
             ImpactEn = "Some AltSound cues will stay silent during play, or the AltSound plugin may fail to load this ROM's sound pack altogether.",
             ImpactFr = "Certains sons AltSound resteront silencieux en jeu, ou le plugin AltSound peut échouer à charger le pack sonore de cette ROM.",
+            ImpactEs = "Algunos sonidos de AltSound quedarán en silencio durante la partida, o el plugin AltSound puede fallar al cargar el pack de sonido de esta ROM.",
             CauseEn = "altsound.csv references one or more .wav/.ogg sample files that aren't present in altsound/<rom>/ — usually a partial extraction or a hand-edited manifest that no longer matches the files on disk.",
             CauseFr = "altsound.csv référence un ou plusieurs fichiers .wav/.ogg absents de altsound/<rom>/ — généralement une extraction partielle, ou un manifeste modifié à la main qui ne correspond plus aux fichiers présents.",
+            CauseEs = "altsound.csv referencia uno o varios archivos .wav/.ogg que no están presentes en altsound/<rom>/ — normalmente una extracción parcial, o un manifiesto editado a mano que ya no coincide con los archivos presentes.",
         },
         // Tier A (handoff Sonnet 5, 06/08) — C1 Screen Topology Check.
         ["DISPLAY_OFFSCREEN"] = new()
         {
             ImpactEn = "The backglass window will never be visible — it opens on a position no connected monitor covers, even though B2S Backglass Server itself reports no error.",
             ImpactFr = "La fenêtre du backglass ne sera jamais visible — elle s'ouvre à une position qu'aucun écran connecté ne couvre, même si B2S Backglass Server ne signale aucune erreur de son côté.",
+            ImpactEs = "La ventana del backglass nunca será visible — se abre en una posición que ningún monitor conectado cubre, aunque B2S Backglass Server no reporte ningún error por su parte.",
             CauseEn = "ScreenRes.txt (or a table's own .res override) declares a backglass position that was valid for a monitor layout that has since changed — a monitor removed, a GPU swapped, or displays reconnected in a different arrangement.",
             CauseFr = "ScreenRes.txt (ou le .res propre à une table) déclare une position de backglass qui était valide pour une disposition d'écrans qui a changé depuis — un écran retiré, une carte graphique remplacée, ou des écrans rebranchés dans un ordre différent.",
+            CauseEs = "ScreenRes.txt (o el .res propio de una tabla) declara una posición de backglass que era válida para una disposición de monitores que ha cambiado desde entonces — un monitor retirado, una tarjeta gráfica sustituida, o pantallas reconectadas en otro orden.",
         },
         // Tier A (handoff Sonnet 5, 06/08) — G3 Junction Health.
         ["BROKEN_JUNCTION"] = new()
         {
             ImpactEn = "Everything expected under this folder — an entire ROM set, a whole PUP-Pack collection, a colorization archive — is invisible to Visual Pinball, PinUP Popper and this scan alike, with no error anywhere.",
             ImpactFr = "Tout ce qui est attendu sous ce dossier — un jeu de ROM entier, toute une collection de PUP-Packs, une archive de colorisation — est invisible pour Visual Pinball, PinUP Popper et ce scan, sans la moindre erreur nulle part.",
+            ImpactEs = "Todo lo esperado bajo esta carpeta — un set de ROM entero, toda una colección de PUP-Packs, un archivo de colorización — es invisible para Visual Pinball, PinUP Popper y este escaneo por igual, sin ningún error en ningún sitio.",
             CauseEn = "This folder is an NTFS junction or directory symlink pointing at a drive, network share or path that is no longer there — commonly after a second drive is renamed, disconnected, or a NAS share drops offline.",
             CauseFr = "Ce dossier est une jonction NTFS ou un lien symbolique pointant vers un disque, un partage réseau ou un chemin qui n'existe plus — typiquement après le renommage ou la déconnexion d'un second disque, ou un partage NAS hors ligne.",
+            CauseEs = "Esta carpeta es una unión NTFS o un enlace simbólico de directorio que apunta a una unidad, recurso compartido de red o ruta que ya no existe — normalmente después de renombrar o desconectar un segundo disco, o de que un recurso NAS quede fuera de línea.",
         },
         // Tier A (handoff Sonnet 5, 06/08) — H2 DirectB2S XML Malform.
         ["B2S_MALFORMED"] = new()
         {
             ImpactEn = "This backglass will not appear at all — B2S Backglass Server refuses to load a file that isn't well-formed XML, typically with just a generic \"not a valid directb2s backglass file\" error.",
             ImpactFr = "Ce backglass n'apparaîtra pas du tout — B2S Backglass Server refuse de charger un fichier qui n'est pas du XML bien formé, en général avec une simple erreur générique « not a valid directb2s backglass file ».",
+            ImpactEs = "Este backglass no aparecerá en absoluto — B2S Backglass Server se niega a cargar un archivo que no es XML bien formado, normalmente con un simple error genérico \"not a valid directb2s backglass file\".",
             CauseEn = "The .directb2s file is truncated, empty, or otherwise not well-formed XML — most often an interrupted download or an export that didn't finish writing.",
             CauseFr = "Le fichier .directb2s est tronqué, vide, ou n'est pas du XML bien formé — le plus souvent un téléchargement interrompu ou un export qui ne s'est pas terminé.",
+            CauseEs = "El archivo .directb2s está truncado, vacío, o no es XML bien formado — casi siempre una descarga interrumpida o una exportación que no terminó de escribirse.",
         },
         // Tier A (handoff Sonnet 5, 06/08) — F1 PUPDatabase Orphan Playlist.
         ["POPPER_ORPHAN_PLAYLIST"] = new()
         {
             ImpactEn = "The PinUP Popper frontend menu is known to freeze when opened, because it can't resolve a game's playlist assignment to a playlist that actually exists.",
             ImpactFr = "Le menu du frontend PinUP Popper est connu pour se figer à l'ouverture, car il ne peut pas résoudre l'affectation de playlist d'un jeu vers une playlist qui existe réellement.",
+            ImpactEs = "Se sabe que el menú del frontend PinUP Popper se congela al abrirse, porque no puede resolver la asignación de playlist de un juego hacia una playlist que realmente existe.",
             CauseEn = "A playlist was deleted from PinUP Popper's admin UI while games were still assigned to it — deleting a playlist only removes the Playlists row, leaving the game assignments behind pointing at nothing.",
             CauseFr = "Une playlist a été supprimée depuis l'interface d'administration de PinUP Popper alors que des jeux y étaient encore affectés — supprimer une playlist ne retire que sa ligne dans Playlists, les affectations de jeux restent en place et pointent dans le vide.",
+            CauseEs = "Se eliminó una playlist desde la interfaz de administración de PinUP Popper mientras aún había juegos asignados a ella — eliminar una playlist solo borra su fila en Playlists, las asignaciones de juegos se quedan apuntando a la nada.",
         },
         // Tier A (handoff Sonnet 5, 06/08) — H1 NVRAM 0-Byte Detector.
         ["NVRAM_EMPTY"] = new()
         {
             ImpactEn = "This table is likely to boot to a black screen or freeze instead of starting fresh — VPinMAME can't read any saved state from a 0-byte file.",
             ImpactFr = "Cette table risque de démarrer sur un écran noir ou de figer au lieu de démarrer proprement — VPinMAME ne peut lire aucun état sauvegardé depuis un fichier de 0 octet.",
+            ImpactEs = "Es probable que esta tabla arranque en pantalla negra o se quede colgada en lugar de iniciar limpiamente — VPinMAME no puede leer ningún estado guardado desde un archivo de 0 bytes.",
             CauseEn = "The .nv save file was truncated to 0 bytes — usually a crash or forced shutdown mid-write, or a full disk at the moment VPinMAME tried to save.",
             CauseFr = "Le fichier de sauvegarde .nv a été tronqué à 0 octet — généralement un plantage ou un arrêt forcé en pleine écriture, ou un disque plein au moment où VPinMAME sauvegardait.",
+            CauseEs = "El archivo de guardado .nv se truncó a 0 bytes — normalmente un cuelgue o un apagado forzado a mitad de escritura, o un disco lleno en el momento en que VPinMAME intentaba guardar.",
             // Pas d'AutoFixable : ce flag n'a aucun lecteur dans l'App aujourd'hui (vérifié — le vrai
             // signal "réparable" vient de knowledge/pack-2026.08.json + RepairActionRegistry, un
             // registre fermé séparé, ADR-005). Le laisser à false partout où aucune règle Repair
@@ -205,8 +251,10 @@ public static class Knowledge
         {
             ImpactEn = "VPinMAME crashes with a stack overflow the instant a table needs this ROM name — it never gets to load anything, the process simply dies.",
             ImpactFr = "VPinMAME plante avec un stack overflow dès qu'une table a besoin de ce nom de ROM — il ne charge jamais rien, le processus meurt directement.",
+            ImpactEs = "VPinMAME se cae con un desbordamiento de pila en cuanto una tabla necesita este nombre de ROM — nunca llega a cargar nada, el proceso simplemente muere.",
             CauseEn = "VPMAlias.txt contains a circular alias chain (one alias eventually points back to itself) — almost always a manual editing mistake, since a normal alias always resolves to a real ROM set name.",
             CauseFr = "VPMAlias.txt contient une chaîne d'alias circulaire (un alias finit par pointer vers lui-même) — presque toujours une erreur de modification manuelle, un alias normal se résout toujours vers un vrai nom de set ROM.",
+            CauseEs = "VPMAlias.txt contiene una cadena de alias circular (un alias acaba apuntando de vuelta a sí mismo) — casi siempre un error de edición manual, ya que un alias normal siempre se resuelve hacia un nombre de set de ROM real.",
         },
         // Rétroactif — comparateur VPX livré le 05/08, Knowledge/Loc complétés le 06/08 (R1 du handoff
         // Sonnet 5 : additif, calqué sur le patron COMPAT_MIN_VERSION voisin).
@@ -214,108 +262,138 @@ public static class Knowledge
         {
             ImpactEn = "The table may fail to load or behave incorrectly — this isn't a table that merely mentions a version, it's a confirmed shortfall against the VPX actually installed.",
             ImpactFr = "La table peut échouer à se charger ou mal se comporter — ce n'est pas juste une table qui mentionne une version, c'est un manque confirmé face au VPX réellement installé.",
+            ImpactEs = "La tabla puede fallar al cargar o comportarse mal — esto no es solo una tabla que menciona una versión, es un déficit confirmado frente al VPX realmente instalado.",
             CauseEn = "Visual Pinball X on this machine was never updated to the version this table declares it needs, checked against the newest installed VPX executable's real file version (not a guess).",
             CauseFr = "Visual Pinball X sur cette machine n'a jamais été mis à jour vers la version que cette table déclare nécessiter, vérifié contre la version fichier réelle du plus récent exécutable VPX installé (pas une supposition).",
+            CauseEs = "Visual Pinball X en esta máquina nunca se actualizó a la versión que esta tabla declara necesitar, verificado contra la versión de archivo real del ejecutable VPX instalado más reciente (no una suposición).",
         },
         ["UPDATE_AVAILABLE"] = new()
         {
             ImpactEn = "You may be missing fixes or improvements shipped in a newer release of this table.",
             ImpactFr = "Tu passes peut-être à côté de correctifs ou d'améliorations d'une version plus récente de cette table.",
+            ImpactEs = "Puede que te estés perdiendo correcciones o mejoras publicadas en una versión más reciente de esta tabla.",
             CauseEn = "A newer version is listed on the Virtual Pinball Spreadsheet than the one detected on disk.",
             CauseFr = "Une version plus récente est répertoriée sur le Virtual Pinball Spreadsheet que celle détectée sur le disque.",
+            CauseEs = "Hay una versión más reciente listada en el Virtual Pinball Spreadsheet que la detectada en el disco.",
         },
         ["BITNESS_MISMATCH_VPM32"] = new()
         {
             ImpactEn = "Every ROM-based table will fail to start: 32-bit VPX cannot load the 64-bit VPinMAME COM server.",
             ImpactFr = "Toutes les tables à ROM échoueront au démarrage : le VPX 32-bit ne peut pas charger le serveur COM VPinMAME 64-bit.",
+            ImpactEs = "Todas las tablas con ROM fallarán al arrancar: el VPX de 32 bits no puede cargar el servidor COM de VPinMAME de 64 bits.",
             CauseEn = "A 64-bit VPinMAME was registered but the executable in use is still the 32-bit Visual Pinball (or the 32-bit VPinMAME was removed).",
             CauseFr = "Un VPinMAME 64-bit a été enregistré mais l'exécutable utilisé est toujours le Visual Pinball 32-bit (ou le VPinMAME 32-bit a été supprimé).",
+            CauseEs = "Se registró un VPinMAME de 64 bits pero el ejecutable en uso sigue siendo el Visual Pinball de 32 bits (o se eliminó el VPinMAME de 32 bits).",
         },
         ["ROM_UNZIPPED"] = new()
         {
             ImpactEn = "The table won't boot even though the ROM is there: VPinMAME only loads ROMs from .zip archives, not extracted folders.",
             ImpactFr = "La table ne démarrera pas alors que la ROM est là : VPinMAME ne charge les ROMs que depuis des archives .zip, pas des dossiers décompressés.",
+            ImpactEs = "La tabla no arrancará aunque la ROM esté ahí: VPinMAME solo carga ROMs desde archivos .zip, no desde carpetas descomprimidas.",
             CauseEn = "The ROM zip was extracted into a folder in the roms directory — a common mistake when unpacking downloads.",
             CauseFr = "Le zip de la ROM a été décompressé en dossier dans le répertoire roms — une erreur fréquente en dézippant les téléchargements.",
+            CauseEs = "El zip de la ROM se extrajo en una carpeta dentro del directorio roms — un error frecuente al descomprimir descargas.",
             AutoFixable = true,
         },
         ["POPPER_MEDIA_MISSING"] = new()
         {
             ImpactEn = "These games look blank in the PinUP Popper wheel — no wheel image is shown for them.",
             ImpactFr = "Ces jeux apparaissent vides dans la roue de PinUP Popper — aucune image de wheel ne s'affiche pour eux.",
+            ImpactEs = "Estos juegos aparecen vacíos en la rueda de PinUP Popper — no se muestra ninguna imagen de wheel para ellos.",
             CauseEn = "No wheel image named after the game was found under POPMedia — media was never imported for them.",
             CauseFr = "Aucune image de wheel au nom du jeu n'a été trouvée sous POPMedia — les médias n'ont jamais été importés pour eux.",
+            CauseEs = "No se encontró ninguna imagen de wheel con el nombre del juego bajo POPMedia — nunca se importaron medios para ellos.",
         },
         ["B2S_ORPHAN"] = new()
         {
             ImpactEn = "This backglass never displays: B2S matches files to tables by exact base name, and nothing matches this one.",
             ImpactFr = "Ce backglass ne s'affiche jamais : B2S associe les fichiers aux tables par nom de base exact, et aucun ne correspond à celui-ci.",
+            ImpactEs = "Este backglass nunca se muestra: B2S asocia archivos a tablas por nombre base exacto, y ninguno coincide con este.",
             CauseEn = "The .directb2s is misnamed (a typo or a different name than the .vpx), or it's a leftover from a table you removed.",
             CauseFr = "Le .directb2s est mal nommé (une faute ou un nom différent du .vpx), ou c'est un reste d'une table que tu as supprimée.",
+            CauseEs = "El .directb2s tiene un nombre incorrecto (una errata o un nombre distinto al del .vpx), o es un resto de una tabla que eliminaste.",
         },
         ["B2S_SERVER_MISSING"] = new()
         {
             ImpactEn = "No backglass will display for any table: the B2S Backglass Server that renders .directb2s files isn't installed.",
             ImpactFr = "Aucun backglass ne s'affichera pour aucune table : le B2S Backglass Server qui affiche les fichiers .directb2s n'est pas installé.",
+            ImpactEs = "No se mostrará ningún backglass para ninguna tabla: el B2S Backglass Server que renderiza los archivos .directb2s no está instalado.",
             CauseEn = "Backglass files were copied in, but the B2S Backglass Server (B2SBackglassServer.dll) was never installed and registered.",
             CauseFr = "Les fichiers backglass ont été copiés, mais le B2S Backglass Server (B2SBackglassServer.dll) n'a jamais été installé et enregistré.",
+            CauseEs = "Se copiaron archivos de backglass, pero el B2S Backglass Server (B2SBackglassServer.dll) nunca se instaló ni se registró.",
         },
         ["FLEXDMD_MISSING"] = new()
         {
             ImpactEn = "Tables that use FlexDMD will run without their DMD/score display — or throw a script error on launch.",
             ImpactFr = "Les tables qui utilisent FlexDMD tourneront sans leur affichage DMD/score — ou déclencheront une erreur de script au lancement.",
+            ImpactEs = "Las tablas que usan FlexDMD se ejecutarán sin su pantalla de DMD/puntuación — o lanzarán un error de script al iniciar.",
             CauseEn = "One or more scripts create a FlexDMD object, but FlexDMD.dll is not installed and registered on this machine.",
             CauseFr = "Un ou plusieurs scripts créent un objet FlexDMD, mais FlexDMD.dll n'est pas installé et enregistré sur cette machine.",
+            CauseEs = "Uno o varios scripts crean un objeto FlexDMD, pero FlexDMD.dll no está instalado ni registrado en esta máquina.",
         },
         ["BITNESS_HYBRID_INSTALL"] = new()
         {
             ImpactEn = "It works, but it's fragile: every plugin (DMD, B2S, FlexDMD) must exist in BOTH 32- and 64-bit, or some tables will break.",
             ImpactFr = "Ça fonctionne, mais c'est fragile : chaque plugin (DMD, B2S, FlexDMD) doit exister en 32 ET en 64-bit, sinon certaines tables casseront.",
+            ImpactEs = "Funciona, pero es frágil: cada plugin (DMD, B2S, FlexDMD) debe existir en AMBAS arquitecturas, 32 y 64 bits, o algunas tablas se romperán.",
             CauseEn = "Both 32-bit and 64-bit Visual Pinball executables are installed side by side.",
             CauseFr = "Des exécutables Visual Pinball 32-bit ET 64-bit sont installés côte à côte.",
+            CauseEs = "Hay ejecutables de Visual Pinball de 32 bits Y de 64 bits instalados uno junto al otro.",
         },
         ["SCRIPT_UNREADABLE"] = new()
         {
             ImpactEn = "This table is skipped from the ROM and physics checks — the scanner couldn't read its script.",
             ImpactFr = "Cette table est ignorée des vérifications ROM et physique — le scanner n'a pas pu lire son script.",
+            ImpactEs = "Esta tabla se omite de las comprobaciones de ROM y física — el escáner no pudo leer su script.",
             CauseEn = "The .vpx file is corrupt, locked by another program, or in an unsupported format.",
             CauseFr = "Le fichier .vpx est corrompu, verrouillé par un autre programme, ou dans un format non pris en charge.",
+            CauseEs = "El archivo .vpx está corrupto, bloqueado por otro programa, o en un formato no compatible.",
         },
         ["TABLES_DIR_NOT_FOUND"] = new()
         {
             ImpactEn = "There's nothing to scan — no tables were found under the selected folder.",
             ImpactFr = "Il n'y a rien à scanner — aucune table n'a été trouvée sous le dossier sélectionné.",
+            ImpactEs = "No hay nada que escanear — no se encontraron tablas bajo la carpeta seleccionada.",
             CauseEn = "The chosen folder probably isn't your Visual Pinball install (it should contain a Tables folder).",
             CauseFr = "Le dossier choisi n'est probablement pas ton installation Visual Pinball (il devrait contenir un dossier Tables).",
+            CauseEs = "La carpeta elegida probablemente no es tu instalación de Visual Pinball (debería contener una carpeta Tables).",
         },
         ["ROMS_DIR_NOT_FOUND"] = new()
         {
             ImpactEn = "ROM checks were skipped — the scanner can't tell which ROMs you have.",
             ImpactFr = "Les vérifications de ROM ont été ignorées — le scanner ne peut pas savoir quelles ROMs tu possèdes.",
+            ImpactEs = "Se omitieron las comprobaciones de ROM — el escáner no puede saber qué ROMs tienes.",
             CauseEn = "VPinMAME's roms folder wasn't found under the selected install.",
             CauseFr = "Le dossier roms de VPinMAME n'a pas été trouvé sous l'installation sélectionnée.",
+            CauseEs = "No se encontró la carpeta roms de VPinMAME bajo la instalación seleccionada.",
         },
         ["PINUP_DISPLAY_ZOMBIE"] = new()
         {
             ImpactEn = "The next table can fail to launch (or its backglass window can misbehave) until the leftover process is closed.",
             ImpactFr = "La prochaine table peut échouer à se lancer (ou sa fenêtre backglass peut mal se comporter) tant que le processus résiduel n'est pas fermé.",
+            ImpactEs = "La siguiente tabla puede fallar al lanzarse (o su ventana de backglass puede comportarse mal) hasta que se cierre el proceso residual.",
             CauseEn = "PinUpDisplay.exe sometimes doesn't exit cleanly when a table closes and is left running with nothing using it.",
             CauseFr = "PinUpDisplay.exe ne se ferme parfois pas proprement quand une table se termine, et reste actif sans rien qui l'utilise.",
+            CauseEs = "PinUpDisplay.exe a veces no se cierra correctamente cuando una tabla termina, y se queda activo sin que nada lo use.",
             AutoFixable = true,
         },
         ["DISPLAY_SETUP_INCOMPLETE"] = new()
         {
             ImpactEn = "A backglass or DMD is configured but has nowhere to display — it may silently not show up.",
             ImpactFr = "Un backglass ou un DMD est configuré mais n'a nulle part où s'afficher — il peut ne pas apparaître, silencieusement.",
+            ImpactEs = "Hay un backglass o un DMD configurado pero sin ningún sitio donde mostrarse — puede que simplemente no aparezca, en silencio.",
             CauseEn = "Fewer displays are currently connected than the install's components expect — often a cable, a sleeping monitor, or a reconnection-order issue after a restart.",
             CauseFr = "Moins d'écrans sont actuellement connectés que ce que les composants de l'installation attendent — souvent un câble, un moniteur en veille, ou un souci d'ordre de reconnexion après un redémarrage.",
+            CauseEs = "Hay menos pantallas conectadas actualmente de las que esperan los componentes de la instalación — a menudo un cable, un monitor en reposo, o un problema de orden de reconexión tras un reinicio.",
         },
         ["ORPHANED_MEDIA_FILE"] = new()
         {
             ImpactEn = "No functional impact — just wasted disk space that grows over time.",
             ImpactFr = "Aucun impact fonctionnel — juste de l'espace disque perdu qui grossit avec le temps.",
+            ImpactEs = "Sin impacto funcional — solo espacio en disco desperdiciado que crece con el tiempo.",
             CauseEn = "Media files (wheel images, videos…) are left behind after a table is removed or renamed.",
             CauseFr = "Des fichiers média (images wheel, vidéos…) restent après la suppression ou le renommage d'une table.",
+            CauseEs = "Quedan archivos de medios (imágenes de wheel, vídeos…) después de eliminar o renombrar una tabla.",
             AutoFixable = true,
         },
         // Code émis par LegacyTableScanner depuis le 30/07, mais jamais ajouté ici — trou repéré
@@ -325,8 +403,10 @@ public static class Knowledge
         {
             ImpactEn = "The table works fine in a classic Visual Pinball 9 player, but stays invisible in the PinUP Popper wheel until a matching legacy emulator entry exists.",
             ImpactFr = "La table fonctionne très bien dans un lecteur Visual Pinball 9 classique, mais reste invisible dans la roue de PinUP Popper tant qu'aucune entrée d'émulateur legacy correspondante n'existe.",
+            ImpactEs = "La tabla funciona bien en un reproductor Visual Pinball 9 clásico, pero permanece invisible en la rueda de PinUP Popper mientras no exista una entrada de emulador legacy correspondiente.",
             CauseEn = "PinUP Popper matches a table to an emulator by file extension. '.vpt' (VP9) isn't listed among the VPX emulator's extensions, and NailBuster advises against adding it there — it breaks '.vpt' launching for that emulator instead of fixing visibility.",
             CauseFr = "PinUP Popper associe une table à un émulateur par extension de fichier. « .vpt » (VP9) ne fait pas partie des extensions de l'émulateur VPX, et NailBuster déconseille de l'y ajouter — ça casse le lancement des .vpt pour cet émulateur au lieu de régler la visibilité.",
+            CauseEs = "PinUP Popper asocia una tabla a un emulador por extensión de archivo. '.vpt' (VP9) no figura entre las extensiones del emulador VPX, y NailBuster desaconseja añadirla ahí — rompe el lanzamiento de los .vpt para ese emulador en lugar de arreglar la visibilidad.",
         },
         // ── Tier B (handoff Sonnet 5, 06/08) — tous Severity.Note (ADR-010 Doctrine : on
         // constate un fait, on n'affirme pas un verdict ; jamais AutoFixable=true sur un Note,
@@ -335,36 +415,46 @@ public static class Knowledge
         {
             ImpactEn = "No functional impact by itself — but if this wasn't your intent, your cab's sound is currently coming out of a screen/HDMI output instead of your speakers.",
             ImpactFr = "Aucun impact fonctionnel en soi — mais si ce n'était pas voulu, le son de ton cab sort actuellement d'une sortie écran/HDMI au lieu de tes enceintes.",
+            ImpactEs = "Sin impacto funcional por sí mismo — pero si no era tu intención, el sonido de tu cab está saliendo ahora mismo por una salida de pantalla/HDMI en lugar de tus altavoces.",
             CauseEn = "Windows is known to occasionally reset the default playback device to a display's HDMI audio output on boot — a state, not a one-time event, so it can recur after any reboot or GPU/monitor change (FIELD-LOG 2026-07-29).",
             CauseFr = "Windows est connu pour parfois réinitialiser le périphérique de lecture par défaut vers la sortie audio HDMI d'un écran au démarrage — un état, pas un évènement isolé, donc ça peut revenir après tout redémarrage ou changement de carte graphique/écran (FIELD-LOG 2026-07-29).",
+            CauseEs = "Se sabe que Windows a veces reinicia el dispositivo de reproducción predeterminado hacia la salida de audio HDMI de una pantalla al arrancar — un estado, no un evento puntual, así que puede repetirse tras cualquier reinicio o cambio de tarjeta gráfica/monitor (FIELD-LOG 2026-07-29).",
         },
         ["DPI_SCALING_NONSTANDARD"] = new()
         {
             ImpactEn = "Possibly nothing — but non-100% display scaling is a known cause of a backglass or table window rendering truncated or offset on some cabs.",
             ImpactFr = "Peut-être rien — mais une mise à l'échelle d'affichage différente de 100 % est une cause connue de fenêtre backglass ou table qui s'affiche tronquée ou décalée sur certains cabs.",
+            ImpactEs = "Puede que no pase nada — pero una escala de pantalla distinta al 100 % es una causa conocida de que la ventana del backglass o de la tabla se muestre recortada o desplazada en algunos cabs.",
             CauseEn = "Windows applies display scaling per user profile — often inherited from whichever monitor was primary during setup, or changed by a Windows update.",
             CauseFr = "Windows applique une mise à l'échelle d'affichage par profil utilisateur — souvent héritée de l'écran qui était principal au moment de l'installation, ou modifiée par une mise à jour Windows.",
+            CauseEs = "Windows aplica la escala de pantalla por perfil de usuario — a menudo heredada del monitor que era principal durante la instalación, o modificada por una actualización de Windows.",
         },
         ["DMD_COM_PORT_NOT_FOUND"] = new()
         {
             ImpactEn = "If this DMD is actually connected, this pattern is known to cause a several-second freeze at launch while the driver waits for a port that isn't there.",
             ImpactFr = "Si ce DMD est réellement connecté, ce cas de figure est connu pour causer un gel de plusieurs secondes au lancement, le temps que le pilote attende un port absent.",
+            ImpactEs = "Si este DMD está realmente conectado, este patrón es conocido por causar un congelamiento de varios segundos al iniciar, mientras el controlador espera un puerto que no está.",
             CauseEn = "dmddevice.ini still has this driver enabled on a COM port from a previous setup, or the DMD is currently powered off / unplugged.",
             CauseFr = "dmddevice.ini a encore ce pilote activé sur un port COM d'une configuration précédente, ou le DMD est actuellement éteint / débranché.",
+            CauseEs = "dmddevice.ini todavía tiene este controlador activado en un puerto COM de una configuración anterior, o el DMD está actualmente apagado / desconectado.",
         },
         ["LOCALE_DECIMAL_SEPARATOR"] = new()
         {
             ImpactEn = "Some VPX table scripts and physics/config parsing assume a dot as the decimal separator, and can misbehave under a comma-decimal locale.",
             ImpactFr = "Certains scripts de table VPX et analyses de physique/configuration supposent un point comme séparateur décimal, et peuvent mal se comporter avec un séparateur virgule.",
+            ImpactEs = "Algunos scripts de tabla VPX y el análisis de física/configuración asumen un punto como separador decimal, y pueden comportarse mal con una configuración regional de coma decimal.",
             CauseEn = "Windows' French regional format uses ',' as the decimal separator by default — a documented pain point for francophone pincab owners.",
             CauseFr = "Le format régional français de Windows utilise « , » comme séparateur décimal par défaut — un point de friction documenté pour les propriétaires de pincab francophones.",
+            CauseEs = "El formato regional francés de Windows usa ',' como separador decimal por defecto — un punto de fricción documentado para propietarios de pincab francófonos.",
         },
         ["VPINMAME_CONFIG_PHANTOM"] = new()
         {
             ImpactEn = "You may be editing settings in one place (the .ini) while VPinMAME is actually reading its configuration from the other (the registry), or vice-versa — changes that silently don't seem to take effect.",
             ImpactFr = "Tu modifies peut-être des réglages à un endroit (le .ini) alors que VPinMAME lit en réalité sa configuration depuis l'autre (le registre), ou l'inverse — des changements qui semblent silencieusement ne pas s'appliquer.",
+            ImpactEs = "Puede que estés editando ajustes en un sitio (el .ini) mientras VPinMAME en realidad lee su configuración desde el otro (el registro), o al revés — cambios que en apariencia no surten efecto.",
             CauseEn = "VPinMAME can be configured through either the registry or an .ini file depending on version/build; both being present at once is usually a leftover from a reinstall or a manual config attempt.",
             CauseFr = "VPinMAME peut être configuré via le registre ou un fichier .ini selon la version/build ; la présence des deux à la fois vient généralement d'une réinstallation ou d'une tentative de configuration manuelle antérieure.",
+            CauseEs = "VPinMAME puede configurarse a través del registro o de un archivo .ini según la versión/build; que ambos estén presentes a la vez suele ser un resto de una reinstalación o de un intento de configuración manual anterior.",
         },
 
         // ── Lot communauté 10/08 — LOT A (COM Registration Health).
@@ -372,29 +462,37 @@ public static class Knowledge
         {
             ImpactEn = "Windows COM registration is per-machine, not per-folder — copying an install (rather than running its official installer/registration tool) never carries it over, so this table's dependency will fail exactly like a missing file even though the file itself is right there.",
             ImpactFr = "L'enregistrement COM Windows est par machine, pas par dossier — copier une installation (au lieu de lancer son installeur/outil d'enregistrement officiel) ne l'emporte jamais avec elle, donc cette dépendance échouera exactement comme si le fichier était absent, alors qu'il est bien là.",
+            ImpactEs = "El registro COM de Windows es por máquina, no por carpeta — copiar una instalación (en lugar de ejecutar su instalador/herramienta de registro oficial) nunca lo traslada, así que esta dependencia de la tabla fallará exactamente como si el archivo faltara, aunque esté justo ahí.",
             CauseEn = "Most often a hand-copied VPX install (zip/USB stick/network share) where the component's own registration tool (Setup.exe, regsvr32, an UI registration button) was never run on this machine.",
             CauseFr = "Le plus souvent une installation VPX copiée à la main (zip/clé USB/partage réseau) sur laquelle l'outil d'enregistrement du composant (Setup.exe, regsvr32, un bouton d'enregistrement dans une interface) n'a jamais été lancé sur cette machine.",
+            CauseEs = "Lo más habitual es una instalación de VPX copiada a mano (zip/USB/recurso de red) en la que nunca se ejecutó en esta máquina la propia herramienta de registro del componente (Setup.exe, regsvr32, un botón de registro en una interfaz).",
         },
         ["COM_STALE_PATH"] = new()
         {
             ImpactEn = "Windows will try to load the component from a path that no longer exists and fail — this looks identical to \"never installed\" from the table's point of view, even though the component is actually present elsewhere on this machine.",
             ImpactFr = "Windows va essayer de charger le composant depuis un chemin qui n'existe plus, et échouer — cela ressemble exactement à « jamais installé » du point de vue de la table, alors que le composant est en réalité présent ailleurs sur cette machine.",
+            ImpactEs = "Windows intentará cargar el componente desde una ruta que ya no existe, y fallará — esto se ve idéntico a \"nunca instalado\" desde el punto de vista de la tabla, aunque el componente esté realmente presente en otro lugar de esta máquina.",
             CauseEn = "The component was registered from a folder that was since moved, renamed, or deleted (a very common pattern after reorganizing a pincab install or migrating to a new drive).",
             CauseFr = "Le composant a été enregistré depuis un dossier qui a depuis été déplacé, renommé ou supprimé (un cas très fréquent après une réorganisation d'installation pincab ou une migration vers un nouveau disque).",
+            CauseEs = "El componente se registró desde una carpeta que desde entonces se movió, renombró o eliminó (un patrón muy frecuente tras reorganizar una instalación de pincab o migrar a un disco nuevo).",
         },
         ["COM_BITNESS_GAP"] = new()
         {
             ImpactEn = "32-bit and 64-bit COM registrations are two completely separate Windows registry trees (Wow6432Node) — a component registered in one is invisible to a process running the other bitness, no matter how correct the install otherwise looks.",
             ImpactFr = "Les enregistrements COM 32-bit et 64-bit sont deux arborescences de registre Windows totalement séparées (Wow6432Node) — un composant enregistré dans l'une est invisible pour un processus tournant dans l'autre architecture, même si le reste de l'installation semble parfaitement correct.",
+            ImpactEs = "Los registros COM de 32 y 64 bits son dos árboles del registro de Windows completamente separados (Wow6432Node) — un componente registrado en uno es invisible para un proceso que corre en la otra arquitectura, sin importar lo correcta que parezca el resto de la instalación.",
             CauseEn = "Only one bitness of the component's registration tool was ever run — very common on hybrid 32+64-bit installs, since most guides only walk through registering one of the two.",
             CauseFr = "Seule une des deux architectures de l'outil d'enregistrement du composant a été lancée — très fréquent sur les installations hybrides 32+64-bit, la plupart des guides ne détaillant l'enregistrement que d'une des deux.",
+            CauseEs = "Solo se ejecutó una de las dos arquitecturas de la herramienta de registro del componente — muy frecuente en instalaciones híbridas de 32+64 bits, ya que la mayoría de las guías solo explican cómo registrar una de las dos.",
         },
         ["VPINMAME_NOT_REGISTERED"] = new()
         {
             ImpactEn = "Total: every ROM-based table fails to start with an opaque COM error, even though the ROMs, the tables and VPinMAME.dll are all genuinely present and correct — this is the single most common \"my cab suddenly can't launch anything with a ROM\" report in the whole research pass.",
             ImpactFr = "Impact total : chaque table à ROM échoue au démarrage avec une erreur COM opaque, alors que les ROMs, les tables et VPinMAME.dll sont bien présents et corrects — c'est le symptôme le plus fréquent de tout le document de recherche pour « ma cab n'arrive soudain plus à lancer une seule table à ROM ».",
+            ImpactEs = "Total: todas las tablas con ROM fallan al arrancar con un error COM opaco, aunque las ROMs, las tablas y VPinMAME.dll estén realmente presentes y correctos — es el reporte más frecuente de todo el estudio para \"mi cab de repente ya no puede lanzar ninguna tabla con ROM\".",
             CauseEn = "VPinMAME.dll was copied into place (zip extraction, USB transfer, drive clone) but its own Setup.exe — the only thing that actually writes the COM registration — was never run on this machine.",
             CauseFr = "VPinMAME.dll a été copié en place (extraction de zip, transfert USB, clonage de disque) mais son propre Setup.exe — la seule chose qui écrit réellement l'enregistrement COM — n'a jamais été lancé sur cette machine.",
+            CauseEs = "VPinMAME.dll se copió en su sitio (extracción de zip, transferencia USB, clonado de disco) pero su propio Setup.exe — lo único que realmente escribe el registro COM — nunca se ejecutó en esta máquina.",
         },
 
         // ── LOT B (Chain Bitness Doctor).
@@ -402,8 +500,10 @@ public static class Knowledge
         {
             ImpactEn = "The table loads a Visual Pinball process of one bitness, but the plugin it needs only exists for the other — the community's own framing fits exactly: \"32-bit and 64-bit are different ecosystems\", not two flavors of the same thing.",
             ImpactFr = "La table charge un processus Visual Pinball dans une architecture, mais le plugin dont elle a besoin n'existe que pour l'autre — la formule de la communauté colle exactement : « le 32-bit et le 64-bit sont deux écosystèmes différents », pas deux variantes d'une même chose.",
+            ImpactEs = "La tabla carga un proceso de Visual Pinball de una arquitectura, pero el plugin que necesita solo existe para la otra — la propia forma de decirlo de la comunidad encaja exactamente: \"32 bits y 64 bits son ecosistemas diferentes\", no dos variantes de lo mismo.",
             CauseEn = "A hybrid 32+64-bit install where only one bitness of B2S/FlexDMD was ever downloaded and placed — easy to miss because the 32-bit tables keep working fine, only the other bitness's tables are affected.",
             CauseFr = "Une installation hybride 32+64-bit où une seule des deux architectures de B2S/FlexDMD a été téléchargée et placée — facile à manquer, car les tables de l'autre architecture continuent de fonctionner normalement, seules celles de l'architecture manquante sont affectées.",
+            CauseEs = "Una instalación híbrida de 32+64 bits donde solo se descargó y colocó una de las dos arquitecturas de B2S/FlexDMD — fácil de pasar por alto porque las tablas de 32 bits siguen funcionando bien, solo se ven afectadas las tablas de la otra arquitectura.",
         },
 
         // ── LOT C (dmddevice.ini Config Doctor).
@@ -411,8 +511,10 @@ public static class Knowledge
         {
             ImpactEn = "The virtual DMD window opens somewhere no monitor can show it — it isn't a crash or an error, it simply never becomes visible, which is a much harder symptom to diagnose than an outright failure.",
             ImpactFr = "La fenêtre du DMD virtuel s'ouvre à un endroit qu'aucun écran ne peut afficher — ce n'est ni un plantage ni une erreur, elle ne devient simplement jamais visible, un symptôme bien plus difficile à diagnostiquer qu'un échec franc.",
+            ImpactEs = "La ventana del DMD virtual se abre en un sitio que ningún monitor puede mostrar — no es un cuelgue ni un error, simplemente nunca llega a ser visible, un síntoma mucho más difícil de diagnosticar que un fallo evidente.",
             CauseEn = "A stale position left over from a previous monitor layout, GPU change, or a monitor that's now disconnected/reordered — dmddevice.ini keeps whatever coordinates were last saved, it never re-validates them.",
             CauseFr = "Une position périmée héritée d'une disposition d'écrans précédente, d'un changement de carte graphique, ou d'un écran maintenant débranché/réordonné — dmddevice.ini garde les dernières coordonnées enregistrées, il ne les revalide jamais.",
+            CauseEs = "Una posición obsoleta heredada de una disposición de monitores anterior, un cambio de tarjeta gráfica, o un monitor ahora desconectado/reordenado — dmddevice.ini conserva las últimas coordenadas guardadas, nunca las revalida.",
         },
 
         // ── LOT G (NVRAM Folder Writability).
@@ -420,8 +522,10 @@ public static class Knowledge
         {
             ImpactEn = "Every table's high scores and per-game settings are lost the moment the app closes — nothing crashes, nothing errors, VPinMAME just has nowhere to put the save, silently, for every table using this folder.",
             ImpactFr = "Les meilleurs scores et réglages de chaque table sont perdus dès que l'application se ferme — rien ne plante, rien ne remonte d'erreur, VPinMAME n'a simplement nulle part où écrire la sauvegarde, silencieusement, pour toutes les tables utilisant ce dossier.",
+            ImpactEs = "Los mejores puntajes y los ajustes por juego de cada tabla se pierden en el momento en que se cierra la aplicación — nada se cuelga, no aparece ningún error, VPinMAME simplemente no tiene dónde guardar, en silencio, para todas las tablas que usan esta carpeta.",
             CauseEn = "The folder (or a parent of it) is marked read-only, or the current Windows user account lacks write permission — common after restoring from a backup, copying from another user's profile, or a permissions change on the drive.",
             CauseFr = "Le dossier (ou un de ses parents) est marqué en lecture seule, ou le compte utilisateur Windows actuel n'a pas le droit d'écriture — fréquent après une restauration depuis une sauvegarde, une copie depuis le profil d'un autre utilisateur, ou un changement de permissions sur le disque.",
+            CauseEs = "La carpeta (o alguna carpeta superior) está marcada como solo lectura, o la cuenta de usuario de Windows actual no tiene permiso de escritura — frecuente tras restaurar una copia de seguridad, copiar desde el perfil de otro usuario, o un cambio de permisos en el disco.",
         },
 
         // ── Note-level entries (ADR-010 Doctrine) — still worth explaining, per the DMD_COM_PORT_NOT_FOUND precedent.
@@ -429,36 +533,46 @@ public static class Knowledge
         {
             ImpactEn = "Not a defect by itself — but it means tables run from this folder actually load a DIFFERENT copy of the component than the one sitting right next to them, which can matter if you keep several installs deliberately out of sync (different plugin versions per cab profile, for instance).",
             ImpactFr = "Pas un défaut en soi — mais cela signifie que les tables lancées depuis ce dossier chargent en réalité une copie DIFFÉRENTE du composant que celle posée juste à côté, ce qui peut compter si tu maintiens plusieurs installations volontairement désynchronisées (versions de plugin différentes selon le profil de cab, par exemple).",
+            ImpactEs = "No es un defecto en sí mismo — pero significa que las tablas ejecutadas desde esta carpeta cargan en realidad una copia DIFERENTE del componente a la que está justo al lado, lo cual puede importar si mantienes varias instalaciones deliberadamente desincronizadas (versiones de plugin distintas por perfil de cab, por ejemplo).",
             CauseEn = "A legitimate multi-install setup (several VPX folders on the same machine), where only one install's copy of the component was ever registered.",
             CauseFr = "Une configuration multi-installation légitime (plusieurs dossiers VPX sur la même machine), où seule la copie du composant d'une des installations a été enregistrée.",
+            CauseEs = "Una configuración legítima de múltiples instalaciones (varias carpetas de VPX en la misma máquina), donde solo se registró la copia del componente de una de las instalaciones.",
         },
         ["DMD_VIRTUAL_DISABLED"] = new()
         {
             ImpactEn = "If unintentional, the DMD simply goes missing with zero error message — a symptom that sends people looking at B2S, FlexDMD, or their video driver before anyone thinks to check this one checkbox.",
             ImpactFr = "Si involontaire, le DMD disparaît tout simplement sans le moindre message d'erreur — un symptôme qui pousse à chercher du côté de B2S, FlexDMD, ou du pilote vidéo, bien avant que quiconque pense à vérifier cette simple case à cocher.",
+            ImpactEs = "Si no fue intencionado, el DMD simplemente desaparece sin ningún mensaje de error — un síntoma que lleva a mirar hacia B2S, FlexDMD, o el controlador de vídeo, mucho antes de que a alguien se le ocurra revisar esta simple casilla.",
             CauseEn = "A Freezy dmd-extensions update is known to reset '[virtualdmd] enabled' to false on its own during an upgrade, independent of what the user had configured.",
             CauseFr = "Une mise à jour de Freezy dmd-extensions est connue pour réinitialiser d'elle-même « [virtualdmd] enabled » à false lors d'une mise à niveau, indépendamment de ce que l'utilisateur avait configuré.",
+            CauseEs = "Se sabe que una actualización de Freezy dmd-extensions reinicia por sí sola '[virtualdmd] enabled' a false durante una actualización, sin importar lo que el usuario tuviera configurado.",
         },
         ["ALTSOUND_PRESENT_NOT_ENABLED"] = new()
         {
             ImpactEn = "The install looks entirely correct (files extracted, folder structure right) and stays silent — no error, just no sound difference — because the switch that actually turns AltSound on is a separate per-game VPinMAME setting, not a file.",
             ImpactFr = "L'installation a l'air entièrement correcte (fichiers extraits, structure de dossier bonne) et reste silencieuse — aucune erreur, juste aucune différence sonore — car l'interrupteur qui active réellement AltSound est un réglage VPinMAME séparé par jeu, pas un fichier.",
+            ImpactEs = "La instalación parece totalmente correcta (archivos extraídos, estructura de carpetas correcta) y permanece en silencio — ningún error, simplemente ninguna diferencia de sonido — porque el interruptor que realmente activa AltSound es un ajuste de VPinMAME independiente por juego, no un archivo.",
             CauseEn = "The pack was extracted correctly but the per-ROM Sound Mode option was never switched from its default (0/Original) in VPinMAME's own game options.",
             CauseFr = "Le pack a été extrait correctement mais l'option Sound Mode par ROM n'a jamais été changée de sa valeur par défaut (0/Original) dans les options de jeu propres à VPinMAME.",
+            CauseEs = "El pack se extrajo correctamente pero la opción Sound Mode por ROM nunca se cambió de su valor por defecto (0/Original) en las opciones de juego propias de VPinMAME.",
         },
         ["ALTCOLOR_PRESENT_NOT_ENABLED"] = new()
         {
             ImpactEn = "Same shape as ALTSOUND_PRESENT_NOT_ENABLED for the DMD: a complete, correctly-extracted colorization set that still renders in plain mono because the enable switch is a separate per-game VPinMAME setting.",
             ImpactFr = "Même schéma que ALTSOUND_PRESENT_NOT_ENABLED pour le DMD : un jeu de colorisation complet et correctement extrait qui continue de s'afficher en mono, car l'interrupteur d'activation est un réglage VPinMAME séparé par jeu.",
+            ImpactEs = "Mismo patrón que ALTSOUND_PRESENT_NOT_ENABLED para el DMD: un set de colorización completo y correctamente extraído que sigue mostrándose en mono simple porque el interruptor de activación es un ajuste de VPinMAME independiente por juego.",
             CauseEn = "The colorization set was extracted correctly but the per-ROM DMD colorization option was never switched on in VPinMAME's own game options.",
             CauseFr = "Le jeu de colorisation a été extrait correctement mais l'option de colorisation DMD par ROM n'a jamais été activée dans les options de jeu propres à VPinMAME.",
+            CauseEs = "El set de colorización se extrajo correctamente pero la opción de colorización DMD por ROM nunca se activó en las opciones de juego propias de VPinMAME.",
         },
         ["SCREENRES_UNPARSED"] = new()
         {
             ImpactEn = "None by itself — this is the tool being explicit about a blind spot rather than silently skipping the file, which would otherwise look identical to \"checked, all good\".",
             ImpactFr = "Aucun en soi — c'est l'outil qui explicite un angle mort au lieu d'ignorer silencieusement le fichier, ce qui ressemblerait sinon à « vérifié, tout va bien ».",
+            ImpactEs = "Ninguno por sí mismo — es la herramienta siendo explícita sobre un punto ciego en lugar de ignorar el archivo en silencio, lo cual se vería igual que \"comprobado, todo bien\".",
             CauseEn = "The file predates B2S Backglass Server 2.0.0's '# V2' marker, or was hand-edited into an unrecognised shape — both common on installs migrated forward from older setups.",
             CauseFr = "Le fichier est antérieur au marqueur « # V2 » de B2S Backglass Server 2.0.0, ou a été édité à la main dans une structure non reconnue — les deux cas sont fréquents sur des installations migrées depuis d'anciennes configurations.",
+            CauseEs = "El archivo es anterior al marcador '# V2' de B2S Backglass Server 2.0.0, o se editó a mano en una estructura no reconocida — ambos casos son frecuentes en instalaciones migradas desde configuraciones antiguas.",
         },
     };
 }

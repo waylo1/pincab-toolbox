@@ -1,4 +1,52 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 14/08/2026
+
+## 🌍 MAJ 14/08 — anglais par défaut au premier lancement + espagnol ajouté comme 3ᵉ langue
+
+> Décision de Maxime : le public anglophone du pincab est plus large que le francophone, donc
+> l'app doit maintenant toujours s'ouvrir en anglais sur une install neuve, peu importe la culture
+> Windows — et l'espagnol devient une vraie 3ᵉ langue du logiciel, pas une simple étiquette.
+>
+> **Deux commits séparés, chacun revertible seul.**
+>
+> **1) Anglais par défaut.** `Loc.Lang` choisissait avant la langue de démarrage via
+> `CultureInfo.CurrentUICulture` (FR si Windows tourne en FR). Remplacé par une constante `"en"`
+> fixe. Le choix sauvegardé d'un utilisateur qui revient (`Settings.Lang`, restauré au démarrage)
+> prime toujours dessus — seul le tout premier lancement change.
+>
+> **2) Espagnol, partout où une langue est réellement affichée.** Recensement complet AVANT
+> d'écrire une ligne de traduction, pour ne pas reproduire le bug du 13/08 (une traduction FR qui
+> existait mais n'était jamais branchée) côté espagnol dès le départ :
+> - `Loc.cs` : les 4 dictionnaires (En/Fr + FrFindings + FrFixHints, 340 clés au total) gagnent leur
+>   pendant Es/EsFindings/EsFixHints. `Lang` passe de "en"/"fr" à "en"/"fr"/"es" ; `Toggle()` cycle
+>   désormais en→fr→es→en (le bouton affiche la langue active, plus un « FR / EN » statique) ;
+>   `SetLang` dégrade proprement vers "en" sur une valeur inconnue.
+> - `Knowledge.cs` (panneau IMPACT/CAUSE) : les 51 entrées gagnent `ImpactEs`/`CauseEs`.
+> - `Scenarios.cs` (Core, diagnostics de cause racine) : `bool fr` → `string lang` ("en"/"fr"/"es"),
+>   les 6 scénarios et leurs chaînes causales gagnent leur variante Es. Signature changée partout
+>   (App + ~30 sites de test) — Core ne référence jamais App, donc pas d'autre façon de faire
+>   passer le choix de langue.
+> - Repair : `Blocker` (2 messages de blocage Preflight, VPX qui tourne / pas de place pour la
+>   sauvegarde) gagne `MessageEs`, désormais `required` comme ses jumeaux Fr/En puisqu'il est
+>   toujours écrit à la main dans `RepairEngine.cs`, jamais piloté par le pack. `RepairLimitation`
+>   (le type bilingue livré hier pour le fix ADR-006) gagne `MessageEs` optionnel, résolu par
+>   `Loc.MissingReasonText` avec la même priorité qu'en FR : texte propre à la raison → table
+>   `EsFixHints` par code → repli anglais.
+> - `knowledge/pack-2026.08.json` : `titleEs`/`explanationEs`/`reasonEs` ajoutés au seul scénario
+>   qui alimente vraiment l'UI (`MIGRATION_32_TO_64_INCOMPLETE`). `selftest.py` revérifié : 12/12
+>   garde-fous toujours verts après l'ajout des champs `*Es` (le validateur ne rejette pas les
+>   champs inconnus, confirmé avant de toucher au fichier).
+>
+> **Hors périmètre, signalé plutôt que fait à moitié en silence :** les champs riches par entrée du
+> pack JSON (`titleFr`/`impactFr`/`causeFr`/`playerFr`/`explanationFr`/`verificationFr`) ne sont PAS
+> lus par `KnowledgePack.Load` — son DTO ne déclare que `code` + `repairRules`, ces champs ne
+> servent qu'à `knowledge/selftest.py`. Morts pour l'app qui tourne. Les traduire n'aurait eu aucun
+> effet visible ; laissés tels quels plutôt que de perdre du temps dessus.
+>
+> Vérification de parité automatisée (script, pas une relecture à l'œil) : les 3 langues ont
+> exactement le même jeu de clés dans les 4 dictionnaires de `Loc.cs`, zéro mismatch de placeholder
+> ({0}/{1}…) entre EN et ES sur les 340 entrées. 501 tests Core (3 nouveaux), 153 tests Repair
+> (2 nouveaux). App vérifiée par `csc -t:library` (0 erreur CS1xxx) et XAML par
+> `xml.etree.ElementTree` (bouton de langue : `Content="EN"` + tooltip `EN / FR / ES`).
 
 ## 🌐 MAJ 13/08 (terdecies) — point 6/6 : le bloc « pas automatisable » de Repair montrait 4 phrases entières en anglais dans l'UI FR
 

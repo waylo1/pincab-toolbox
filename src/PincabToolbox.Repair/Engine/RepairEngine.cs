@@ -183,6 +183,7 @@ public sealed class RepairEngine : IRepairEngine
                     Code = step.RuleId,
                     MessageEn = step.ReasonEn ?? step.RuleId,
                     MessageFr = step.ReasonFr,
+                    MessageEs = step.ReasonEs,
                 });
                 continue;
             }
@@ -255,6 +256,7 @@ public sealed class RepairEngine : IRepairEngine
                 Code = "VPX_RUNNING",
                 MessageFr = $"Ferme d'abord : {string.Join(", ", running)}. Rien n'a été touché.",
                 MessageEn = $"Close these first: {string.Join(", ", running)}. Nothing has been touched.",
+                MessageEs = $"Cierra esto primero: {string.Join(", ", running)}. No se tocó nada.",
             });
         }
 
@@ -266,6 +268,7 @@ public sealed class RepairEngine : IRepairEngine
                 Code = "NO_DISK_SPACE",
                 MessageFr = "Pas assez de place pour la sauvegarde. Repair ne modifie rien tant qu'il ne peut pas sauvegarder d'abord.",
                 MessageEn = "Not enough space for the backup. Repair changes nothing until it can back up first.",
+                MessageEs = "No hay suficiente espacio para la copia de seguridad. Repair no cambia nada hasta poder respaldar antes.",
             });
         }
 

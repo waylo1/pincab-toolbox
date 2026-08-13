@@ -229,7 +229,7 @@
                     <TextBlock x:Name="HeaderTagline" Text="" FontSize="13" Foreground="{StaticResource TextDim}"
                                VerticalAlignment="Center" Margin="14,4,0,0"/>
                 </StackPanel>
-                <Button x:Name="BtnLang" DockPanel.Dock="Right" HorizontalAlignment="Right" Content="FR / EN" Click="BtnLang_Click"/>
+                <Button x:Name="BtnLang" DockPanel.Dock="Right" HorizontalAlignment="Right" Content="EN" Click="BtnLang_Click" ToolTip="EN / FR / ES"/>
             </DockPanel>
         </Border>
 

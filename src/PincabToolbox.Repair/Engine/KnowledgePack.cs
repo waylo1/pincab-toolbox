@@ -10,6 +10,7 @@ public sealed record PackStep
     public bool ManualOnly { get; init; }
     public string? ReasonFr { get; init; }
     public string? ReasonEn { get; init; }
+    public string? ReasonEs { get; init; }
 }
 
 public sealed record PackScenario
@@ -17,12 +18,14 @@ public sealed record PackScenario
     public required string Id { get; init; }
     public required string TitleFr { get; init; }
     public required string TitleEn { get; init; }
+    public string? TitleEs { get; init; }
     public IReadOnlyList<string> Requires { get; init; } = Array.Empty<string>();
     public IReadOnlyList<string> Supports { get; init; } = Array.Empty<string>();
     public IReadOnlyList<string> Excludes { get; init; } = Array.Empty<string>();
     public int BaseConfidence { get; init; } = 100;
     public string? ExplanationFr { get; init; }
     public string? ExplanationEn { get; init; }
+    public string? ExplanationEs { get; init; }
     public IReadOnlyList<PackStep> Playbook { get; init; } = Array.Empty<PackStep>();
 }
 
@@ -130,12 +133,14 @@ public sealed class KnowledgePack : IKnowledgePack
                 Id = s.Id!,
                 TitleFr = s.TitleFr ?? s.Id!,
                 TitleEn = s.TitleEn ?? s.Id!,
+                TitleEs = s.TitleEs,
                 Requires = s.Requires!,
                 Supports = s.Supports ?? new List<string>(),
                 Excludes = s.Excludes ?? new List<string>(),
                 BaseConfidence = s.BaseConfidence ?? 100,
                 ExplanationFr = s.ExplanationFr,
                 ExplanationEn = s.ExplanationEn,
+                ExplanationEs = s.ExplanationEs,
                 Playbook = (s.RepairPlaybook ?? new List<StepDto>())
                     .Where(x => !string.IsNullOrWhiteSpace(x.RuleId))
                     .Select(x => new PackStep
@@ -145,6 +150,7 @@ public sealed class KnowledgePack : IKnowledgePack
                         ManualOnly = x.ManualOnly,
                         ReasonFr = x.ReasonFr,
                         ReasonEn = x.ReasonEn,
+                        ReasonEs = x.ReasonEs,
                     }).ToList(),
             });
         }
@@ -183,12 +189,14 @@ public sealed class KnowledgePack : IKnowledgePack
         public string? Id { get; set; }
         public string? TitleFr { get; set; }
         public string? TitleEn { get; set; }
+        public string? TitleEs { get; set; }
         public List<string>? Requires { get; set; }
         public List<string>? Supports { get; set; }
         public List<string>? Excludes { get; set; }
         public int? BaseConfidence { get; set; }
         public string? ExplanationFr { get; set; }
         public string? ExplanationEn { get; set; }
+        public string? ExplanationEs { get; set; }
         public List<StepDto>? RepairPlaybook { get; set; }
     }
 
@@ -199,5 +207,6 @@ public sealed class KnowledgePack : IKnowledgePack
         public bool ManualOnly { get; set; }
         public string? ReasonFr { get; set; }
         public string? ReasonEn { get; set; }
+        public string? ReasonEs { get; set; }
     }
 }

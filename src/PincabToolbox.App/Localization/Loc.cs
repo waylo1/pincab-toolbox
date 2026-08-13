@@ -14,20 +14,24 @@ namespace PincabToolbox.App.Localization;
 /// </summary>
 public static class Loc
 {
+    private static readonly string[] SupportedLangs = { "en", "fr", "es" };
+
     public static string Lang { get; private set; } = "en";
 
     public static event Action? LanguageChanged;
 
+    /// <summary>Cycles en → fr → es → en. 14/08/2026: was a plain en/fr flip before Spanish.</summary>
     public static void Toggle()
     {
-        Lang = Lang == "fr" ? "en" : "fr";
+        var i = Array.IndexOf(SupportedLangs, Lang);
+        Lang = SupportedLangs[(i + 1) % SupportedLangs.Length];
         LanguageChanged?.Invoke();
     }
 
-    /// <summary>Force a specific language ("fr"/"en"); used to restore the saved preference at startup.</summary>
+    /// <summary>Force a specific language ("en"/"fr"/"es"); used to restore the saved preference at startup. Anything else degrades to English.</summary>
     public static void SetLang(string lang)
     {
-        lang = lang == "fr" ? "fr" : "en";
+        lang = SupportedLangs.Contains(lang) ? lang : "en";
         if (lang == Lang) return;
         Lang = lang;
         LanguageChanged?.Invoke();
@@ -36,14 +40,15 @@ public static class Loc
     public static string Get(string key)
     {
         if (Lang == "fr" && Fr.TryGetValue(key, out var fr)) return fr;
+        if (Lang == "es" && Es.TryGetValue(key, out var es)) return es;
         return En.TryGetValue(key, out var en) ? en : key;
     }
 
     /// <summary>Localized finding text — falls back to the Core's English rendering.</summary>
     public static string FindingText(Finding f)
     {
-        if (Lang != "fr") return f.EnglishText;
-        if (!FrFindings.TryGetValue(f.Code, out var template)) return f.EnglishText;
+        var table = Lang switch { "fr" => FrFindings, "es" => EsFindings, _ => null };
+        if (table is null || !table.TryGetValue(f.Code, out var template)) return f.EnglishText;
         try
         {
             return string.Format(template, f.Args.Cast<object?>().ToArray());
@@ -58,22 +63,30 @@ public static class Loc
     public static string? FixHintText(Finding f)
     {
         if (f.FixHint is null) return null;
-        if (Lang == "fr" && FrFixHints.TryGetValue(f.Code, out var fr)) return fr;
+        var table = Lang switch { "fr" => FrFixHints, "es" => EsFixHints, _ => null };
+        if (table is not null && table.TryGetValue(f.Code, out var localized)) return localized;
         return f.FixHint;
     }
 
     /// <summary>
     /// Localized text for a <see cref="RepairLimitation"/> (13/08/2026 fix — the ADR-006
     /// "not automatable" line and the manual-item confirmation text were both showing raw English
-    /// in the FR UI). Priority: the reason's own FR text (scenario steps carry one from the pack),
-    /// then this table's FR fix-hint keyed by the same code (findings without a pack rule, e.g.
-    /// ROM_MISSING), then the English fallback — never a blank line.
+    /// in the FR UI; extended 14/08 for ES). Priority: the reason's own localized text (scenario
+    /// steps carry one from the pack), then this table's fix-hint keyed by the same code (findings
+    /// without a pack rule, e.g. ROM_MISSING), then the English fallback — never a blank line.
     /// </summary>
     public static string MissingReasonText(RepairLimitation m)
     {
-        if (Lang != "fr") return m.MessageEn;
-        if (!string.IsNullOrWhiteSpace(m.MessageFr)) return m.MessageFr;
-        if (m.Code is not null && FrFixHints.TryGetValue(m.Code, out var fr)) return fr;
+        if (Lang == "fr")
+        {
+            if (!string.IsNullOrWhiteSpace(m.MessageFr)) return m.MessageFr;
+            if (m.Code is not null && FrFixHints.TryGetValue(m.Code, out var fr)) return fr;
+        }
+        else if (Lang == "es")
+        {
+            if (!string.IsNullOrWhiteSpace(m.MessageEs)) return m.MessageEs;
+            if (m.Code is not null && EsFixHints.TryGetValue(m.Code, out var es)) return es;
+        }
         return m.MessageEn;
     }
 
@@ -586,6 +599,245 @@ public static class Loc
         ["more.results"] = "+{0} autres — onglet Tous les résultats",
     };
 
+    private static readonly Dictionary<string, string> Es = new()
+    {
+        ["app.title"] = "Pincab Toolbox",
+        ["tab.scanner"] = "Escáner",
+        ["tab.diff"] = "Diff de scripts",
+        ["tab.about"] = "Acerca de",
+        ["tab.repair"] = "Repair",
+        ["scan.root"] = "Carpeta raíz del pincab:",
+        ["scan.browse"] = "Examinar…",
+        ["scan.demo"] = "Modo demo",
+        ["scan.start"] = "ESCANEAR MI PINCAB",
+        ["scan.running"] = "Escaneando…",
+        ["scan.cancel"] = "Cancelar",
+        ["scan.export"] = "Exportar informe",
+        ["scan.copyforum"] = "Copiar para el foro",
+        ["report.copied"] = "Informe copiado — pégalo en el foro.",
+        ["scan.placeholder"] = "Selecciona la carpeta raíz de tu instalación de pinball virtual (la que contiene Tables, VPinMAME, PinUPSystem…) y pulsa Escanear.",
+        ["scan.empty"] = "Todavía no hay resultados.",
+        ["scan.hint.notables"] = "No se encontraron tablas .vpx — comprueba que elegiste la carpeta correcta.",
+        ["filter.critical"] = "Críticos",
+        ["filter.warning"] = "Avisos",
+        ["filter.note"] = "Notas",
+        ["filter.info"] = "Info",
+        ["filter.ok"] = "OK",
+        ["score.a"] = "Instalación sana",
+        ["score.b"] = "Algunos puntos a vigilar",
+        ["score.c"] = "Instalación a corregir",
+        ["score.f"] = "Instalación en mal estado",
+        ["diagnosis.conf.high"] = "alta",
+        ["diagnosis.conf.mid"] = "media",
+        ["diagnosis.conf.low"] = "baja",
+        ["hero.ok"] = "No se encontró ningún problema bloqueante",
+        ["hero.blocking.one"] = "1 problema bloqueante impide que una tabla arranque",
+        ["hero.blocking.many"] = "{0} problemas bloqueantes impiden que las tablas arranquen",
+        ["priority.label"] = "CORREGIR ESTO PRIMERO",
+        ["priority.watch"] = "MERECE UNA MIRADA",
+        ["diagnosis.label"] = "DIAGNÓSTICO PRINCIPAL",
+        ["diagnosis.confidence"] = "fiabilidad",
+        ["priority.basedon"] = "Basado en:",
+        ["detail.impact"] = "IMPACTO",
+        ["detail.cause"] = "CAUSA PROBABLE",
+        ["detail.fix"] = "CORRECCIÓN RECOMENDADA",
+        ["repair.checks.fixable"] = "✓ Reparable automáticamente",
+        ["repair.checks.backup"] = "✓ Copia de seguridad antes del cambio",
+        ["repair.checks.reversible"] = "✓ Reversible — deshacer en un clic",
+        ["repair.checks.duration.seconds"] = "⏱ Unos segundos",
+        ["repair.checks.duration.underminute"] = "⏱ Menos de un minuto",
+        ["repair.checks.duration.minutes"] = "⏱ Unos minutos",
+        ["repair.tag"] = "→ Ve a la pestaña Repair para aplicar esta corrección",
+        ["repair.summary"] = "Repair podría corregir {0} de los {1} resultados aquí automáticamente — ve a la pestaña Repair.",
+        ["repair.notautomatable"] = "Algunos pasos siempre quedarán manuales, con licencia o sin ella:",
+        ["repair.goto"] = "Ir a la pestaña Repair →",
+        ["repair.intro"] = "Repair puede corregir automáticamente algunos de los resultados anteriores: cada cambio se respalda antes de aplicarse y puede deshacerse, y nunca se aplica nada sin tu confirmación explícita, elemento por elemento. Introduce tu clave de licencia, construye el plan, revísalo y luego elige qué aplicar.",
+        ["repair.license.label"] = "Clave de licencia",
+        ["repair.license.hint"] = "Pega la clave que recibiste tras la compra.",
+        ["repair.license.verify"] = "Verificar",
+        ["repair.license.valid"] = "✓ Licencia válida.",
+        ["repair.license.invalid"] = "Clave de licencia ausente o inválida — Repair solo mostrará lo que podría corregirse, sin aplicarlo.",
+        ["repair.forceddryrun.banner"] = "⚠ MODO SIMULACIÓN — PINCAB_REPAIR_FORCE_DRYRUN está activo. Apply informará lo que habría hecho, pero no cambiará nada en el disco.",
+        ["repair.forceddryrun.applied"] = "Solo simulación — no se escribió nada en el disco.",
+        ["repair.plan.build"] = "Analizar qué se puede reparar",
+        ["repair.plan.status"] = "{0} elemento(s) reparable(s), {1} paso(s) manual(es) por hacer tú mismo. Revisa la lista de abajo.",
+        ["repair.plan.empty"] = "No hay nada que aplicar ahora mismo — o todo va bien, o cada corrección necesita una licencia, o los pasos restantes siguen siendo manuales.",
+        ["repair.needscan"] = "Ejecuta primero un escaneo desde la pestaña Escáner.",
+        ["repair.noneselected"] = "No hay nada seleccionado — marca al menos un elemento antes de aplicar.",
+        ["repair.manual.label"] = "Manual — Repair no puede corregir esto automáticamente",
+        ["repair.manual.noreason"] = "Todavía no existe una corrección automática para esto — consulta la propia indicación del resultado en el informe del Escáner.",
+        ["repair.locked.label"] = "Existe una corrección — se necesita una licencia válida para verla y aplicarla.",
+        ["repair.reversible.yes"] = "Reversible",
+        ["repair.reversible.no"] = "No se puede deshacer",
+        ["repair.backup.yes"] = "Con copia de seguridad previa",
+        ["repair.backup.no"] = "Sin copia de seguridad (nada que restaurar)",
+        ["repair.confirm.title"] = "Esto no se puede deshacer",
+        ["repair.confirm.nonreversible"] = "Al menos una corrección seleccionada no se podrá deshacer una vez aplicada. ¿Quieres continuar?",
+        ["repair.apply.button"] = "Aplicar correcciones seleccionadas",
+        ["repair.apply.running"] = "Aplicando…",
+        ["repair.apply.status"] = "{0} aplicado(s), {1} fallido(s).",
+        ["repair.apply.recovery"] = "Algo salió mal al deshacer un cambio parcial — se conserva una copia de seguridad aquí, restáurala a mano si hace falta:",
+        ["repair.done.label"] = "Reparado",
+        ["repair.done.empty"] = "Todavía no se aplicó ninguna corrección.",
+        ["repair.done.count"] = "{0} — {1} corrección(es) aplicada(s)",
+        ["repair.done.partiallyundone"] = "{0} de ellas ya deshechas — el resto sigue en pie.",
+        ["repair.done.fullyundone"] = "Deshecho por completo.",
+        ["repair.undone.label"] = "Deshecho",
+        ["repair.undone.empty"] = "Ningún plan deshecho todavía.",
+        ["repair.undo.button"] = "Deshacer",
+        ["repair.undo.ok"] = "Deshecho.",
+        ["repair.undo.fail"] = "No se pudo deshacer por completo:",
+        ["repair.undo.journalwarning"] = "⚠ La última escritura en el diario de deshacer falló — Undo podría estar incompleto para la acción más reciente.",
+        ["col.severity"] = "Gravedad",
+        ["col.category"] = "Módulo",
+        ["col.subject"] = "Sujeto",
+        ["col.message"] = "Detalles",
+        ["col.action"] = "Acción",
+        ["search.hint"] = "Buscar…",
+        ["action.folder"] = "Abrir carpeta",
+        ["action.update"] = "Abrir actualización",
+        ["action.copy"] = "Copiar detalles",
+        ["action.copied"] = "Copiado al portapapeles.",
+        ["sev.Critical"] = "CRÍTICO",
+        ["sev.Warning"] = "Aviso",
+        ["sev.Note"] = "Nota",
+        ["sev.Info"] = "Info",
+        ["sev.Ok"] = "OK",
+        ["diff.old"] = "Tabla antigua (.vpx o .vbs):",
+        ["diff.new"] = "Tabla nueva (.vpx o .vbs):",
+        ["diff.compare"] = "Comparar scripts",
+        ["diff.summary"] = "{0} modificadas · {1} añadidas · {2} eliminadas",
+        ["diff.placeholder"] = "Elige dos versiones de una tabla (o dos scripts .vbs) para ver exactamente qué cambió — antes de instalar una actualización a ciegas.",
+        ["report.saved"] = "Informe guardado: ",
+        ["status.ready"] = "Listo.",
+        ["status.done"] = "Análisis completo · {0} comprobaciones — {1} críticos, {2} avisos, {3} info, {4} notas.",
+        ["scan.demolabel"] = "Demo — instalación de ejemplo",
+        ["diff.empty"] = "Compara el script de dos versiones de una tabla (.vpx o .vbs) para ver exactamente qué cambió. Elige un archivo antiguo y uno nuevo arriba, luego Comparar.",
+        ["scan.copied"] = "✓ Copiado",
+        ["cat.rom"] = "ROM",
+        ["cat.bitness"] = "32/64 bits",
+        ["cat.completeness"] = "Instalación",
+        ["cat.compat"] = "Compatibilidad",
+        ["cat.updates"] = "Actualizaciones",
+        ["cat.security"] = "Seguridad",
+        ["cat.dependencies"] = "Plugins",
+        ["cat.aliasloop"] = "VPMAlias",
+        ["cat.nvram"] = "NVRAM",
+        ["cat.altcolor"] = "AltColor",
+        ["cat.altsound"] = "AltSound",
+        ["cat.screentopology"] = "Topología de pantallas",
+        ["cat.junctions"] = "Uniones",
+        ["cat.directb2s"] = "DirectB2S",
+        ["cat.popperplaylist"] = "Playlists",
+        ["cat.legacy"] = "Tablas antiguas",
+        ["cat.disk"] = "Espacio en disco",
+        ["cat.process"] = "PinUP Display",
+        ["cat.display"] = "Configuración de pantallas",
+        ["cat.media-orphan"] = "Medios huérfanos",
+        ["cat.vpxversion"] = "Versión VPX",
+        ["cat.com"] = "Registro COM",
+        ["cat.chain-bitness"] = "Cadena 32/64 bits",
+        ["cat.dmd-config"] = "Configuración DMD",
+        ["cat.feature-enabled"] = "Función activada",
+        ["cat.screenres-format"] = "Formato ScreenRes",
+        ["cat.nvram-writable"] = "Escritura NVRAM",
+        ["cat.audio-state"] = "Audio",
+        ["cat.config-phantom"] = "Configuración duplicada",
+        ["cat.dmd-com-port"] = "Puerto COM del DMD",
+        ["cat.dpi-scaling"] = "Escala de pantalla",
+        ["cat.locale-separator"] = "Separador decimal",
+        ["about.tagline"] = "El mecánico de tu pincab.",
+        ["about.body"] = "Pincab Toolbox escanea tu instalación de Visual Pinball X / PinUP Popper y te dice qué está roto, falta o no coincide — antes de que pulses Iniciar en una tabla.\n\n• Escaneo 100% local — tu cab, tus archivos y tus resultados nunca se suben, sin telemetría, sin cuenta.\n• Solo lectura — el escáner gratuito nunca modifica un solo archivo.\n• El Update Watcher usa la base de datos de código abierto Virtual Pinball Spreadsheet y solo te enlaza a páginas oficiales. Nunca descarga tablas, ROMs ni medios.\n• La única excepción: el botón \"Buscar actualizaciones\" de abajo es manual y opcional — lo pulsas tú, y contacta con GitHub solo para ver si existe una versión más reciente. Nada sobre tu cab, tus tablas o tus resultados de escaneo se envía nunca. Nunca se ejecuta por su cuenta.",
+        ["about.version"] = "Versión",
+        ["about.checkupdate"] = "Buscar actualizaciones",
+        ["about.update.checking"] = "Comprobando…",
+        ["about.update.uptodate"] = "Estás al día ({0}).",
+        ["about.update.available"] = "Nueva versión {0} disponible — haz clic para abrir la página de la release.",
+        ["about.update.error"] = "No se pudo comprobar (sin conexión, o GitHub inaccesible). Inténtalo más tarde.",
+        ["onb.title"] = "Bienvenido a Pincab Toolbox",
+        ["onb.lead"] = "Un chequeo rápido para tu gabinete de pinball virtual. Cerca de un minuto, y totalmente seguro.",
+        ["onb.p1"] = "✓  Solo lectura — nunca modifica un solo archivo.",
+        ["onb.p2"] = "✓  100 % local — nada se sube, sin cuenta, sin telemetría.",
+        ["onb.p3"] = "✓  Encuentra lo que está roto, falta o no coincide — y explica cómo corregirlo.",
+        ["onb.start"] = "Empezar",
+        ["hero.causes.one"] = "Los resultados se reducen a 1 causa de fondo — corrige la causa, no cada síntoma uno por uno.",
+        ["hero.causes.many"] = "Los resultados se reducen a {0} causas de fondo — corrige las causas, no cada síntoma uno por uno.",
+        ["meta.mode"] = "Modo",
+        ["meta.mode.demo"] = "Demostración",
+        ["meta.mode.folder"] = "Carpeta",
+        ["meta.started"] = "Iniciado",
+        ["meta.duration"] = "Duración",
+        ["meta.checks"] = "Controles",
+        ["meta.tablecount"] = "Tablas analizadas",
+        ["stab.causes"] = "Causas raíz",
+        ["stab.results"] = "Todos los resultados",
+        ["stab.components"] = "Componentes",
+        ["stab.tables"] = "Tablas",
+        ["stab.system"] = "Sistema",
+        ["card.conf"] = "Confianza",
+        ["card.comp.one"] = "{0} componente",
+        ["card.comp.many"] = "{0} componentes",
+        ["card.tbl.one"] = "{0} tabla de {1}",
+        ["card.tbl.many"] = "{0} tablas de {1}",
+        ["card.manual"] = "⚑ Corrección manual",
+        ["card.steps"] = "Ver los pasos →",
+        ["side.criticals"] = "RESULTADOS CRÍTICOS",
+        ["side.components"] = "SALUD DE LOS COMPONENTES",
+        ["side.notes"] = "NOTAS",
+        ["side.comp.note"] = "Un componente que ninguna tabla usa nunca se cuenta como un problema. Nada se deduce de una lectura fallida: en ese caso Pincab Toolbox se queda callado.",
+        ["comp.name.main-exe"] = "Visual Pinball X",
+        ["comp.name.vpinmame"] = "VPinMAME",
+        ["comp.name.vpinmame64"] = "VPinMAME 64 bits",
+        ["comp.name.dmddevice"] = "dmddevice",
+        ["comp.name.dmddevice64"] = "dmddevice 64 bits",
+        ["comp.name.b2s"] = "B2S Backglass Server",
+        ["comp.name.flexdmd"] = "FlexDMD",
+        ["comp.name.popper"] = "PinUP Popper",
+        ["comp.meta.absent"] = "ausente",
+        ["comp.meta.dbread"] = "base leída",
+        ["comp.meta.dbunreadable"] = "base ilegible",
+        ["comp.st.ok"] = "✓ OK",
+        ["comp.st.critical"] = "✕ Crítico",
+        ["comp.st.warn"] = "▲ Aviso",
+        ["comp.st.note"] = "✎ Nota",
+        ["comp.code.BITNESS_DMD64_MISSING"] = "▲ Falta 64 bits",
+        ["comp.code.B2S_SERVER_MISSING"] = "▲ Falta",
+        ["comp.code.FLEXDMD_MISSING"] = "▲ Falta",
+        ["comp.code.VPINMAME_NOT_REGISTERED"] = "✕ No registrado",
+        ["tbl.header"] = "TABLAS ANALIZADAS",
+        ["tbl.h.table"] = "Tabla",
+        ["tbl.h.rom"] = "ROM",
+        ["tbl.h.b2s"] = "Backglass",
+        ["tbl.h.frontend"] = "Frontend",
+        ["tbl.rom.ok"] = "✓ {0}",
+        ["tbl.rom.missing"] = "✕ falta {0}",
+        ["tbl.rom.notrequired"] = "✓ ninguna requerida",
+        ["tbl.rom.unzipped"] = "▲ descomprimida",
+        ["tbl.b2s.present"] = "✓ presente",
+        ["tbl.b2s.missing"] = "ausente",
+        ["tbl.fe.registered"] = "✓ registrada",
+        ["tbl.fe.notregistered"] = "no registrada",
+        ["tbl.unknown"] = "—",
+        ["repaircard.none.title"] = "No hay reparación automática disponible en este escaneo",
+        ["repaircard.none.body"] = "Repair hoy sabe corregir 4 tipos de problemas (archivo bloqueado por Windows, ROM descomprimida, medio huérfano, proceso de pantalla atascado). Ninguno está presente aquí: las causas de arriba requieren instalar o registrar un componente, algo que una herramienta no debe hacer en tu lugar sin que veas exactamente qué.",
+        ["repaircard.some.title"] = "Reparación automática disponible",
+        ["repaircard.open"] = "Abrir Repair",
+        ["sys.needscan"] = "Ejecuta un escaneo para rellenar esta pestaña.",
+        ["sys.scan.header"] = "ÚLTIMO ESCANEO",
+        ["sys.machine.header"] = "MÁQUINA",
+        ["sys.root"] = "Raíz analizada",
+        ["sys.dirs"] = "Carpetas resueltas",
+        ["sys.os"] = "Sistema",
+        ["sys.cpu"] = "Procesador",
+        ["sys.cores"] = "{0} núcleos lógicos",
+        ["sys.ram"] = "Memoria",
+        ["sys.ram.fmt"] = "{0} GB disponibles",
+        ["sys.screens"] = "Pantallas",
+        ["sys.screens.fmt"] = "{0} pantalla(s) — escritorio virtual {1} × {2}",
+        ["more.tables"] = "+{0} más — pestaña Tablas",
+        ["more.results"] = "+{0} más — pestaña Todos los resultados",
+    };
+
     /// <summary>French templates per finding code ({0}, {1}… map to Finding.Args).</summary>
     private static readonly Dictionary<string, string> FrFindings = new()
     {
@@ -691,6 +943,74 @@ public static class Loc
         ["NVRAM_FOLDER_NOT_WRITABLE"] = "Le dossier nvram de VPinMAME existe mais un vrai test d'écriture a échoué — les meilleurs scores et réglages par table vont échouer à s'enregistrer silencieusement, table après table, sans aucune erreur affichée.",
     };
 
+    /// <summary>Spanish templates per finding code ({0}, {1}… map to Finding.Args).</summary>
+    private static readonly Dictionary<string, string> EsFindings = new()
+    {
+        ["GROUPED"] = "{0} resultados similares ({1}) — agrupados para mantener la lista legible. Exporta en .txt, .pdf o .json para verlos todos individualmente.",
+        ["ALTCOLOR_INCOMPLETE"] = "« {0} » tiene un set de colorización AltColor/Serum incompleto — hay archivos en altcolor/{0}/ pero no forman un par completo (.vni+.pal, o un archivo Serum+.pal). El DMD puede mostrarse en mono, o la colorización puede no cargar en absoluto.",
+        ["ALTSOUND_SAMPLE_MISSING"] = "« {0} »: altsound.csv referencia {1} muestra(s) de {2} que faltan en altsound/{0}/ — estos sonidos quedarán en silencio, o el plugin AltSound puede fallar al cargar.",
+        ["DISPLAY_OFFSCREEN"] = "La posición del backglass definida en « {0} » cae por completo fuera de todas las pantallas conectadas — nunca será visible, aunque el archivo cargue sin error.",
+        ["BROKEN_JUNCTION"] = "« {0} » es una unión/enlace simbólico que apunta a « {1} », que ya no existe — todo lo esperado bajo esta carpeta es invisible para Visual Pinball, PinUP Popper y este escaneo.",
+        ["B2S_MALFORMED"] = "« {0} » no es XML bien formado — B2S Backglass Server se niega a cargarlo, así que este backglass no aparecerá en absoluto.",
+        ["POPPER_ORPHAN_PLAYLIST"] = "{0} juego(s) en la base de PinUP Popper están asignados a una playlist que ya no existe — esto es conocido por congelar el menú del frontend Popper al abrirlo.",
+        ["NVRAM_EMPTY"] = "El archivo de guardado NVRAM de « {0} » está vacío (0 bytes) — VPinMAME no puede leer ningún estado guardado, la tabla puede arrancar en pantalla negra o quedarse colgada.",
+        ["VPMALIAS_LOOP"] = "VPMAlias.txt contiene un bucle de alias: {0}. VPinMAME se cae (desbordamiento de pila) en cuanto una tabla necesita este nombre de ROM.",
+        ["ROM_MISSING"] = "« {0} » no arrancará: la ROM « {1} » no está en la carpeta roms.",
+        ["ROM_OK"] = "« {0} » — ROM encontrada: {1}.",
+        ["ROM_NOT_REQUIRED"] = "« {0} » no necesita ROM (tabla original/EM).",
+        ["ROM_UNZIPPED"] = "La ROM de « {0} » está presente como carpeta descomprimida « {1} » — VPinMAME carga las ROMs desde .zip, así que no se encontrará.",
+        ["POPPER_MEDIA_MISSING"] = "{0} juego(s) registrado(s) de {1} no tienen imagen de wheel en POPMedia — aparecerán vacíos en la rueda de PinUP Popper.",
+        ["SCRIPT_UNREADABLE"] = "No se pudo leer el script de « {0} » ({1}).",
+        ["TABLES_DIR_NOT_FOUND"] = "No se encontró ninguna carpeta de tablas bajo la raíz elegida — ¿es realmente una instalación de Visual Pinball?",
+        ["ROMS_DIR_NOT_FOUND"] = "No se encontró la carpeta roms de VPinMAME — se omitió la verificación de ROMs.",
+        ["BLOCKED_DLL"] = "« {0} » está bloqueado por Windows (archivo descargado) — puede que no cargue mientras no lo desbloquees.",
+        ["BLOCKED_NONE"] = "No se detectó ningún archivo bloqueado por Windows.",
+        ["BITNESS_INVENTORY"] = "{0} — {1} ({2}).",
+        ["BITNESS_NOTHING_FOUND"] = "No hay ningún binario conocido que analizar.",
+        ["BITNESS_MISMATCH_VPM"] = "Hay instalado un Visual Pinball de 64 bits pero solo se encontró un VPinMAME.dll de 32 bits. El VPX de 64 bits no puede usar el servidor COM de 32 bits — las tablas con ROM fallarán.",
+        ["BITNESS_MISMATCH_VPM32"] = "Hay instalado un Visual Pinball de 32 bits pero solo se encontró un VPinMAME.dll de 64 bits. El VPX de 32 bits no puede usar el servidor COM de 64 bits — las tablas con ROM fallarán.",
+        ["B2S_SERVER_MISSING"] = "No se encontró B2SBackglassServer.dll bajo esta instalación aunque hay backglass (o scripts) que lo necesitan — los backglass no se mostrarán mientras B2S Backglass Server no esté instalado y registrado.",
+        ["FLEXDMD_MISSING"] = "{0} tabla(s) usan FlexDMD pero no se encontró ningún FlexDMD.dll bajo esta instalación — su pantalla de DMD/puntuación no funcionará mientras FlexDMD no esté instalado y registrado.",
+        ["B2S_SERVER_OK"] = "B2S Backglass Server instalado y archivos de backglass presentes.",
+        ["BITNESS_HYBRID_INSTALL"] = "Hay ejecutables de Visual Pinball de 32 bits Y de 64 bits presentes. Una instalación híbrida funciona, pero cada plugin (dmddevice, B2S, FlexDMD) debe existir en AMBAS variantes — este escaneo lista lo que tienes.",
+        ["BITNESS_DMD64_MISSING"] = "VPX de 64 bits detectado pero no hay dmddevice64.dll — los DMD externos no funcionarán desde el VPinMAME de 64 bits.",
+        ["B2S_MISSING"] = "« {0} » no tiene archivo de backglass .directb2s junto a la tabla.",
+        ["B2S_ORPHAN"] = "El backglass « {0}.directb2s » no corresponde a ninguna tabla — B2S carga los backglass por nombre base exacto, así que este se ignora.",
+        ["POPPER_NOT_REGISTERED"] = "« {0} » no está registrada en PinUP Popper — no aparecerá en el frontend.",
+        ["POPPER_DB_NOT_FOUND"] = "No se encontró la base de datos de PinUP Popper — se omitieron las comprobaciones de frontend.",
+        ["PUPPACK_PRESENT"] = "« {0} » tiene un PUP-Pack ({1}).",
+        ["COMPAT_MIN_VERSION"] = "« {0} » declara necesitar VPX {1}+ — comprueba tu versión instalada antes de lanzarla.",
+        ["VPX_VERSION_OUTDATED"] = "« {0} » declara necesitar Visual Pinball X {1}+, pero la versión de VPX más reciente instalada es {2} — esta tabla puede fallar al cargar o funcionar mal mientras Visual Pinball X no se actualice.",
+        ["COMPAT_SIGNATURE"] = "« {0} »: {1}.",
+        ["UPDATE_AVAILABLE"] = "« {0} » — tienes la v{1}, la v{2} está listada en el Virtual Pinball Spreadsheet. Ver {3}.",
+        ["VPS_UNAVAILABLE"] = "Base VPS no disponible (¿sin conexión?) — se omitió la comprobación de actualizaciones. Se hará en la próxima conexión.",
+        ["VPS_MATCH_SUMMARY"] = "Update Watcher: {0}/{1} tablas reconocidas en la base VPS (heurística, beta). Mods/variantes no comparados: {2} (siguen su propio versionado).",
+        ["SCANNER_ERROR"] = "El módulo « {0} » falló: {1}.",
+        ["LOW_DISK_SPACE"] = "Poco espacio en disco en {0}: {1} GB libres. Visual Pinball puede fallar al cargar texturas (« Unable to Create Offscreen Texture ») o medios cuando el disco está casi lleno.",
+        ["VPT_LEGACY_PRESENT"] = "{0} tabla(s) .vpt (Visual Pinball 9, formato antiguo) presentes. A menudo no aparecen en PinUP Popper porque « .vpt » no forma parte de las extensiones del emulador VPX.",
+        ["PINUP_DISPLAY_ZOMBIE"] = "PinUpDisplay.exe sigue activo aunque no hay ninguna tabla en curso — un resto de una sesión anterior. Puede bloquear el lanzamiento de la siguiente tabla mientras no se cierre.",
+        ["DISPLAY_SETUP_INCOMPLETE"] = "Esta instalación espera una configuración multipantalla (hay un componente de backglass o DMD presente) pero solo hay {0} pantalla conectada actualmente. Si tu cab suele funcionar con más pantallas, puede que estén en reposo, desconectadas, o reconectadas en el orden incorrecto.",
+        ["ORPHANED_MEDIA_FILE"] = "{0} archivo(s) de medios en las carpetas de PinUP Popper no corresponden a ninguna tabla instalada — probablemente restos de tablas eliminadas o renombradas.",
+        ["AUDIO_DEFAULT_SUSPECT"] = "El dispositivo de reproducción predeterminado de Windows es actualmente « {0} » — su nombre sugiere una salida de audio de pantalla/HDMI en lugar de altavoces dedicados. Es un punto conocido donde Windows reinicia en silencio el predeterminado al arrancar; comprueba que sea realmente lo que quieres.",
+        ["DPI_SCALING_NONSTANDARD"] = "La escala de pantalla de Windows para este usuario está en {0} % en lugar de 100 %. Es una causa conocida de que la ventana del backglass o de la tabla se muestre recortada o desplazada en algunos cabs — revisa tu pantalla si notas esto.",
+        ["DMD_COM_PORT_NOT_FOUND"] = "dmddevice.ini activa « {0} » en {1}, pero Windows no lista {1} como activo actualmente. Si este DMD está conectado y encendido, este caso es conocido por causar un congelamiento de varios segundos al iniciar, mientras el controlador lo espera.",
+        ["LOCALE_DECIMAL_SEPARATOR"] = "El separador decimal de este usuario de Windows es « {0} » en lugar de « . ». Algunos scripts de tabla VPX y análisis de física/configuración asumen un punto, y pueden comportarse mal con un separador de coma — un punto de fricción conocido para instalaciones de Windows en francés.",
+        ["VPINMAME_CONFIG_PHANTOM"] = "Se encontró una configuración de VPinMAME en el registro (HKCU\\Software\\Freeware\\Visual PinMame) Y un archivo VPinMAME.ini. VPinMAME puede configurarse desde cualquiera de los dos — si modificas uno y no ves que los cambios se apliquen, puede que estés modificando el que no se está usando actualmente.",
+        ["COM_NOT_REGISTERED"] = "« {0} » no está registrado en ninguna de las dos vistas del registro COM (32 y 64 bits), aunque el componente correspondiente está presente en esta instalación y al menos una tabla lo necesita — esto fallará con un error del tipo « ActiveX component can't create object » o « Library not registered (Exception from HRESULT: 0x8002801D) ».",
+        ["COM_STALE_PATH"] = "« {0} » está registrado pero apunta a « {1} », que ya no existe — un resto de registro de una instalación anterior. La carga fallará.",
+        ["COM_PATH_OUTSIDE_INSTALL"] = "« {0} » está registrado, pero hacia una copia fuera de esta instalación (« {1} ») — esta instalación también tiene su propia copia del componente. Las tablas lanzadas aquí en realidad cargarán la copia registrada (la otra).",
+        ["COM_OK"] = "« {0} » está registrado y apunta dentro de esta instalación.",
+        ["COM_BITNESS_GAP"] = "Hay instalado un Visual Pinball {1} pero « {0} » solo está registrado en la OTRA arquitectura — el proceso {1} no puede usarlo. Es el clásico problema de « 32 bits y 64 bits son dos ecosistemas diferentes ».",
+        ["VPINMAME_NOT_REGISTERED"] = "VPinMAME.dll está presente pero VPinMAME.Controller no está registrado en ninguna de las dos vistas del registro COM (32 o 64 bits), aunque al menos una tabla lo necesita — todas las tablas con ROM fallarán al arrancar (« ActiveX component can't create object » / « Library not registered »). Casi siempre lo causa una instalación de VPX copiada a mano sin haber ejecutado nunca el Setup.exe de VPinMAME.",
+        ["CHAIN_BITNESS_GAP"] = "Hay instalado un Visual Pinball {1} y al menos una tabla necesita {0}, pero no se encontró ningún binario {0} en {1} bajo esta instalación — la carga fallará desde el proceso {1}.",
+        ["DMD_VIRTUAL_DISABLED"] = "dmddevice.ini tiene el DMD virtual desactivado (« [virtualdmd] enabled = false »), y tampoco hay ningún controlador de DMD físico activado en el mismo archivo. Si no tienes un DMD físico, tu DMD simplemente desaparecerá sin mensaje de error — se sabe que una actualización de Freezy reinicia este valor por sí sola.",
+        ["DMD_POSITION_OFFSCREEN"] = "dmddevice.ini coloca el DMD virtual en ({0},{1}) con un tamaño de {2}x{3}, lo cual cae por completo fuera de todas las pantallas conectadas — nunca será visible, aunque dmddevice.ini cargue sin error.",
+        ["ALTSOUND_PRESENT_NOT_ENABLED"] = "« {0} » tiene un pack AltSound instalado en altsound/{0}/, pero el modo Alt Sound de VPinMAME está en 0 (desactivado) para esta ROM — el pack está presente pero silencioso.",
+        ["ALTCOLOR_PRESENT_NOT_ENABLED"] = "« {0} » tiene un set de colorización AltColor/Serum completo instalado en altcolor/{0}/, pero la colorización DMD de VPinMAME está desactivada para esta ROM — el DMD se mostrará en mono.",
+        ["SCREENRES_UNPARSED"] = "« {0} » está presente pero no en un formato que esta herramienta sepa verificar (sin marcador « # V2 », o una estructura no reconocida) — su posición de backglass/DMD no se verifica; esto no es una afirmación de que haya un problema.",
+        ["NVRAM_FOLDER_NOT_WRITABLE"] = "La carpeta nvram de VPinMAME existe pero una prueba de escritura real falló — los mejores puntajes y ajustes por tabla fallarán al guardarse en silencio, tabla tras tabla, sin que se muestre ningún error.",
+    };
+
     /// <summary>French fix hints per finding code (English fallback is in the Core Finding.FixHint).</summary>
     private static readonly Dictionary<string, string> FrFixHints = new()
     {
@@ -744,5 +1064,52 @@ public static class Loc
         ["ALTCOLOR_PRESENT_NOT_ENABLED"] = "Dans les options par jeu de VPinMAME, active la colorisation DMD (« Colorize DMD » / couleurs DMD externes) pour utiliser le jeu installé.",
         ["SCREENRES_UNPARSED"] = "Si la position de ton backglass semble fausse, relance B2S_ScreenResIdentifier (ou ton éditeur ScreenRes) pour régénérer le fichier dans le format actuel.",
         ["NVRAM_FOLDER_NOT_WRITABLE"] = "Vérifie que le dossier nvram n'est pas en lecture seule et que ton compte utilisateur Windows a le droit d'écriture dessus (clic droit → Propriétés → Sécurité).",
+    };
+
+    /// <summary>Spanish fix hints per finding code (English fallback is in the Core Finding.FixHint).</summary>
+    private static readonly Dictionary<string, string> EsFixHints = new()
+    {
+        ["BITNESS_MISMATCH_VPM"] = "Instala y registra el VPinMAME de 64 bits (VPinMAME64.dll) para el VPX de 64 bits, o ejecuta el VPX de 32 bits para estas tablas.",
+        ["BITNESS_MISMATCH_VPM32"] = "Instala y registra el VPinMAME de 32 bits (VPinMAME.dll) para el VPX de 32 bits, o ejecuta el VPX de 64 bits para estas tablas.",
+        ["B2S_SERVER_MISSING"] = "Instala el B2S Backglass Server (registra B2SBackglassServer.dll), consérvalo en tu carpeta Tables y regístralo como administrador.",
+        ["FLEXDMD_MISSING"] = "Descarga FlexDMD, coloca FlexDMD.dll en tu carpeta de Visual Pinball y regístralo (regsvr32 como administrador).",
+        ["BITNESS_DMD64_MISSING"] = "Descarga el dmddevice64.dll de 64 bits desde las releases de código abierto de Freezy dmd-extensions y colócalo junto a VPinMAME64.",
+        ["BLOCKED_DLL"] = "Clic derecho sobre el archivo → Propiedades → marca « Desbloquear » → Aceptar. O en PowerShell: Unblock-File « <ruta> »",
+        ["B2S_MISSING"] = "Si usas una pantalla de backglass, descarga el .directb2s correspondiente y colócalo en la carpeta de tablas con exactamente el mismo nombre base.",
+        ["B2S_ORPHAN"] = "Si este backglass pertenece a una tabla, renómbralo con el nombre base exacto de la tabla (idéntico al .vpx). Si no, es un resto que puedes eliminar.",
+        ["ALTCOLOR_INCOMPLETE"] = "Vuelve a descargar el set de colorización de esta ROM y extrae todos los archivos que contiene en la carpeta altcolor correspondiente — una extracción parcial (por ejemplo solo el .pal, o solo el .vni) es la causa más frecuente.",
+        ["ALTSOUND_SAMPLE_MISSING"] = "Vuelve a extraer el pack AltSound de esta ROM en la carpeta altsound correspondiente — una extracción parcial es la causa más frecuente. Si modificaste altsound.csv a mano, comprueba la columna FNAME contra los archivos realmente presentes.",
+        ["DISPLAY_OFFSCREEN"] = "Vuelve a ejecutar B2S_ScreenResIdentifier (o tu editor de ScreenRes) con todas las pantallas conectadas en su disposición normal del cab, y vuelve a guardar — un ScreenRes.txt/.res obsoleto tras un cambio de pantalla o de tarjeta gráfica es la causa más frecuente.",
+        ["BROKEN_JUNCTION"] = "Reconecta el disco/recurso compartido al que apunta el enlace, o recrea la unión (mklink /J) hacia su ubicación correcta y actualmente disponible. Elimínala si la carpeta enlazada desapareció definitivamente.",
+        ["B2S_MALFORMED"] = "Vuelve a descargar o reexportar este backglass — una descarga truncada o una exportación interrumpida es la causa más frecuente.",
+        ["POPPER_ORPHAN_PLAYLIST"] = "En la herramienta de administración de PinUP Popper, vuelve a abrir y guardar la asignación de playlist de cada juego afectado (o quítala), o recrea la playlist que falta.",
+        ["NVRAM_EMPTY"] = "Elimina el archivo .nv vacío y lanza la tabla una vez — VPinMAME lo recrea con los valores por defecto. Si tienes una copia de seguridad .nv anterior al problema, restáurala en su lugar para conservar tus mejores puntajes.",
+        ["VPMALIAS_LOOP"] = "Abre VPMAlias.txt y rompe el bucle: el último alias de la cadena debe apuntar directamente al nombre real del set de ROM, no a un alias ya visto.",
+        ["ROM_MISSING"] = "Coloca el archivo .zip de la ROM (nombre exacto, sin descomprimirlo) en la carpeta roms de VPinMAME.",
+        ["ROM_UNZIPPED"] = "Vuelve a comprimir la carpeta de la ROM en un .zip con el mismo nombre dentro de la carpeta roms (no la comprimas dentro de una carpeta superior adicional).",
+        ["POPPER_MEDIA_MISSING"] = "Añade una imagen de wheel con el nombre exacto del juego (su GameName de Popper) en POPMedia\\<emulador>\\Wheel, o vuelve a ejecutar la importación de medios de Popper.",
+        ["LOW_DISK_SPACE"] = "Libera espacio en este disco (copias de seguridad antiguas, tablas/medios sin usar) — mantén al menos unos GB de margen.",
+        ["VPT_LEGACY_PRESENT"] = "No añadas « .vpt » al emulador VPX existente — el autor de PinUP (NailBuster) lo desaconseja, rompe el lanzamiento de los .vpt. Crea mejor una entrada de emulador legacy VP9 dedicada.",
+        ["PINUP_DISPLAY_ZOMBIE"] = "Cierra PinUpDisplay.exe desde el Administrador de tareas antes de volver a lanzar una tabla.",
+        ["DISPLAY_SETUP_INCOMPLETE"] = "Revisa el cableado y que el reposo de los monitores esté desactivado independientemente del reposo del PC — causa muy frecuente de pantallas que se reconectan en el orden incorrecto tras un reinicio (guías de la comunidad: Pincab Passion « Changer l'ordre des écrans dans Windows »).",
+        ["ORPHANED_MEDIA_FILE"] = "Puede revisarse a mano, o ponerse en cuarentena con Repair cuando esté disponible (movido a un lado con copia de seguridad, nunca eliminado). No elimines medios a mano sin comprobar antes — variantes como « (SCREEN2) »/« (SCREEN3) » todavía pueden estar en uso aunque el nombre base parezca desconocido.",
+        ["VPX_VERSION_OUTDATED"] = "Actualiza Visual Pinball X a la versión requerida por la tabla (indicada en el mensaje de arriba). Puedes mantener tu versión actual en paralelo — los builds de VPX coexisten, las demás tablas no se ven afectadas.",
+        ["AUDIO_DEFAULT_SUSPECT"] = "Si esta no es la salida de audio que quieres, vuelve a configurar el dispositivo de reproducción predeterminado a tus altavoces en los ajustes de Sonido de Windows.",
+        ["DPI_SCALING_NONSTANDARD"] = "En los ajustes de pantalla de Windows, vuelve a poner la « Escala » al 100 % para las pantallas del cab, o comprueba que Visual Pinball / B2S se ejecuten en modo compatible con DPI si mantienes una escala superior al 100 %.",
+        ["DMD_COM_PORT_NOT_FOUND"] = "Comprueba que el DMD esté encendido y que su conexión USB/serie esté conectada, o actualiza dmddevice.ini si el puerto COM cambió.",
+        ["LOCALE_DECIMAL_SEPARATOR"] = "En la configuración regional de Windows, puedes poner el « símbolo decimal » en « . » dentro del formato de número avanzado — algunos propietarios de pincab configuran su cuenta del cab en formato numérico inglés (Estados Unidos) específicamente para evitar este tipo de problema.",
+        ["VPINMAME_CONFIG_PHANTOM"] = "Si dependes de VPinMAME.ini, comprueba que sus ajustes realmente se apliquen; si no, considera eliminarlo para evitar la ambigüedad y mantener el registro como fuente única.",
+        ["COM_NOT_REGISTERED"] = "Ejecuta la herramienta de registro del componente (su Setup.exe / su aplicación de registro / regsvr32) como administrador.",
+        ["COM_STALE_PATH"] = "Vuelve a ejecutar la herramienta de registro del componente desde su ubicación ACTUAL para sobrescribir el registro obsoleto.",
+        ["COM_PATH_OUTSIDE_INSTALL"] = "Si querías usar la copia de ESTA instalación, vuelve a ejecutar su herramienta de registro desde aquí.",
+        ["COM_BITNESS_GAP"] = "Registra la versión del componente que corresponde a la arquitectura que falta, o ejecuta la versión de VPX cuya arquitectura YA está registrada.",
+        ["VPINMAME_NOT_REGISTERED"] = "Ejecuta el Setup.exe de VPinMAME (en la carpeta VPinMAME) como administrador — registra el componente COM. Es la corrección más habitual para « ninguna tabla con ROM arranca ».",
+        ["CHAIN_BITNESS_GAP"] = "Instala la versión que falta del componente en la arquitectura afectada, junto al Visual Pinball correspondiente.",
+        ["DMD_VIRTUAL_DISABLED"] = "Si no tienes un DMD físico, pon « enabled = true » bajo [virtualdmd] en dmddevice.ini.",
+        ["DMD_POSITION_OFFSCREEN"] = "Reinicia los valores left/top/width/height de [virtualdmd] en dmddevice.ini (o elimínalos para volver a los valores por defecto) con todas las pantallas conectadas en su disposición normal del cab.",
+        ["ALTSOUND_PRESENT_NOT_ENABLED"] = "En las opciones por juego de VPinMAME (menú F1, o la interfaz de configuración de VPinMAME), cambia el modo de sonido de 0/Original para usar el pack AltSound instalado.",
+        ["ALTCOLOR_PRESENT_NOT_ENABLED"] = "En las opciones por juego de VPinMAME, activa la colorización DMD (« Colorize DMD » / colores DMD externos) para usar el set instalado.",
+        ["SCREENRES_UNPARSED"] = "Si la posición de tu backglass parece incorrecta, vuelve a ejecutar B2S_ScreenResIdentifier (o tu editor de ScreenRes) para regenerar el archivo en el formato actual.",
+        ["NVRAM_FOLDER_NOT_WRITABLE"] = "Comprueba que la carpeta nvram no esté en modo solo lectura y que tu cuenta de usuario de Windows tenga permiso de escritura sobre ella (clic derecho → Propiedades → Seguridad).",
     };
 }
