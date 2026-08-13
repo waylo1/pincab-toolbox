@@ -5,6 +5,11 @@ tests/fixtures/out/
 publish/
 *.zip
 
+# Exception to the *.zip blanket rule above: these are tiny fake ROM fixtures (no ROM data
+# inside, see the .READ-ME-FAKE-ROM.txt each one carries) that the demo dataset needs on disk
+# to tell its story — not a build artifact, must be tracked.
+!src/PincabToolbox.App/DemoData/install/VPinMAME/roms/*.zip
+
 # License signing private key (audit 2026-08-04: tools/PincabToolbox.LicenseTool defaults to
 # writing it as a relative file, which would land inside the repo working directory unless
 # caught here). Anyone with this file can mint valid Repair licenses — it must never be committed.

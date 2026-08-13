@@ -1,4 +1,67 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 12/08/2026
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
+
+## 📀 MAJ 13/08 — point 1/6 : zips ROM factices dans le DemoData, le mode démo raconte enfin une vraie histoire
+
+> **Premier des 6 chantiers de la revue CTO+Produit qui suit le portage Scanner du 12/08**, traité
+> seul, dans son propre commit, du plus simple au plus complexe (ordre imposé par Maxime). Reprise
+> en session fraîche : le sandbox cloud précédent n'existe plus, tout reconstruit depuis le bundle
+> `.git` complet du poste de Maxime (`git bundle create --all`, transféré via le pont device →
+> conteneur), `.NET 8 SDK` réinstallé (`apt-get install dotnet-sdk-8.0`, absent du nouveau
+> conteneur), fixtures binaires de `PincabToolbox.Core.Tests` régénérées
+> (`tests/fixtures/make_fixtures.py`, dossier `out/` gitignoré donc jamais livré). **Baseline
+> revérifiée avant tout changement : Core 412/412, Repair 145/145, identique au dernier commit
+> connu.**
+>
+> **Fait** : `DemoData/install/VPinMAME/roms/afm_113b.zip` et `afm_113.zip` — exactement la
+> proposition à faible coût notée le 12/08, non codée à l'époque. Chaque zip ne contient qu'un
+> fichier texte `*.READ-ME-FAKE-ROM.txt` disant explicitement que ce n'est pas une vraie ROM
+> (aucune donnée MAME/VPinMAME, rien de sous copyright) — pour que personne ne s'y trompe si le
+> zip est un jour ouvert. `mm_109c.zip` (Medieval Madness) volontairement PAS ajouté : c'est ce
+> manque qui donne au démo son résultat Critical.
+>
+> **Zéro ligne de code touchée.** `RomValidatorScanner` compare déjà uniquement des noms de
+> fichiers (`ctx.RomSets`, rempli par un glob `*.zip` sur le dossier roms — jamais le contenu),
+> `MainWindow.BuildTableRows`/`BuildCauseCards` pilotent déjà la colonne ROM et les cartes
+> uniquement par les codes `ROM_OK/ROM_MISSING/ROM_NOT_REQUIRED/ROM_UNZIPPED`, et les clés
+> `Loc["tbl.rom.*"]` existent déjà En/Fr. Un pur changement de données. Seul fichier texte modifié :
+> `.gitignore` — `*.zip` est une règle globale (protège contre un commit accidentel des gros zips
+> de build/dist qui traînent sur le poste de Maxime) ; ajout d'une exception scopée
+> `!src/PincabToolbox.App/DemoData/install/VPinMAME/roms/*.zip` plutôt que d'affaiblir la règle
+> partout.
+>
+> **Effet mesuré** (harnais jetable `dotnet run` contre `PincabToolbox.Core` directement, hors
+> Windows donc hors résultats COM/écrans/audio du poste de Maxime — comparaison AVANT/APRÈS dans
+> le même environnement, seule chose qui compte ici) :
+> - Avant : 16 résultats, score 68/C, 1 critique (`ROMS_DIR_NOT_FOUND` explique un `—` partout en
+>   colonne ROM — proche des 17/68/C/1 déjà consignés le 12/08, l'écart d'une unité vient d'un
+>   scanner réseau exclu du harnais de vérification, pas d'une régression).
+> - Après : 19 résultats, score 57/C, 2 critiques. Attack From Mars → `ROM_OK` (afm_113b, match
+>   direct). Aliased Table (Test 2020) → `ROM_OK` via `afm_mod → afm_113` — **la résolution
+>   VPMAlias s'exécute enfin dans le pipeline démo**, jusqu'ici jamais exercée que par les tests
+>   unitaires de `AliasFile`. Medieval Madness → `ROM_MISSING` **Critical**, nouveau résultat
+>   vedette du démo, même histoire que le rapport terrain de Gregg (12/08) : une ROM vraiment
+>   manquante sur une table qui pilote vraiment VPinMAME. Original Gem (Homebrew) → confirmé
+>   `ROM_NOT_REQUIRED` (aucun `GameName`/`CreateObject` VPinMAME dans son script).
+>
+> **Root cause cards** : aucun des 3 scénarios actuels (`Scenarios.cs`) ne déclenche sur
+> `ROM_MISSING` (vérifié en lisant les `RequiresCode` des chaînes causales : seuls
+> `BITNESS_MISMATCH_VPM`, `BITNESS_DMD64_MISSING`, `POPPER_NOT_REGISTERED`, `B2S_MISSING`,
+> `VPINMAME_NOT_REGISTERED` sont câblés). Le démo garde donc 2 causes racines réelles, et le
+> `ROM_MISSING` de Medieval Madness remonte par le repli déjà prévu pour ce cas (« carte construite
+> du résultat le plus grave sans scénario ») — comportement attendu, pas un trou.
+>
+> **Amélioration à faible coût repérée, NON codée (revue CTO+Produit)** : un scénario MinMatch-1
+> dédié à `ROM_MISSING` seul donnerait à ce cas — le plus fréquent en usage réel d'après le retour
+> de Gregg — sa propre carte avec phrase joueur/impact au lieu du repli générique. Candidat naturel
+> pour le point 4 (nouveaux scénarios), pas pour ce point-ci qui reste un changement de données pur.
+>
+> **Vérifié** : Core 412/412, Repair 145/145 (relancés après l'ajout, aucune régression — attendu,
+> aucun test Core/Repair ne référence `DemoData`, vérifié par recherche). `PincabToolbox.App`
+> **toujours pas compilable dans ce sandbox** (NU1100, fait documenté, inchangé) — rien à
+> revérifier côté XAML/x:Name/Loc puisqu'aucun fichier App n'a bougé. **À vérifier sur la machine
+> de Maxime via `build.cmd` + Mode démo** : Attack From Mars et Aliased Table en vert avec leur ROM
+> trouvée, Medieval Madness en rouge « ne démarrera pas », Original Gem en vert « aucune requise »,
+> et la carte de tête doit maintenant afficher ce Critical au lieu du fallback précédent.
 
 ## 🎨 MAJ 12/08 (bis) — fond du bandeau remplacé par une salle d'arcade, voile renforcé
 

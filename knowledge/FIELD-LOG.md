@@ -26,6 +26,38 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 (session éco) · Point 1/6 revue CTO+Produit — zips ROM factices dans le DemoData
+- code:        aucun nouveau code de finding (`ROM_OK`/`ROM_MISSING`/`ROM_NOT_REQUIRED` existaient
+  déjà) ; les résultats concernés changent : `ROMS_DIR_NOT_FOUND` disparaît du démo, remplacé par
+  2× `ROM_OK` + 1× `ROM_MISSING` (Critical) + 1× `ROM_NOT_REQUIRED`
+- bac:         FEATURE (implémentation de l'amélioration à faible coût notée le 2026-08-12, pas
+  codée à l'époque)
+- contexte:    `DemoData/install/VPinMAME/roms/` n'existait pas → colonne ROM du mode démo à « — »
+  partout, `RomValidatorScanner` s'arrêtait sur `ROMS_DIR_NOT_FOUND` avant même de lire les tables
+- analyse:     ajout de `afm_113b.zip` et `afm_113.zip` (fixtures vides, un seul fichier texte
+  `*.READ-ME-FAKE-ROM.txt` à l'intérieur disant que ce n'est pas une vraie ROM — aucune donnée
+  MAME/VPinMAME, rien sous copyright). `mm_109c.zip` (Medieval Madness) volontairement absent.
+  Effet, mesuré par harnais `dotnet run` jetable contre `PincabToolbox.Core` (hors Windows) :
+  Attack From Mars → `ROM_OK` direct ; Aliased Table (Test 2020) → `ROM_OK` via l'alias VPMAlias
+  `afm_mod → afm_113` (chemin de résolution d'alias enfin exercé par le pipeline démo, jusque-là
+  seulement couvert par les tests unitaires `AliasFileTests`) ; Medieval Madness → `ROM_MISSING`
+  Critical (nouveau résultat vedette du démo, même histoire que le rapport terrain de Gregg du
+  12/08 — une ROM manquante sur une table qui pilote réellement VPinMAME) ; Original Gem
+  (Homebrew) → confirmé `ROM_NOT_REQUIRED` (aucun `GameName`/`CreateObject` VPinMAME dans son
+  script). Score démo (hors Windows) : 68/C avant → 57/C après, 1 critique → 2. Zéro code touché :
+  `RomValidatorScanner` compare des noms de fichiers, `MainWindow.BuildTableRows`/`BuildCauseCards`
+  et les clés `Loc["tbl.rom.*"]` pilotaient déjà tout par les codes existants. Seule chose non-DemoData
+  modifiée : `.gitignore` (exception scopée à la règle globale `*.zip`, pour ne pas l'affaiblir
+  ailleurs). Vérifié : aucun des 3 scénarios actuels ne déclenche sur `ROM_MISSING` (RequiresCode
+  passés en revue), donc le repli « carte du résultat le plus grave sans scénario » porte
+  correctement ce nouveau Critical — comportement attendu.
+- disposition: livré (bundle) · à vérifier sur la machine de Maxime via `build.cmd` + Mode démo.
+  Core 412/412 + Repair 145/145 verts (sandbox reconstruit en session fraîche : .NET 8 SDK
+  réinstallé, fixtures Core.Tests régénérées via `make_fixtures.py`, baseline revérifiée identique
+  avant tout changement). Amélioration à faible coût repérée, NON codée : un scénario MinMatch-1
+  dédié à `ROM_MISSING` seul (candidat pour le point 4, nouveaux scénarios) donnerait à ce cas —
+  le plus fréquent en usage réel d'après Gregg — sa propre carte au lieu du repli générique.
+
 ## 2026-08-12 (session éco) · Écran Scanner porté sur la maquette du 11/08 — en une passe
 - code:        transverse UI (aucun nouveau code de finding) + `Scenarios.DetectAll` (liste triée au
   lieu du seul meilleur) + nouveau scénario `VPINMAME_NOT_REGISTERED` (MinMatch 1 — les 4 conditions
