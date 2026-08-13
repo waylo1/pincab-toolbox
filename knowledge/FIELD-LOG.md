@@ -113,6 +113,28 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
   échoue bruyamment au lieu de livrer silencieusement un panneau de détail incomplet. 501 Core + 156 Repair (inchangé
   en nombre, un test étendu plutôt qu'ajouté), `selftest.py` 12/12, JSON revalidé, pack réel validé sans avertissement
   bloquant (seuls les 4 avertissements pré-existants et déjà connus subsistent).
+
+## 2026-08-14 (extension bis) · Maxime, « feu vert » — le filet ROM_MISSING automatisé dans le validateur
+- code:        aucun code de finding — outillage CI, guard-fou anti-régression sur la couverture éditoriale du pack
+- bac:         FEATURE
+- contexte:    suite directe de la revue CTO+Produit de l'entrée précédente, où l'amélioration à faible coût
+  proposée était : « ajouter un contrôle automatique dans selftest.py qui vérifie qu'un nouveau code ajouté à
+  Knowledge.cs a bien son entrée dans le pack, pour que ce genre de rattrapage ne dépende plus d'une relecture
+  manuelle ». Maxime : « feu vert ».
+- analyse:     le validateur avait déjà exactement ce principe pour ADR-005 (`discover_registry` lit le code C#
+  du registre d'actions et compare à ce que le pack déclare) — même geste appliqué à Knowledge.cs. Nouvelle
+  fonction `discover_knowledge_codes` : regex sur les clés `["CODE"]` de la table `Knowledge.Table`, même
+  logique que la vérification manuelle faite deux fois à la main ce 14/08. Sévérité choisie : avertissement,
+  pas rejet — un code sans texte éditorial reste un pack valide et sûr (dégradation ADR-005 normale), seulement
+  moins riche ; ce n'est pas une erreur bloquante comme un actionId inconnu du registre.
+- disposition: FEATURE, livré. `validate_pack.py --knowledge-cs <chemin>` (optionnel, comme `--registry`) signale
+  chaque code de Knowledge.cs absent du pack, et chaque entrée présente mais à qui il manque playerEn/
+  explanationEn/verificationEn. Branché dans la CI (`.github/workflows/knowledge-pack.yml`) — sans ce branchement
+  le nouveau flag existerait mais ne tournerait jamais, exactement le problème de donnée morte qu'on corrige
+  depuis ce matin. Vérifié en le cassant volontairement : retirer ROM_MISSING du pack fait apparaître l'avertissement
+  exact attendu. 2 nouveaux cas dans `selftest.py` (14/14 désormais) : le cas cassé confirme l'avertissement, le
+  cas sain confirme que `--knowledge-cs` ne fait pas régresser le pack de référence. Pack réel revalidé avec le
+  nouveau flag : 0 code manquant, comme attendu après l'entrée précédente.
 - code:        BITNESS_DMD64_MISSING, B2S_MISSING, DPI_SCALING_NONSTANDARD, DISPLAY_SETUP_INCOMPLETE (et tout code sans règle du pack, ou étape manuelle de scénario)
 - bac:         FP-langue (bug de traduction, pas de logique)
 - contexte:    Maxime, capture d'écran de son vrai cab en FR : sous « Aucune réparation automatique

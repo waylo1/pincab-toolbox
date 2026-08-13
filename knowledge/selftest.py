@@ -12,11 +12,19 @@ def run(pack):
                        capture_output=True, text=True)
     return r.returncode, r.stdout
 
+def run_with_knowledge(pack):
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+        json.dump(pack, f); p = f.name
+    r = subprocess.run([sys.executable, "validate_pack.py", p, "--actions", ACTIONS,
+                        "--knowledge-cs", "../src/PincabToolbox.App/Knowledge.cs"],
+                       capture_output=True, text=True)
+    return r.returncode, r.stdout
+
 cases = []
 
-def case(name, mutate, must_fail=True, expect=""):
+def case(name, mutate, must_fail=True, expect="", runner=run):
     p = copy.deepcopy(base); mutate(p)
-    code, out = run(p)
+    code, out = runner(p)
     ok = (code != 0) if must_fail else (code == 0)
     if expect: ok = ok and expect in out
     cases.append((name, ok, out.strip().splitlines()[-1] if out else ""))
@@ -75,8 +83,16 @@ case("étape manualOnly sans raison FR/EN → rejet",
 case("code dupliqué → rejet",
      lambda p: p["entries"].append(copy.deepcopy(p["entries"][0])))
 
+# couverture éditoriale : un code connu de Knowledge.cs disparaît du pack (le bug ROM_MISSING du 14/08)
+case("code Knowledge.cs sans entrée pack → avertissement (pas un rejet)",
+     lambda p: p.__setitem__("entries", [e for e in p["entries"] if e["code"] != "ROM_MISSING"]),
+     must_fail=False, expect="ROM_MISSING: connu de Knowledge.cs mais absent du pack",
+     runner=run_with_knowledge)
+
 # pack sain
 case("le pack de référence reste valide", lambda p: None, must_fail=False)
+case("le pack de référence reste valide avec --knowledge-cs aussi",
+     lambda p: None, must_fail=False, runner=run_with_knowledge)
 
 print()
 fails = 0

@@ -27,10 +27,11 @@ jobs:
               jsonschema.validate(json.load(open(p)), schema); print('ok', p)
           "
 
-      - name: Regles metier + ADR-005
+      - name: Regles metier + ADR-005 + couverture editoriale
         run: |
           for pack in knowledge/pack-*.json; do
-            python knowledge/validate_pack.py "$pack" --registry src/PincabToolbox.Repair
+            python knowledge/validate_pack.py "$pack" --registry src/PincabToolbox.Repair \
+              --knowledge-cs src/PincabToolbox.App/Knowledge.cs
           done
 
       - name: Garde-fous du validateur

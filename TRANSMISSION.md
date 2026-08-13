@@ -1,5 +1,25 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 14/08/2026
 
+## 🛡️ MAJ 14/08 (quater) — le validateur attrape désormais lui-même un futur "oubli ROM_MISSING"
+
+> Suite de la revue CTO+Produit de l'entrée juste en dessous : l'amélioration à faible coût
+> proposée mais pas codée était un contrôle automatique de couverture éditoriale. Maxime : « feu
+> vert ».
+>
+> **Même principe que le garde-fou ADR-005 existant** (`discover_registry` lit le code C# du
+> registre d'actions, jamais la donnée) appliqué à `Knowledge.cs` : `discover_knowledge_codes` lit
+> les 51 clés de code de `Knowledge.Table` et les compare à ce que le pack déclare.
+>
+> **Livré :** `validate_pack.py --knowledge-cs <chemin>` (optionnel, même famille que `--registry`)
+> — avertit pour chaque code de Knowledge.cs absent du pack, et pour chaque entrée présente à qui
+> il manque playerEn/explanationEn/verificationEn. Avertissement, pas rejet : un code sans texte
+> éditorial reste un pack valide et sûr, juste moins riche. **Branché dans la CI**
+> (`.github/workflows/knowledge-pack.yml`) — sans ce branchement le flag existerait mais ne
+> tournerait jamais en pratique, exactement le problème de donnée morte diagnostiqué ce matin.
+> Vérifié en le cassant volontairement (retirer ROM_MISSING du pack fait apparaître l'avertissement
+> exact attendu), 2 nouveaux cas dans `selftest.py` (14/14). Pack réel revalidé avec le nouveau
+> flag : 0 code manquant.
+
 ## 🧠 MAJ 14/08 (ter) — les 44 codes restants annotés, les 51 codes de Knowledge.cs ont maintenant un panneau de détail complet
 
 > Suite de l'entrée juste en dessous, qui n'avait câblé que 7 codes sur 51. Maxime, après avoir vu

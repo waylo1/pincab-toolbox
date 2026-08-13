@@ -17,9 +17,15 @@ Ce que le JSON Schema ne peut PAS vérifier et que ce script vérifie :
      automatique, une confiance à 100 posée au doigt mouillé.
   6. TODO restants — un pack avec des TODO ne part pas en production.
 
+  7. Couverture éditoriale — un code connu de Knowledge.cs (App) sans entrée pack (player/
+     explanation/verification) se voit désormais AVANT de livrer, pas après coup (14/08/2026 :
+     ROM_MISSING était passé au travers d'un premier lot de 43 codes, repéré seulement par une
+     vérification manuelle de parité — ce guard-fou automatise ce filet).
+
 Usage :
     python3 validate_pack.py pack-2026.08.json --registry ../src/PincabToolbox.Repair
     python3 validate_pack.py pack-2026.08.json --actions unblock_file,relink_binary
+    python3 validate_pack.py pack-2026.08.json --knowledge-cs ../src/PincabToolbox.App/Knowledge.cs
 """
 from __future__ import annotations
 import argparse, json, re, sys
@@ -56,6 +62,16 @@ def discover_registry(src: Path) -> set[str]:
         # ActionId = "unblock_file"  (initialiseur d'objet)
         ids |= set(re.findall(r'ActionId\s*=\s*"([a-z][a-z0-9_]*)"\s*[,;}]', t))
     return ids
+
+
+# ── 1bis. codes connus de Knowledge.cs (App), lus dans le CODE aussi ────────
+
+KNOWLEDGE_CODE = re.compile(r'^\s*\["([A-Z][A-Z0-9_]*)"\]', re.MULTILINE)
+
+def discover_knowledge_codes(knowledge_cs: Path) -> set[str]:
+    """Extrait les codes de la table Knowledge.Table en C#. Même principe que le registre
+    d'actions (§1) : le code fait foi, la donnée ne peut pas se déclarer complète toute seule."""
+    return set(KNOWLEDGE_CODE.findall(knowledge_cs.read_text(encoding="utf-8", errors="ignore")))
 
 
 # ── 2..6. règles métier ─────────────────────────────────────────────────────
@@ -144,6 +160,7 @@ def main() -> int:
     ap.add_argument("pack")
     ap.add_argument("--registry", help="dossier source de PincabToolbox.Repair")
     ap.add_argument("--actions", help="liste d'ActionId séparés par des virgules (si pas de source)")
+    ap.add_argument("--knowledge-cs", help="chemin vers PincabToolbox.App/Knowledge.cs")
     a = ap.parse_args()
 
     try:
@@ -189,6 +206,26 @@ def main() -> int:
 
     for sc in pack.get("scenarios", []):
         check_scenario(sc, codes, rule_ids, f"scenarios[{sc.get('id','?')}]")
+
+    if a.knowledge_cs:
+        kc_path = Path(a.knowledge_cs)
+        if not kc_path.exists():
+            warn(f"--knowledge-cs {kc_path} introuvable — couverture éditoriale NON vérifiée")
+        else:
+            known = discover_knowledge_codes(kc_path)
+            by_code = {e["code"]: e for e in entries}
+            for code in sorted(known):
+                e = by_code.get(code)
+                if e is None:
+                    warn(f"{code}: connu de Knowledge.cs mais absent du pack — "
+                         f"le panneau de détail n'aura ni player, ni explanation, ni verification")
+                    continue
+                missing = [f for f in ("playerEn", "explanationEn", "verificationEn") if not e.get(f)]
+                if missing:
+                    warn(f"entries[{code}]: présent mais {', '.join(missing)} manquant(s) — "
+                         f"couverture éditoriale incomplète")
+    else:
+        warn("--knowledge-cs non fourni — la couverture éditoriale des codes App n'a PAS été vérifiée")
 
     print(f"\n{len(entries)} entrées · {len(rule_ids)} règles · "
           f"{len(pack.get('scenarios', []))} scénarios")
