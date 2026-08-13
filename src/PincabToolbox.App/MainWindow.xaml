@@ -712,7 +712,7 @@
                             <Grid Margin="0,8,0,0">
                                 <Border x:Name="TablesTabCard" Visibility="Collapsed" Background="{StaticResource Panel}"
                                         BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12"
-                                        MaxWidth="920" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        VerticalAlignment="Top">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
