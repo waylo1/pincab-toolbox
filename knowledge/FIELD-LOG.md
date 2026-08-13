@@ -26,6 +26,33 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 (session éco) · Point 4/6 revue CTO+Produit — 3 nouveaux scénarios dans Scenarios.cs (BITNESS_MISMATCH_VPM32, COM_STALE_PATH, AltSound/AltColor désactivés)
+- code:        aucun nouveau code de finding (les 3 scénarios utilisent des codes existants,
+  jusqu'ici non repris par aucun scénario)
+- bac:         FEATURE (chantier planifié, point 4/6, signal « GO » de Maxime reçu après clôture du
+  point 3/6)
+- contexte:    point 4/6 de la revue CTO+Produit ; portée = ajouter des scénarios de corrélation à
+  `Scenarios.DetectAll`
+- analyse:     3 candidats choisis en repartant de la liste complète des codes de finding existants
+  et en cherchant ceux qui, comme `VPINMAME_NOT_REGISTERED` (point 3/6 quater), sont déjà un
+  diagnostic complet à eux seuls — donc MinMatch=1, zéro corrélation inventée entre scanners
+  différents. `BITNESS_MISMATCH_VPM32` (Critical, `BitnessScanner.cs`) est le miroir jamais utilisé
+  du premier scénario (VPX 32-bit + VPinMAME 64-bit-only au lieu de l'inverse) ; gardé comme Def
+  séparée plutôt que fusionné dans le scénario 1 dont le texte de chaîne est câblé en dur pour
+  l'autre sens. `COM_STALE_PATH` (Warning, `ComHealthScanner.cs`) : le composant est enregistré ET le
+  chemin enregistré n'existe plus, les deux faits mesurés par le scanner lui-même ; confiance de base
+  fixée à 68 (un cran sous les scénarios Critical à 80) pour refléter la sévérité réelle sous-
+  jacente. `ALTSOUND_PRESENT_NOT_ENABLED` + `ALTCOLOR_PRESENT_NOT_ENABLED` (Note,
+  `FeatureEnabledScanner.cs`, LOT D) : combinés en MinMatch=1 parce que ce n'est pas une corrélation
+  entre deux scanners différents façon scénario 1/2, c'est le même patron « installé mais l'option
+  VPinMAME est encore à 0 » mesuré deux fois (son, couleur) — l'un seul est déjà un diagnostic
+  complet.
+- disposition: livré (bundle) · Core 439/439 (inchangé, ce point ne touche pas Core), Repair 145/145
+  (inchangé), App.Tests 49/49 (38 + 11 nouveaux : déclenchement MinMatch=1 pour chacun, filtrage de
+  chaîne par code, calcul exact de confiance, non-collision avec le scénario 1 existant, textes FR,
+  cohabitation des 6 scénarios ensemble). `csc -t:library` : toujours zéro CS1xxx. Diff strictement
+  scopé à `Scenarios.cs` + `ScenariosTests.cs`. En attente du signal de Maxime avant le point 5.
+
 ## 2026-08-13 (session éco) · Point 3/6 suite — décision de Maxime = extraire maintenant. ChainRowPlanner + TableRowPlanner, MainWindow rebranché dessus
 - code:        aucun nouveau code de finding
 - bac:         FEATURE (tests, chantier planifié) — suite directe de l'entrée juste en dessous, la

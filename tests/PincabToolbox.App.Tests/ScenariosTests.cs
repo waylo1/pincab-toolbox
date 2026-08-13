@@ -173,4 +173,94 @@ public static class ScenariosTests
         Assert.True(m.TriggeredBy.Contains("B2S_MISSING"));
         Assert.False(m.TriggeredBy.Contains("UNRELATED"));
     }
+
+    // ---- Point 4/6 (13/08): 3 new scenarios, all single-code-or-twin-code MinMatch=1 (see the
+    // rationale comments in Scenarios.cs itself for why each one is safe to fire on one code alone). ----
+
+    public static void Test_Vpm32Mismatch_Alone_Is_Enough_MinMatch_1()
+    {
+        var matches = Scenarios.DetectAll(Codes("BITNESS_MISMATCH_VPM32"));
+        Assert.Equal(1, matches.Count);
+        Assert.Equal(3, matches[0].Chain.Count, "all 3 chain steps require BITNESS_MISMATCH_VPM32, all should show");
+    }
+
+    public static void Test_Vpm32Mismatch_Does_Not_Fire_The_Other_Direction_Bitness_Scenario()
+    {
+        // BITNESS_MISMATCH_VPM32 must not accidentally satisfy scenario 1's MinMatch=2 on
+        // BITNESS_MISMATCH_VPM/BITNESS_DMD64_MISSING/BITNESS_HYBRID_INSTALL — the two Defs share no code.
+        var matches = Scenarios.DetectAll(Codes("BITNESS_MISMATCH_VPM32"));
+        Assert.False(matches.Any(m => m.Title == "Incomplete 32→64 migration"));
+    }
+
+    public static void Test_Vpm32Mismatch_Confidence_Is_BaseConfidence_Plus_One_PerCode()
+    {
+        var matches = Scenarios.DetectAll(Codes("BITNESS_MISMATCH_VPM32"));
+        Assert.Equal(88, matches[0].Confidence, "BaseConfidence 80 + 1 matched code * PerCode 8");
+    }
+
+    public static void Test_ComStalePath_Alone_Is_Enough_MinMatch_1()
+    {
+        var matches = Scenarios.DetectAll(Codes("COM_STALE_PATH"));
+        Assert.Equal(1, matches.Count);
+        Assert.Equal(3, matches[0].Chain.Count, "all 3 chain steps require COM_STALE_PATH, all should show");
+    }
+
+    public static void Test_ComStalePath_Confidence_Is_BaseConfidence_Plus_One_PerCode()
+    {
+        var matches = Scenarios.DetectAll(Codes("COM_STALE_PATH"));
+        Assert.Equal(76, matches[0].Confidence, "BaseConfidence 68 + 1 matched code * PerCode 8");
+    }
+
+    public static void Test_AltExtrasNotEnabled_Fires_On_AltSound_Alone_And_Only_Shows_Its_Own_Chain_Pair()
+    {
+        var matches = Scenarios.DetectAll(Codes("ALTSOUND_PRESENT_NOT_ENABLED"));
+        Assert.Equal(1, matches.Count);
+        Assert.Equal(2, matches[0].Chain.Count, "only the AltSound pair should show, not AltColor's");
+        Assert.False(matches[0].Chain.Any(c => c.Label.Contains("AltColor", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    public static void Test_AltExtrasNotEnabled_Fires_On_AltColor_Alone_And_Only_Shows_Its_Own_Chain_Pair()
+    {
+        var matches = Scenarios.DetectAll(Codes("ALTCOLOR_PRESENT_NOT_ENABLED"));
+        Assert.Equal(1, matches.Count);
+        Assert.Equal(2, matches[0].Chain.Count, "only the AltColor pair should show, not AltSound's");
+        Assert.False(matches[0].Chain.Any(c => c.Label.Contains("AltSound", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    public static void Test_AltExtrasNotEnabled_Both_Codes_Show_All_Four_Chain_Steps()
+    {
+        var matches = Scenarios.DetectAll(Codes("ALTSOUND_PRESENT_NOT_ENABLED", "ALTCOLOR_PRESENT_NOT_ENABLED"));
+        Assert.Equal(1, matches.Count);
+        Assert.Equal(4, matches[0].Chain.Count);
+    }
+
+    public static void Test_AltExtrasNotEnabled_Confidence_Grows_From_One_Code_To_Two()
+    {
+        var one = Scenarios.DetectAll(Codes("ALTSOUND_PRESENT_NOT_ENABLED"))[0].Confidence;
+        var two = Scenarios.DetectAll(Codes("ALTSOUND_PRESENT_NOT_ENABLED", "ALTCOLOR_PRESENT_NOT_ENABLED"))[0].Confidence;
+        Assert.Equal(86, one, "BaseConfidence 78 + 1 matched code * PerCode 8");
+        Assert.Equal(94, two, "BaseConfidence 78 + 2 matched codes * PerCode 8");
+    }
+
+    public static void Test_Point4_Scenarios_Have_French_Text_Too() => WithLang("fr", () =>
+    {
+        var vpm32 = Scenarios.DetectAll(Codes("BITNESS_MISMATCH_VPM32"))[0];
+        Assert.Equal("Installation 32-bit avec VPinMAME 64-bit uniquement", vpm32.Title);
+
+        var stale = Scenarios.DetectAll(Codes("COM_STALE_PATH"))[0];
+        Assert.Equal("Composant enregistré vers un emplacement supprimé", stale.Title);
+
+        var extras = Scenarios.DetectAll(Codes("ALTSOUND_PRESENT_NOT_ENABLED"))[0];
+        Assert.Equal("Pack son/couleur installé mais désactivé", extras.Title);
+    });
+
+    public static void Test_Point4_Scenarios_Can_All_Fire_Alongside_The_Original_Three()
+    {
+        var matches = Scenarios.DetectAll(Codes(
+            "BITNESS_MISMATCH_VPM", "BITNESS_DMD64_MISSING",
+            "POPPER_NOT_REGISTERED", "B2S_MISSING",
+            "VPINMAME_NOT_REGISTERED",
+            "BITNESS_MISMATCH_VPM32", "COM_STALE_PATH", "ALTSOUND_PRESENT_NOT_ENABLED"));
+        Assert.Equal(6, matches.Count);
+    }
 }

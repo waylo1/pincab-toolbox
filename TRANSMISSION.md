@@ -1,5 +1,41 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 🧪 MAJ 13/08 (sexies) — point 4/6 : 3 nouveaux scénarios dans `Scenarios.cs`, 11 tests
+
+> Point 3/6 est clos (signal « GO » de Maxime reçu). Point 4/6 : ajouter des scénarios à
+> `Scenarios.DetectAll`. Choix des 3 scénarios fait à partir des codes de finding existants
+> **non déjà couverts** par les 3 scénarios en place — zéro corrélation inventée : chacun des trois
+> reprend le même patron déjà validé pour « VPinMAME registration missing » (point 3/6 quater) — un
+> seul code, ou deux codes qui mesurent littéralement la même chose deux fois, MinMatch = 1, déjà un
+> diagnostic complet à lui seul.
+>
+> 1. **`BITNESS_MISMATCH_VPM32`** (`BitnessScanner.cs`, Critical, jamais utilisé jusqu'ici) — le
+>    miroir exact du premier scénario existant, mais dans l'autre sens (VPX 32-bit + VPinMAME
+>    64-bit-only au lieu de VPX 64-bit + VPinMAME 32-bit-only). Def séparée plutôt que fusionnée dans
+>    le scénario 1 : son texte de chaîne est câblé en dur ("VPX 64-bit / VPinMAME 32-bit") et serait
+>    faux lu à l'envers.
+> 2. **`COM_STALE_PATH`** (`ComHealthScanner.cs`, Warning) — le composant EST enregistré mais le
+>    chemin enregistré n'existe plus sur le disque (les deux faits sont mesurés par le scanner, pas
+>    devinés). `BaseConfidence` = 68 (un cran sous les scénarios Critical à 80 : la sévérité sous-
+>    jacente est Warning, la confiance doit le refléter).
+> 3. **`ALTSOUND_PRESENT_NOT_ENABLED` + `ALTCOLOR_PRESENT_NOT_ENABLED`** (`FeatureEnabledScanner.cs`,
+>    Note, LOT D) — "pack son/couleur installé mais l'option VPinMAME qui l'active est encore à 0".
+>    MinMatch = 1 : ce n'est pas une corrélation entre deux choses différentes façon scénario 1/2,
+>    c'est le MÊME patron mesuré deux fois (son, couleur) — l'un seul suffit déjà comme diagnostic
+>    complet, les deux ensemble ajoutent juste la deuxième paire de cases dans la chaîne causale.
+>
+> 11 nouveaux tests dans `ScenariosTests.cs` : déclenchement à MinMatch=1 pour chacun, filtrage de
+> chaîne (le cas AltSound seul ne montre pas les cases AltColor et vice-versa), calcul de confiance
+> exact, non-collision avec le scénario 1 existant (même famille BITNESS_* mais Def différente, codes
+> disjoints), textes FR, et cohabitation des 6 scénarios (3 anciens + 3 nouveaux) quand tous leurs
+> codes co-occurrent dans un même scan.
+>
+> Vérifications avant livraison : Core 439/439 (inchangé, ce point ne touche pas Core), Repair
+> 145/145 (inchangé), App.Tests **49/49** (38 + 11 nouveaux). `csc -t:library` sur les 8 fichiers .cs
+> de l'App : toujours uniquement CS0234/CS0246/CS0518/CS0656, zéro CS1xxx. Diff strictement scopé à
+> `src/PincabToolbox.App/Scenarios.cs` + `tests/PincabToolbox.App.Tests/ScenariosTests.cs`, rien
+> d'autre touché.
+
 ## 🧪 MAJ 13/08 (quinquies) — point 3/6 suite : décision de Maxime = extraire maintenant. `ChainRowPlanner` + `TableRowPlanner`, 20 tests, MainWindow rebranché dessus
 
 > Maxime a choisi l'option « extraire maintenant » (mini-tranche anticipée du point 5) plutôt que

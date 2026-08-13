@@ -133,6 +133,80 @@ public static class Scenarios
                 new() { LabelEn = "ROM tables", LabelFr = "Tables à ROM", StatusEn = "✕ won't start", StatusFr = "✕ ne démarrent pas", Tone = ChainTone.Bad, RequiresCode = "VPINMAME_NOT_REGISTERED" },
             },
         },
+        new()
+        {
+            // Point 4/6 (13/08) — mirror of the first scenario, other direction. BitnessScanner
+            // measures this as its own independent condition (has32Main && !hasVpm32 && hasVpm64,
+            // BitnessScanner.cs) — a single Critical code that is already a complete diagnosis on
+            // its own, same shape as VPINMAME_NOT_REGISTERED just above (MinMatch = 1, no
+            // correlation invented). Kept as its OWN Def rather than folded into scenario 1: the
+            // chain text of scenario 1 is hardcoded to "VPX 64-bit / VPinMAME 32-bit" and would be
+            // wrong read backwards, so a second Def is the honest way to cover the reverse case.
+            TitleEn = "32-bit install with 64-bit-only VPinMAME",
+            TitleFr = "Installation 32-bit avec VPinMAME 64-bit uniquement",
+            PlayerEn = "Your Visual Pinball is 32-bit, but only the 64-bit ROM component is installed.",
+            PlayerFr = "Ton Visual Pinball est en 32-bit, mais seul le composant ROM 64-bit est installé.",
+            ExplEn = "This is the reverse of the more common 32→64 migration issue: a 32-bit Visual Pinball executable is present but only VPinMAME64.dll was found — 32-bit VPX cannot load the 64-bit COM server, so every ROM table will fail.",
+            ExplFr = "C'est l'inverse du problème de migration 32→64 le plus courant : un exécutable Visual Pinball 32-bit est présent mais seul VPinMAME64.dll a été trouvé — VPX 32-bit ne peut pas charger le serveur COM 64-bit, donc toutes les tables à ROM vont échouer.",
+            Codes = new[] { "BITNESS_MISMATCH_VPM32" },
+            MinMatch = 1, BaseConfidence = 80, PerCode = 8,
+            Chain = new ChainStepDef[]
+            {
+                new() { LabelEn = "Visual Pinball X", LabelFr = "Visual Pinball X", StatusEn = "✓ 32-bit", StatusFr = "✓ 32-bit", Tone = ChainTone.Good, RequiresCode = "BITNESS_MISMATCH_VPM32" },
+                new() { LabelEn = "VPinMAME.dll", LabelFr = "VPinMAME.dll", StatusEn = "✕ 64-bit only", StatusFr = "✕ 64-bit uniquement", Tone = ChainTone.Bad, RequiresCode = "BITNESS_MISMATCH_VPM32" },
+                new() { LabelEn = "ROM tables", LabelFr = "Tables à ROM", StatusEn = "✕ won't start", StatusFr = "✕ ne démarrent pas", Tone = ChainTone.Bad, RequiresCode = "BITNESS_MISMATCH_VPM32" },
+            },
+        },
+        new()
+        {
+            // Point 4/6 (13/08) — COM_STALE_PATH (ComHealthScanner.cs) already measures every fact
+            // this scenario states: the component IS registered (view32/view64 not null) AND the
+            // path it's registered to no longer exists on disk. Single Warning-level code, MinMatch
+            // = 1, same "one code is already the whole diagnosis" shape as VPINMAME_NOT_REGISTERED.
+            // BaseConfidence kept a notch below the two Critical-only scenarios above (80): the
+            // underlying finding is a Warning, not a Critical, and confidence should track that.
+            TitleEn = "Component registered to a deleted location",
+            TitleFr = "Composant enregistré vers un emplacement supprimé",
+            PlayerEn = "A required component is registered, but Windows is looking for it somewhere that no longer exists.",
+            PlayerFr = "Un composant requis est enregistré, mais Windows le cherche à un endroit qui n'existe plus.",
+            ExplEn = "The COM registration for this component still points to a file path that has been moved, renamed, or deleted — a leftover from a previous install location. Loading it will fail even though a working copy may exist elsewhere.",
+            ExplFr = "L'enregistrement COM de ce composant pointe encore vers un chemin de fichier qui a été déplacé, renommé ou supprimé — un reliquat d'un emplacement d'installation précédent. Son chargement échouera même si une copie fonctionnelle existe peut-être ailleurs.",
+            Codes = new[] { "COM_STALE_PATH" },
+            MinMatch = 1, BaseConfidence = 68, PerCode = 8,
+            Chain = new ChainStepDef[]
+            {
+                new() { LabelEn = "Registration entry", LabelFr = "Entrée d'enregistrement", StatusEn = "✓ present", StatusFr = "✓ présente", Tone = ChainTone.Good, RequiresCode = "COM_STALE_PATH" },
+                new() { LabelEn = "Target file", LabelFr = "Fichier cible", StatusEn = "✕ missing", StatusFr = "✕ absent", Tone = ChainTone.Bad, RequiresCode = "COM_STALE_PATH" },
+                new() { LabelEn = "Component", LabelFr = "Composant", StatusEn = "✕ won't load", StatusFr = "✕ ne se charge pas", Tone = ChainTone.Bad, RequiresCode = "COM_STALE_PATH" },
+            },
+        },
+        new()
+        {
+            // Point 4/6 (13/08) — FeatureEnabledScanner.cs (LOT D) emits ALTSOUND_PRESENT_NOT_ENABLED
+            // and ALTCOLOR_PRESENT_NOT_ENABLED independently, each already fully measured on its own
+            // (pack files verified present/complete on disk AND the matching VPinMAME registry mode
+            // read as 0/off — never a guess, per that scanner's own doc). MinMatch = 1: this is NOT
+            // "these two unrelated things co-occurring means X" the way scenario 1/2 correlate
+            // different scanners — it's the SAME "installed but switched off" pattern measured twice
+            // (sound, colour), so either alone is already the complete story and firing on one is
+            // honest. Both matching just adds the second chain pair, never inflates past what was
+            // actually measured for that.
+            TitleEn = "Sound/color pack installed but switched off",
+            TitleFr = "Pack son/couleur installé mais désactivé",
+            PlayerEn = "You installed extra sound or color files for a table, but VPinMAME is still set to ignore them.",
+            PlayerFr = "Tu as installé des fichiers son ou couleur en plus pour une table, mais VPinMAME est encore réglé pour les ignorer.",
+            ExplEn = "The AltSound and/or AltColor files for at least one ROM are present and complete, but VPinMAME's per-game option to actually use them is switched off — the pack stays silent/inactive until that option is flipped.",
+            ExplFr = "Les fichiers AltSound et/ou AltColor pour au moins une ROM sont présents et complets, mais l'option VPinMAME par jeu qui les active réellement est désactivée — le pack reste silencieux/inactif tant que cette option n'est pas basculée.",
+            Codes = new[] { "ALTSOUND_PRESENT_NOT_ENABLED", "ALTCOLOR_PRESENT_NOT_ENABLED" },
+            MinMatch = 1, BaseConfidence = 78, PerCode = 8,
+            Chain = new ChainStepDef[]
+            {
+                new() { LabelEn = "AltSound pack", LabelFr = "Pack AltSound", StatusEn = "✓ installed", StatusFr = "✓ installé", Tone = ChainTone.Good, RequiresCode = "ALTSOUND_PRESENT_NOT_ENABLED" },
+                new() { LabelEn = "Sound Mode option", LabelFr = "Option Sound Mode", StatusEn = "✕ off", StatusFr = "✕ désactivée", Tone = ChainTone.Bad, RequiresCode = "ALTSOUND_PRESENT_NOT_ENABLED" },
+                new() { LabelEn = "AltColor/Serum set", LabelFr = "Set AltColor/Serum", StatusEn = "✓ complete", StatusFr = "✓ complet", Tone = ChainTone.Good, RequiresCode = "ALTCOLOR_PRESENT_NOT_ENABLED" },
+                new() { LabelEn = "DMD colorization option", LabelFr = "Option colorisation DMD", StatusEn = "✕ off", StatusFr = "✕ désactivée", Tone = ChainTone.Bad, RequiresCode = "ALTCOLOR_PRESENT_NOT_ENABLED" },
+            },
+        },
     };
 
     /// <summary>
