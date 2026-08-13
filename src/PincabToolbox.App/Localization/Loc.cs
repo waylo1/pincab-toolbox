@@ -20,15 +20,14 @@ public static class Loc
 
     public static event Action? LanguageChanged;
 
-    /// <summary>Cycles en → fr → es → en. 14/08/2026: was a plain en/fr flip before Spanish.</summary>
-    public static void Toggle()
-    {
-        var i = Array.IndexOf(SupportedLangs, Lang);
-        Lang = SupportedLangs[(i + 1) % SupportedLangs.Length];
-        LanguageChanged?.Invoke();
-    }
-
-    /// <summary>Force a specific language ("en"/"fr"/"es"); used to restore the saved preference at startup. Anything else degrades to English.</summary>
+    /// <summary>
+    /// Force a specific language ("en"/"fr"/"es"). Used to restore the saved preference at
+    /// startup, and — since 14/08/2026 (bis) — by each of the 3 always-visible language buttons
+    /// (MainWindow's BtnLangEn/Fr/Es), which replaced the earlier single cycling toggle button
+    /// (Maxime: a one-button EN→FR→ES→EN cycle wasn't discoverable — a user who didn't already
+    /// know the other languages existed had no way to find them). Anything unrecognised degrades
+    /// to English.
+    /// </summary>
     public static void SetLang(string lang)
     {
         lang = SupportedLangs.Contains(lang) ? lang : "en";

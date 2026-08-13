@@ -403,9 +403,11 @@ public partial class MainWindow : Window
 
     private void ApplyTexts()
     {
-        // 14/08/2026: was a static "FR / EN" label (fine for a 2-way toggle) — with Spanish added
-        // as a third language, the button now shows the ACTIVE language; clicking cycles to the next.
-        BtnLang.Content = Loc.Lang.ToUpperInvariant();
+        // 14/08/2026: was one "FR / EN" toggle button, then a single button showing the active
+        // language and cycling on click — Maxime's feedback: not discoverable, a user who didn't
+        // already know had no way to find the other languages. Now 3 buttons, always visible,
+        // side by side; UpdateLangButtons highlights whichever one is active.
+        UpdateLangButtons();
         Title = Loc.Get("app.title");
         HeaderTagline.Text = Loc.Get("about.tagline");
         TabScannerHeader.Text = Loc.Get("tab.scanner");
@@ -487,7 +489,21 @@ public partial class MainWindow : Window
         if (_report is not null) RefreshList();
     }
 
-    private void BtnLang_Click(object sender, RoutedEventArgs e) => Loc.Toggle();
+    private void BtnLangEn_Click(object sender, RoutedEventArgs e) => Loc.SetLang("en");
+    private void BtnLangFr_Click(object sender, RoutedEventArgs e) => Loc.SetLang("fr");
+    private void BtnLangEs_Click(object sender, RoutedEventArgs e) => Loc.SetLang("es");
+
+    /// <summary>Highlights whichever of the 3 language buttons is active (AccentButton style,
+    /// same visual language used elsewhere for a selected/primary action) and leaves the other
+    /// two in the plain default Button style.</summary>
+    private void UpdateLangButtons()
+    {
+        var active = (Style)FindResource("AccentButton");
+        var inactive = (Style)FindResource(typeof(Button));
+        BtnLangEn.Style = Loc.Lang == "en" ? active : inactive;
+        BtnLangFr.Style = Loc.Lang == "fr" ? active : inactive;
+        BtnLangEs.Style = Loc.Lang == "es" ? active : inactive;
+    }
 
     /// <summary>
     /// The one and only network call in the app (see <see cref="GitHubUpdateChecker"/>) — fires

@@ -229,7 +229,15 @@
                     <TextBlock x:Name="HeaderTagline" Text="" FontSize="13" Foreground="{StaticResource TextDim}"
                                VerticalAlignment="Center" Margin="14,4,0,0"/>
                 </StackPanel>
-                <Button x:Name="BtnLang" DockPanel.Dock="Right" HorizontalAlignment="Right" Content="EN" Click="BtnLang_Click" ToolTip="EN / FR / ES"/>
+                <!-- 3 boutons de langue toujours visibles côte à côte (14/08/2026, retour Maxime :
+                     un seul bouton bascule EN/FR/ES au clic sans dire lequel — pas découvrable).
+                     Chacun choisit sa langue directement via Loc.SetLang, la langue active est
+                     mise en évidence dans UpdateLangButtons (voir ApplyTexts). -->
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                    <Button x:Name="BtnLangEn" Content="EN" Padding="10,5" Margin="0,0,4,0" Click="BtnLangEn_Click" ToolTip="English"/>
+                    <Button x:Name="BtnLangFr" Content="FR" Padding="10,5" Margin="0,0,4,0" Click="BtnLangFr_Click" ToolTip="Français"/>
+                    <Button x:Name="BtnLangEs" Content="ES" Padding="10,5" Click="BtnLangEs_Click" ToolTip="Español"/>
+                </StackPanel>
             </DockPanel>
         </Border>
 
