@@ -98,7 +98,14 @@ public static class LayoutDetector
     public static IEnumerable<string> FindFilesByPattern(string root, string pattern, int maxDepth) =>
         SafeEnumerateDirs(root, maxDepth).SelectMany(d => SafeEnumerateFiles(d, pattern, SearchOption.TopDirectoryOnly));
 
-    /// <summary>Breadth-first bounded directory walk that never throws on access errors.</summary>
+    /// <summary>
+    /// Breadth-first bounded directory walk that never throws on access errors. Never descends into
+    /// <see cref="SystemNoiseDirs"/> (Recycle Bin, Windows internals, …) — see that class for why:
+    /// without this, a "C:\" root walk can surface Recycle Bin remnants as if they were the real
+    /// install (FIELD-LOG 13/08). The root itself is always yielded even if its own name would
+    /// otherwise be noise — only its children are filtered — matching how a caller-chosen starting
+    /// point is never second-guessed, only what the walk goes looking for underneath it.
+    /// </summary>
     public static IEnumerable<string> SafeEnumerateDirs(string root, int maxDepth)
     {
         var queue = new Queue<(string dir, int depth)>();
@@ -111,7 +118,11 @@ public static class LayoutDetector
             string[] children;
             try { children = Directory.GetDirectories(dir); }
             catch { continue; }
-            foreach (var c in children) queue.Enqueue((c, depth + 1));
+            foreach (var c in children)
+            {
+                if (SystemNoiseDirs.IsNoise(c)) continue;
+                queue.Enqueue((c, depth + 1));
+            }
         }
     }
 

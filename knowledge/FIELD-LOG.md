@@ -26,6 +26,37 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 (session éco, plus tard) · Point 6/6 — `$Recycle.Bin` exclu du scan (feu vert reçu), 2 diagnostics de terrain rendus (Undo, échec Apply)
+- code:        aucun nouveau code de finding
+- bac:         FIX (LayoutDetector) + WORDING/FN (les deux diagnostics rendus, non corrigés ici)
+- contexte:    rescan de 18h13 sur le vrai cab de Maxime, `$Recycle.Bin` toujours gagnant contre le
+  vrai dossier `Tables\` pour la 3ᵉ fois consécutive
+- analyse:     (1) `DriveInstallFinder` excluait déjà `$Recycle.Bin` et consorts d'un set privé
+  `NoiseDirNames` (10/08) mais seulement pour son propre usage (repérer des racines candidates sur un
+  scan multi-installs) — `LayoutDetector.SafeEnumerateDirs`, le walk réellement utilisé pour un scan
+  `C:\` en un seul dossier (ce que fait Maxime), n'avait jamais ce filtre. D'où le bug : jamais corrigé
+  parce que jamais présent au bon endroit. Fix : liste déplacée dans une seule source de vérité,
+  `SystemNoiseDirs`, utilisée par `SafeEnumerateDirs` ET `DriveInstallFinder` — ferme le trou pour
+  `LayoutDetector` lui-même, `BlockedFileScanner` et `CompletenessScanner` d'un coup, les trois
+  s'appuyant sur ce même walk. (2) Diagnostic rendu sur "Annuler le plan sélectionné" qui semble ne
+  rien faire sur certains plans historiques : `RepairEngine.Undo` refuse tant qu'un logiciel du cab
+  tourne (même règle que Preflight, `Test_Undo_IsRefusedWhileVpxIsRunning` le couvre déjà), message
+  facile à rater sous le bouton ; ou le plan choisi n'a jamais rien appliqué pour de vrai (ex. un plan
+  du tout premier test en `PINCAB_REPAIR_FORCE_DRYRUN=1`), auquel cas Undo répond "ok" (rien à annuler,
+  légitimement) sans dire clairement pourquoi il n'y a rien à annuler — piste FEATURE, pas encore codée.
+  (3) Diagnostic rendu sur le "1 échoué(s)" à l'Apply (DLL bloqué) et sur "Repair ne détecte pas le
+  problème pourtant vu par Scanner" en mode administrateur : confirmé dans le code,
+  `RefreshRepairItemsList` (MainWindow.xaml.cs) ne montre QUE les items avec `Changes.Count > 0`, les
+  items sans changement calculé (`ManualOnly`, y compris un item automatisable qui a échoué à trouver
+  quoi que ce soit à changer) sont invisibles dans Repair, contre ADR-006 — piste FEATURE, pas encore
+  codée. Cause probable du "1 échoué(s)" lui-même : lever le blocage Windows sur un fichier dans un
+  dossier protégé (Program Files) demande d'écrire dessus, ce que Windows refuse sans élévation
+  administrateur — pas encore confirmé (aucun message d'erreur par item n'est affiché aujourd'hui,
+  autre symptôme du même trou ADR-006).
+- disposition: `$Recycle.Bin` corrigé et livré (feu vert explicite de Maxime, 13/08). Les deux
+  diagnostics (Undo peu clair, items manuels/échoués invisibles dans Repair) restent à coder, prochains
+  points annoncés à Maxime avec son accord sur l'ordre.
+
 ## 2026-08-13 (session éco) · Point 6/6 en cours — première vraie clé publique de licence embarquée ; 2 problèmes de terrain trouvés sur le vrai cab de Maxime
 - code:        aucun nouveau code de finding
 - bac:         FIX (licence) + FN/FEATURE (les deux trouvailles terrain, non corrigées ici)

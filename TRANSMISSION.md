@@ -1,5 +1,49 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 🐛 MAJ 13/08 (nonies) — point 6/6 : `$Recycle.Bin` exclu du scan (feu vert reçu), 2 diagnostics rendus sur Repair (pas encore codés)
+
+> Suite du point 6/6 (le premier vrai run de Repair sur le cab de Maxime continue de faire remonter du
+> vécu, ce que ce point est censé faire). Trois retours groupés de Maxime, traités dans cet ordre :
+>
+> **1. `$Recycle.Bin` corrigé — feu vert reçu, livré ici.** Root cause enfin isolée en lisant le code
+> plutôt qu'en devinant : `DriveInstallFinder` avait déjà une liste d'exclusion privée
+> (`NoiseDirNames`, ajoutée le 10/08 pour son propre usage de recherche multi-installs) qui contenait
+> `$Recycle.Bin`, mais `LayoutDetector.SafeEnumerateDirs` — le walk réellement emprunté par un scan
+> `C:\` en un seul dossier, l'usage que Maxime préfère — n'avait jamais ce filtre. La liste existait,
+> juste pas au bon endroit. Fix : nouvelle classe `PincabToolbox.Core.Scanning.SystemNoiseDirs`,
+> source unique de vérité, utilisée à la fois par `SafeEnumerateDirs` (donc `LayoutDetector`,
+> `BlockedFileScanner`, `CompletenessScanner`, qui partagent tous ce même walk) et par
+> `DriveInstallFinder` (qui pointe dessus au lieu de garder sa propre copie). Testé par reproduction
+> exacte du bug réel : un faux `$Recycle.Bin\<SID>\$R....vpx` posé à côté d'un vrai dossier
+> `Tables\*.vpx`, `LayoutDetector.Detect` doit retenir le second — `Test_Detect_Skips_
+> RecycleBin_Remnants_And_Finds_The_Real_Tables_Dir`, plus 3 tests unitaires sur `SystemNoiseDirs` et
+> `SafeEnumerateDirs` (le dossier de départ reste toujours retourné même si son propre nom serait du
+> bruit, seuls ses enfants sont filtrés). Diff scopé à 2 fichiers modifiés + 1 nouveau + tests, rien
+> d'autre touché. Core.Tests 494/494, Repair.Tests 145/145.
+>
+> **2. Diagnostic rendu, pas codé — "Annuler le plan sélectionné" qui semble ne rien faire.**
+> `RepairEngine.Undo` applique la même règle que Preflight, il refuse tant qu'un logiciel du cab
+> tourne (`Test_Undo_IsRefusedWhileVpxIsRunning` le couvre déjà côté tests) — sur un vrai cab c'est
+> souvent le cas, et le message sous le bouton est facile à rater. Autre cas confirmé possible : un
+> plan de l'historique qui n'a en réalité jamais rien appliqué pour de vrai (typiquement un plan du
+> tout premier test en `PINCAB_REPAIR_FORCE_DRYRUN=1`) — Undo répond alors "ok" (rien à annuler, ce
+> qui est correct) sans dire clairement pourquoi il n'y a rien à annuler. Pas encore codé.
+>
+> **3. Diagnostic rendu, pas codé — items non automatisables ou en échec invisibles dans Repair.**
+> Confirmé dans le code : `RefreshRepairItemsList` (`MainWindow.xaml.cs`) ne montre QUE les items avec
+> `Changes.Count > 0` — tout item `ManualOnly` (y compris un item théoriquement automatisable qui n'a
+> rien trouvé à changer) n'apparaît nulle part dans l'onglet Repair, seulement dans le rapport Scanner.
+> C'est un vrai trou contre ADR-006 ("Repair doit toujours montrer les étapes non automatisables").
+> Même trou explique pourquoi le "1 échoué(s)" à l'Apply (DLL bloqué) ne dit pas pourquoi il a échoué —
+> aucun message d'erreur par item n'est affiché aujourd'hui. Cause probable de cet échec précis, pas
+> encore confirmée : lever le blocage Windows sur un fichier dans un dossier protégé (Program Files)
+> demande d'écrire dessus, ce que Windows refuse sans élévation administrateur.
+>
+> **Prochain point annoncé à Maxime, en attente de son signal :** bouton "Tout sélectionner" (trivial),
+> puis afficher dans Repair les items manuels/échoués avec leur texte d'explication (ADR-006), puis
+> "supprimer le plan" une fois son sens confirmé par Maxime (vider le checklist affiché sans rien
+> appliquer, ou purger un plan de l'historique — pas encore tranché).
+
 ## 🔑 MAJ 13/08 (octies) — point 6/6 en cours : première vraie clé publique de licence embarquée
 
 > Point 5/6 clos. Maxime a lancé le premier vrai scan sur son cab (via `PINCAB_REPAIR_FORCE_DRYRUN=1`,

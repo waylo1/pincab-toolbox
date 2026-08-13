@@ -1245,6 +1245,69 @@ public static class LayoutDetectorTests
         if (!OperatingSystem.IsWindows())
             Assert.True(VpinmameRegistry.TryGetRomPath() is null, "must be null on non-Windows");
     }
+
+    /// <summary>
+    /// Reproduces the real bug found on Maxime's cab (FIELD-LOG 13/08, three separate full-C:\
+    /// scans): a fake "$Recycle.Bin\&lt;SID&gt;\$R....vpx" remnant made the *.vpx fallback search
+    /// pick the Recycle Bin as the tables directory instead of the real "Tables" folder.
+    /// </summary>
+    public static void Test_Detect_Skips_RecycleBin_Remnants_And_Finds_The_Real_Tables_Dir()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "pctb-layoutdetector-" + Guid.NewGuid());
+        var recycleBinSid = Path.Combine(root, "$Recycle.Bin", "S-1-5-21-000-000-000-1001");
+        var realTables = Path.Combine(root, "Visual Pinball", "Tables");
+        Directory.CreateDirectory(recycleBinSid);
+        Directory.CreateDirectory(realTables);
+        File.WriteAllText(Path.Combine(recycleBinSid, "$RVKD0HT.vpx"), "deleted remnant, not a real table");
+        File.WriteAllText(Path.Combine(realTables, "Attack From Mars.vpx"), "real table");
+
+        try
+        {
+            var layout = LayoutDetector.Detect(root, Fixtures.Profile());
+            Assert.NotNull(layout.TablesDir);
+            Assert.Equal(realTables, layout.TablesDir);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    public static void Test_SafeEnumerateDirs_Never_Yields_A_Noise_Child()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "pctb-safeenum-" + Guid.NewGuid());
+        Directory.CreateDirectory(Path.Combine(root, "$Recycle.Bin", "stuff"));
+        Directory.CreateDirectory(Path.Combine(root, "Visual Pinball"));
+
+        try
+        {
+            var dirs = LayoutDetector.SafeEnumerateDirs(root, maxDepth: 5).ToList();
+            Assert.False(dirs.Any(d => d.Contains("$Recycle.Bin", StringComparison.OrdinalIgnoreCase)),
+                "walk must never descend into $Recycle.Bin");
+            Assert.True(dirs.Any(d => d.EndsWith("Visual Pinball", StringComparison.OrdinalIgnoreCase)));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>The root itself is always yielded even if a caller deliberately points at a noise-named folder.</summary>
+    public static void Test_SafeEnumerateDirs_Still_Yields_The_Root_Even_If_Its_Name_Is_Noise()
+    {
+        var parent = Path.Combine(Path.GetTempPath(), "pctb-noiseroot-" + Guid.NewGuid());
+        var root = Path.Combine(parent, "AppData");   // exact noise name, so IsNoise(root) would be true
+        Directory.CreateDirectory(root);
+        try
+        {
+            var dirs = LayoutDetector.SafeEnumerateDirs(root, maxDepth: 2).ToList();
+            Assert.True(dirs.Contains(root));
+        }
+        finally
+        {
+            Directory.Delete(parent, recursive: true);
+        }
+    }
 }
 
 public static class DiskSpaceTests

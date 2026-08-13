@@ -26,18 +26,6 @@ public static class DriveInstallFinder
     private const int WalkMaxDepth = 6;
 
     /// <summary>
-    /// Folder names skipped everywhere in the walk — Windows/system internals, package caches,
-    /// and dev tooling noise that would otherwise blow up the walk's cost for zero chance of
-    /// containing a pincab install.
-    /// </summary>
-    private static readonly HashSet<string> NoiseDirNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Windows", "$Recycle.Bin", "System Volume Information", "WindowsApps",
-        "Package Cache", "node_modules", ".git", "$WinREAgent", "Recovery",
-        "PerfLogs", "AppData", "ProgramData",
-    };
-
-    /// <summary>
     /// Walks <paramref name="startPath"/> (a drive root or any folder) and yields every directory
     /// that looks like a pincab install root. Never throws on an unreadable subtree — one blocked
     /// folder is skipped, the rest of the walk continues (same doctrine as
@@ -65,7 +53,7 @@ public static class DriveInstallFinder
         foreach (var child in children)
         {
             ct.ThrowIfCancellationRequested();
-            if (NoiseDirNames.Contains(Path.GetFileName(child))) continue;
+            if (SystemNoiseDirs.IsNoise(child)) continue;
             foreach (var found in Walk(child, profile, depth + 1, ct))
                 yield return found;
         }
