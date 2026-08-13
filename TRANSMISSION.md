@@ -1,5 +1,38 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 🧪 MAJ 13/08 (quinquies) — point 3/6 suite : décision de Maxime = extraire maintenant. `ChainRowPlanner` + `TableRowPlanner`, 20 tests, MainWindow rebranché dessus
+
+> Maxime a choisi l'option « extraire maintenant » (mini-tranche anticipée du point 5) plutôt que
+> reporter ou se contenter d'une vérification manuelle. Fait, pour 2 des 4 méthodes `Build*`
+> bloquées — les deux dont la logique de décision est raisonnablement isolable sans toucher à
+> `_report!`/l'état d'instance de fond en comble.
+>
+> **`ChainRowPlanner.Plan`** (nouveau `src/PincabToolbox.App/RowPlanning.cs`, WPF-free) — sort de
+> `BuildChainRows` la décision « quelle est la rupture bon→cassé (le ✕→ rouge), quelle flèche pour
+> les autres cases ». 7 tests, dont un qui **documente un comportement qu'on aurait pu casser sans
+> le voir** : la règle est purement locale (case précédente vs case courante), donc une chaîne
+> Bon→Cassé→Bon→Cassé marque LES DEUX ruptures, pas seulement la première — pas un bug, mais le
+> genre de détail qu'un refactor futur pourrait "corriger" par erreur en une règle globale sans que
+> personne ne remarque le changement visuel avant un retour terrain.
+>
+> **`TableRowPlanner`** (même fichier) — sort de `BuildTableRows` les 3 décisions de colonne
+> (ROM/Backglass/Frontend) : quel finding gagne, quelle sévérité réelle s'applique, quand la colonne
+> entière doit se taire (Backglass si `completenessFailed`, Frontend si la base Popper n'a pas pu
+> être lue). 13 tests — dont exactement le genre de garde-fou qui a déjà fait mal ailleurs dans ce
+> code (severity par défaut Info, jamais inventée ; silence n'est pas une mesure).
+>
+> **MainWindow.xaml.cs rebranché** sur les deux planners — comportement identique, juste la décision
+> qui vit maintenant dans du code testé au lieu d'être inline dans la boucle WPF. Vérifié : `csc
+> -t:library` sur les 7 fichiers de l'App, uniquement CS0234/CS0246/CS0518/CS0656, zéro CS1xxx.
+>
+> **`BuildCauseCard` et `BuildComponentRows` restent non extraits, volontairement** : les deux
+> touchent `_report!`/l'état d'instance de façon plus large (agrégation multi-findings, formatage
+> Loc pluriels/singuliers) — une extraction propre y ressemblerait plus à faire le point 5 en entier
+> qu'à une mini-tranche. Laissés pour de vrai au point 5.
+>
+> **Vérifié** : Core 439/439, Repair 145/145, **App.Tests 38/38** (18 Scenarios + 20 nouveaux
+> RowPlanning, tous réels/exécutés).
+
 ## 🧪 MAJ 13/08 (quater) — point 3/6 : tests `Scenarios.DetectAll` faits (18, réels) ; les `Build*` de MainWindow, structurellement impossibles à tester dans ce sandbox — décision à prendre
 
 > **Moitié claire, moitié bloquée — dit maintenant plutôt que découpé en silence.** Le point 3

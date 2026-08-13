@@ -26,6 +26,34 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 (session éco) · Point 3/6 suite — décision de Maxime = extraire maintenant. ChainRowPlanner + TableRowPlanner, MainWindow rebranché dessus
+- code:        aucun nouveau code de finding
+- bac:         FEATURE (tests, chantier planifié) — suite directe de l'entrée juste en dessous, la
+  question posée à Maxime a une réponse
+- contexte:    Maxime a choisi « Extraire la logique maintenant » (mini-tranche anticipée du point 5,
+  décrite dans la question comme « sortir la logique de décision pure des 4 méthodes qui touchent des
+  Brush vers des fonctions testables, avec de vrais tests »)
+- analyse:     2 des 4 méthodes `Build*` de `MainWindow.xaml.cs` avaient une logique de décision assez
+  autonome pour être sortie proprement : `BuildChainRows` → `ChainRowPlanner.Plan` (quel step est le
+  point de coupure ✕→ dans la chaîne causale) ; `BuildTableRows` → `TableRowPlanner.PlanRom`/`PlanB2s`/
+  `PlanFrontend` (quelle finding ROM/B2S/Frontend gagne pour chaque table du tableau). Nouveau fichier
+  `src/PincabToolbox.App/RowPlanning.cs`, zéro WPF, lié par chemin dans
+  `tests/PincabToolbox.App.Tests` comme `Scenarios.cs`/`Loc.cs` déjà. `MainWindow.xaml.cs` rebranché
+  pour appeler ces planners (comportement inchangé, vérifié ligne à ligne avant/après) ; il ne reste
+  dans les deux méthodes que la traduction Brush/texte localisé, quelques lookups triviaux. `Build
+  CauseCard` et `BuildComponentRows` volontairement PAS extraites cette fois : trop enchevêtrées avec
+  l'état d'instance `_report!` et le pluriel/singulier de `Loc` pour être une mini-tranche propre —
+  reportées au point 5 en entier, notées comme dette assumée plutôt que bâclées ici. Un test a été
+  corrigé en cours de route : son nom/commentaire affirmait que seule la PREMIÈRE transition bon→mauvais
+  compte comme point de coupure, mais l'algorithme (et l'assertion elle-même) marque CHAQUE transition
+  bon→mauvais indépendamment — renommé `Test_Every_GoodToBad_Edge_Is_A_Cut_Point_Not_Just_The_First`
+  avec un commentaire qui documente ce comportement intentionnel-mais-surprenant plutôt que de le
+  cacher.
+- disposition: livré (bundle) · Core 439/439, Repair 145/145, App.Tests 38/38 (18 Scenarios + 7
+  ChainRowPlanner + 13 TableRowPlanner, tous nouveaux/réels). `csc -t:library` sur les 7 fichiers .cs
+  de l'App : uniquement CS0234/CS0246/CS0518/CS0656, zéro CS1xxx après le rebranchement. Point 3/6
+  maintenant complet dans les limites du sandbox — en attente du signal de Maxime avant le point 4.
+
 ## 2026-08-13 (session éco) · Point 3/6 revue CTO+Produit — tests Scenarios.DetectAll (fait) ; Build* de MainWindow (bloqué, décision à prendre)
 - code:        aucun nouveau code de finding
 - bac:         FEATURE (tests, chantier planifié) — point livré à moitié, l'autre moitié posée en

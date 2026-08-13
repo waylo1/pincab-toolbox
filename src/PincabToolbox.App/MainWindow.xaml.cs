@@ -1051,27 +1051,20 @@ public partial class MainWindow : Window
     }
 
     /// <summary>« ✕→ » rouge sur la première rupture bon→cassé, « → » discret ailleurs — même
-    /// convention que la maquette.</summary>
-    private static List<CauseChainRow> BuildChainRows(IReadOnlyList<ChainStepMatch> steps)
-    {
-        var rows = new List<CauseChainRow>(steps.Count);
-        for (int i = 0; i < steps.Count; i++)
+    /// convention que la maquette. The cut-point/arrow decision itself lives in
+    /// <see cref="ChainRowPlanner"/> (point 3, 13/08) — real, tested, WPF-free; this method only
+    /// maps the plan to Brushes.</summary>
+    private static List<CauseChainRow> BuildChainRows(IReadOnlyList<ChainStepMatch> steps) =>
+        ChainRowPlanner.Plan(steps).Select(p => new CauseChainRow
         {
-            var s = steps[i];
-            var cut = i > 0 && steps[i - 1].Tone == ChainTone.Good && s.Tone == ChainTone.Bad;
-            rows.Add(new CauseChainRow
-            {
-                Arrow = i == 0 ? "" : cut ? "✕→" : "→",
-                ArrowBrush = cut ? BrushCritical : BrushDim,
-                Label = s.Label,
-                Status = s.Status,
-                StatusBrush = s.Tone switch { ChainTone.Good => BrushOk, ChainTone.Bad => BrushCritical, _ => BrushWarning },
-                NodeBg = s.Tone switch { ChainTone.Bad => NodeBadBg, ChainTone.Warn => NodeWarnBg, _ => NodeGoodBg },
-                NodeBorder = s.Tone switch { ChainTone.Bad => NodeBadBorder, ChainTone.Warn => NodeWarnBorder, _ => NodeGoodBorder },
-            });
-        }
-        return rows;
-    }
+            Arrow = p.Arrow,
+            ArrowBrush = p.IsCutPoint ? BrushCritical : BrushDim,
+            Label = p.Label,
+            Status = p.Status,
+            StatusBrush = p.Tone switch { ChainTone.Good => BrushOk, ChainTone.Bad => BrushCritical, _ => BrushWarning },
+            NodeBg = p.Tone switch { ChainTone.Bad => NodeBadBg, ChainTone.Warn => NodeWarnBg, _ => NodeGoodBg },
+            NodeBorder = p.Tone switch { ChainTone.Bad => NodeBadBorder, ChainTone.Warn => NodeWarnBorder, _ => NodeGoodBorder },
+        }).ToList();
 
     /// <summary>
     /// Carte réparation : l'offre réelle de RepairOfferBuilder quand elle existe, sinon la carte
@@ -1238,44 +1231,36 @@ public partial class MainWindow : Window
             var name = Path.GetFileNameWithoutExtension(path);
             var fs = byTable.TryGetValue(name, out var found) ? found : new List<Finding>();
 
-            string rom = Loc.Get("tbl.unknown");
-            Brush romBrush = BrushDim;
-            var frRom = fs.FirstOrDefault(f => f.Code is "ROM_OK" or "ROM_MISSING" or "ROM_NOT_REQUIRED" or "ROM_UNZIPPED");
-            if (frRom is not null)
+            // Which finding wins per column, and at what severity, is decided by TableRowPlanner
+            // (point 3, 13/08) — real, tested, WPF-free. This loop only turns that plan into the
+            // localized text and Brush a WPF row needs.
+            var romPlan = TableRowPlanner.PlanRom(fs);
+            var (rom, romBrush) = romPlan.Status switch
             {
-                (rom, romBrush) = frRom.Code switch
-                {
-                    "ROM_OK" => (string.Format(Loc.Get("tbl.rom.ok"), frRom.Args.Count > 1 ? frRom.Args[1] : ""), BrushOk),
-                    "ROM_MISSING" => (string.Format(Loc.Get("tbl.rom.missing"), frRom.Args.Count > 1 ? frRom.Args[1] : ""), BrushCritical),
-                    "ROM_NOT_REQUIRED" => (Loc.Get("tbl.rom.notrequired"), BrushOk),
-                    _ => (Loc.Get("tbl.rom.unzipped"), BrushWarning),
-                };
-            }
+                RomColumnStatus.Ok => (string.Format(Loc.Get("tbl.rom.ok"), romPlan.RomName ?? ""), BrushOk),
+                RomColumnStatus.Missing => (string.Format(Loc.Get("tbl.rom.missing"), romPlan.RomName ?? ""), BrushCritical),
+                RomColumnStatus.NotRequired => (Loc.Get("tbl.rom.notrequired"), BrushOk),
+                RomColumnStatus.Unzipped => (Loc.Get("tbl.rom.unzipped"), BrushWarning),
+                _ => (Loc.Get("tbl.unknown"), BrushDim),
+            };
 
-            string b2s = Loc.Get("tbl.unknown");
-            Brush b2sBrush = BrushDim;
-            if (!completenessFailed)
+            var b2sPlan = TableRowPlanner.PlanB2s(fs, completenessFailed);
+            var (b2s, b2sBrush) = b2sPlan.Status switch
             {
-                var frB2s = fs.FirstOrDefault(f => f.Code == "B2S_MISSING");
-                b2s = frB2s is null ? Loc.Get("tbl.b2s.present") : $"{SevGlyph(frB2s.Severity)} {Loc.Get("tbl.b2s.missing")}";
-                b2sBrush = frB2s is null ? BrushOk : SevBrushOf(frB2s.Severity);
-            }
+                B2sColumnStatus.Present => (Loc.Get("tbl.b2s.present"), BrushOk),
+                B2sColumnStatus.Missing => ($"{SevGlyph(b2sPlan.Severity)} {Loc.Get("tbl.b2s.missing")}", SevBrushOf(b2sPlan.Severity)),
+                _ => (Loc.Get("tbl.unknown"), BrushDim),
+            };
 
-            string fe = Loc.Get("tbl.unknown");
-            Brush feBrush = BrushDim;
-            if (_popperRegistered is not null)
+            // La teinte suit la gravité RÉELLE du résultat (Info sur le pack actuel) — pas l'orange
+            // de la maquette, qui surjouait un résultat informatif.
+            var fePlan = TableRowPlanner.PlanFrontend(name, _popperRegistered, fs);
+            var (fe, feBrush) = fePlan.Status switch
             {
-                if (_popperRegistered.Contains(name)) { fe = Loc.Get("tbl.fe.registered"); feBrush = BrushOk; }
-                else
-                {
-                    // La teinte suit la gravité RÉELLE du résultat (Info sur le pack actuel) —
-                    // pas l'orange de la maquette, qui surjouait un résultat informatif.
-                    var frFe = fs.FirstOrDefault(f => f.Code == "POPPER_NOT_REGISTERED");
-                    var sev = frFe?.Severity ?? Severity.Info;
-                    fe = $"{SevGlyph(sev)} {Loc.Get("tbl.fe.notregistered")}";
-                    feBrush = SevBrushOf(sev);
-                }
-            }
+                FrontendColumnStatus.Registered => (Loc.Get("tbl.fe.registered"), BrushOk),
+                FrontendColumnStatus.NotRegistered => ($"{SevGlyph(fePlan.Severity)} {Loc.Get("tbl.fe.notregistered")}", SevBrushOf(fePlan.Severity)),
+                _ => (Loc.Get("tbl.unknown"), BrushDim),
+            };
 
             rows.Add(new TableRowVm
             {

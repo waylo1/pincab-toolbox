@@ -27,14 +27,17 @@
       type, this project will simply fail to build — a tripwire, not a bug, and the sign that this
       bridge needs to be reconsidered.
 
-      MainWindow.xaml.cs's Build* methods are NOT here for a different, harder reason than WPF
-      references: MainWindow is one half of a partial class whose other half (all the TxtRoot/
-      BtnScan/... field declarations) is generated from MainWindow.xaml at compile time. There is
-      no source file to link — testing it for real needs either the full WPF build (blocked here)
-      or extracting its decision logic into WPF-free helpers first. See TRANSMISSION.md 13/08.
+      MainWindow.xaml.cs's Build* methods themselves are NOT here, and can't be, for a different,
+      harder reason than WPF references: MainWindow is one half of a partial class whose other half
+      (all the TxtRoot/BtnScan/... field declarations) is generated from MainWindow.xaml at compile
+      time. There is no source file to link. What CAN be linked, and is below, is RowPlanning.cs —
+      the decision logic pulled OUT of the Brush-touching Build* methods (BuildChainRows,
+      BuildTableRows) into plain WPF-free functions, added 13/08 (same session, "extract now"
+      chosen over waiting for point 5). See TRANSMISSION.md 13/08 (quater/quinquies).
     -->
     <Compile Include="..\..\src\PincabToolbox.App\Scenarios.cs" Link="LinkedFromApp\Scenarios.cs" />
     <Compile Include="..\..\src\PincabToolbox.App\Localization\Loc.cs" Link="LinkedFromApp\Loc.cs" />
+    <Compile Include="..\..\src\PincabToolbox.App\RowPlanning.cs" Link="LinkedFromApp\RowPlanning.cs" />
   </ItemGroup>
 
 </Project>
