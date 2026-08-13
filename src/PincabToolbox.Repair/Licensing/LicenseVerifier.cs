@@ -27,13 +27,13 @@ public sealed class LicenseVerifier : ILicenseVerifier
     /// with `dotnet run --project tools/PincabToolbox.LicenseTool -- init`, printed to stdout by
     /// that command, and pasted here.
     ///
-    /// Real key, generated 11/08/2026 by Maxime via `license-tool init` (offline, on his own
+    /// Real key, generated 13/08/2026 by Maxime via `license-tool init` (offline, on his own
     /// machine — the matching private key never touched this repo or any session). From this
-    /// commit on, only that private key can produce a license this build will accept; anything
-    /// signed against the old placeholder (i.e. nothing — the placeholder was never valid DER)
-    /// stays invalid, as it always was.
+    /// commit on, only that private key can produce a license this build will accept; any license
+    /// signed against a previous key (including any earlier real or placeholder value this
+    /// constant may have held) stays invalid.
     /// </summary>
-    public const string EmbeddedPublicKeyBase64 = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE8qb8OJHM7lWNIxcukDWFf0dWRsrTZ7uYEXFQFNmmvmd0+ujpB5CNisNXE92UadFJSiE09LN9Kf0n2leYQ7tC/A==";
+    public const string EmbeddedPublicKeyBase64 = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEJzN5IV+cxt+JTxae4VPjGbAnPJ5agHwUGonMKaukiRVX9Gx6n3s9bMreUamAPvrfu+bObWQtPScqUdJGtSrypQ==";
 
     private readonly ECDsa? _publicKey;
     private readonly string? _keyError;
@@ -50,10 +50,11 @@ public sealed class LicenseVerifier : ILicenseVerifier
     public LicenseVerifier(string publicKeyBase64)
     {
         // Revue sécurité 2026-08-05 (mandat "vérifie la protection licence") : ImportSubjectPublicKeyInfo
-        // peut lever APRÈS que ECDsa.Create() ait déjà pris un handle crypto natif — le placeholder de
-        // EmbeddedPublicKeyBase64 emprunte systématiquement ce chemin tant que `license-tool init` n'a
-        // pas été lancé pour de vrai, donc c'est le chemin pris à CHAQUE démarrage de l'app aujourd'hui,
-        // pas un cas rare. Sans le try/finally ci-dessous, chaque instanciation fuyait ce handle.
+        // peut lever APRÈS que ECDsa.Create() ait déjà pris un handle crypto natif — vrai pour
+        // EmbeddedPublicKeyBase64 tant qu'aucune vraie clé n'était encore embarquée (avant le
+        // 13/08/2026), et reste vrai aujourd'hui pour toute clé invalide passée au constructeur
+        // explicite (tests, LicenseTool). Sans le try/finally ci-dessous, chaque instanciation sur
+        // une clé invalide fuyait ce handle.
         ECDsa? key = null;
         try
         {

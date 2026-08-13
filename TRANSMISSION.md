@@ -1,5 +1,38 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 13/08/2026
 
+## 🔑 MAJ 13/08 (octies) — point 6/6 en cours : première vraie clé publique de licence embarquée
+
+> Point 5/6 clos. Maxime a lancé le premier vrai scan sur son cab (via `PINCAB_REPAIR_FORCE_DRYRUN=1`,
+> après un aller-retour sur `set`/PowerShell). Deux vrais problèmes de terrain trouvés au passage,
+> consignés mais pas corrigés ici (pas dans le périmètre de ce commit) :
+> - Scanner le disque entier (`C:\`) fait gagner `$Recycle.Bin` contre le vrai dossier `Tables\` dans
+>   la détection de `LayoutDetector` — cas d'usage central pour Maxime, correction proposée, en
+>   attente de son signal.
+> - Bug d'affichage : quand la racine choisie ne contient pas de dossier Tables, les chemins sortent
+>   comme `.\C:\Visual Pinball\...` (le `.\` collé devant un chemin déjà absolu) au lieu d'un chemin
+>   propre. Cosmétique, pas bloquant.
+>
+> Pour pouvoir tester Repair pour de vrai (Apply, même en dry-run, est gaté par licence — voir
+> `RepairSession.Plan(..., licensed: bool)`), Maxime a lancé lui-même, en local, hors de ce sandbox :
+> `dotnet run --project tools\PincabToolbox.LicenseTool -- init`. La clé PRIVÉE reste chez lui,
+> jamais transmise ici (c'est explicitement le but de ce tool — voir son propre header). Il m'a donné
+> la clé PUBLIQUE générée, que j'ai embarquée dans
+> `LicenseVerifier.EmbeddedPublicKeyBase64` (`src/PincabToolbox.Repair/Licensing/LicenseVerifier.cs`)
+> à la place de l'ancienne valeur — commentaires mis à jour en conséquence (celui de
+> `RepairSession.VerifyLicense` affirmait encore que la clé était un placeholder rejetant tout).
+>
+> Vérifications avant livraison : Core.Tests 488/488, Repair.Tests 145/145 — dont
+> `Test_EmbeddedPublicKey_IsARealKey_NotThePlaceholder` (parse bien comme DER P-256 valide) et
+> `Test_VerifyLicense_RealEmbeddedKey_GarbageInputStaysInvalid` (une chaîne au hasard reste rejetée
+> même avec une vraie clé embarquée). Diff strictement scopé à `LicenseVerifier.cs` +
+> `RepairSession.cs` (commentaire uniquement dans ce second fichier).
+>
+> **Reste à faire côté Maxime** pour que ça serve à quelque chose : rebuild l'App localement
+> (`build.cmd`, ou juste republier `src/PincabToolbox.App`) pour que l'exe embarque la nouvelle clé
+> publique, puis `dotnet run --project tools\PincabToolbox.LicenseTool -- issue --key
+> license-private-key.pem --email <son email>` pour se signer sa propre licence de test, à coller
+> dans l'onglet Repair.
+
 ## 🧪 MAJ 13/08 (septies) — point 5/6 : `Scenarios.cs` + `RowPlanning.cs` déplacés dans `PincabToolbox.Core.Diagnostics`, `PincabToolbox.App.Tests` retiré
 
 > Point 4/6 clos, signal « GO » de Maxime reçu (avec une note : les autres pistes repérées en cours

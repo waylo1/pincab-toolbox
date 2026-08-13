@@ -100,9 +100,9 @@ public sealed class RepairSession
 
     /// <summary>
     /// H.4 — verifies against the embedded public key, never trusts a caller-supplied bool.
-    /// A missing/empty key is simply Invalid (this is also what happens today: the shipped
-    /// verifier's public key is a placeholder — see <see cref="LicenseVerifier.EmbeddedPublicKeyBase64"/> —
-    /// so every real call currently returns Invalid until Maxime runs `license-tool init` for real).
+    /// A missing/empty key is simply Invalid. The embedded key (<see cref="LicenseVerifier.EmbeddedPublicKeyBase64"/>)
+    /// is a real one since 13/08/2026 (Maxime ran `license-tool init` for real) — a validly-signed
+    /// license issued against the matching private key now verifies successfully.
     /// </summary>
     public LicenseCheckResult VerifyLicense(string? licenseKey) => _licenseVerifier.Verify(licenseKey);
 

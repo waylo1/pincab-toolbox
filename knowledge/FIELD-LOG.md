@@ -26,6 +26,27 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-13 (session éco) · Point 6/6 en cours — première vraie clé publique de licence embarquée ; 2 problèmes de terrain trouvés sur le vrai cab de Maxime
+- code:        aucun nouveau code de finding
+- bac:         FIX (licence) + FN/FEATURE (les deux trouvailles terrain, non corrigées ici)
+- contexte:    point 6/6, premier vrai scan de Maxime sur son cab via `PINCAB_REPAIR_FORCE_DRYRUN=1`
+- analyse:     (1) Maxime a lancé `license-tool init` chez lui et donné la clé publique générée,
+  embarquée dans `LicenseVerifier.EmbeddedPublicKeyBase64` — la clé privée n'a jamais transité par ce
+  sandbox, conformément au design du tool. (2) Scanner `C:\` en entier fait gagner `$Recycle.Bin`
+  contre le vrai dossier `Tables\` dans `LayoutDetector` (les fichiers `$I.../$R...` de la corbeille
+  matchent `*.vpx` avant que le vrai dossier soit atteint) — cas d'usage central pour Maxime
+  ("le mieux c'est d'analyser le disque en entier"), pas encore corrigé, en attente de son signal.
+  (3) Bug d'affichage mineur : racine sans dossier Tables → chemins rendus `.\C:\Visual
+  Pinball\...` (`.\` collé devant un chemin déjà absolu). (4) Repéré en creusant le rapport HTML :
+  `PathScrubber.Scrub` protège bien le vrai nom de compte Windows dans les chemins (ADR-003 tient),
+  mais le remplacement est appliqué au texte entier du rapport, pas seulement aux chemins — si le nom
+  de compte Windows contient "Pincab" (cas plausible pour ce produit), la marque elle-même
+  ("Pincab Toolbox", l'URL) se fait écraser en "<user> Toolbox" dans le rapport exporté. Mineur,
+  sens de l'erreur sûr (sur-scrubbing, pas fuite), noté pour plus tard.
+- disposition: (1) livré (bundle) · Core.Tests 488/488, Repair.Tests 145/145. (2), (3), (4) consignés,
+  pas codés dans ce commit — (2) est le plus important, bloque un test Repair vraiment représentatif
+  tant que ce n'est pas corrigé ou que Maxime pointe une racine plus précise.
+
 ## 2026-08-13 (session éco) · Point 5/6 revue CTO+Produit — Scenarios.cs + RowPlanning.cs déplacés vers PincabToolbox.Core.Diagnostics, PincabToolbox.App.Tests retiré
 - code:        aucun nouveau code de finding
 - bac:         FEATURE (chantier planifié, point 5/6, signal « GO » de Maxime reçu après clôture du
