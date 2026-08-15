@@ -1,4 +1,37 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 14/08/2026
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 15/08/2026
+
+## 📣 MAJ 15/08 — post d'annonce EN (forum + FB) rédigé, planning UI de lundi confirmé, suivi testeur Joey Mahon noté
+
+> **Post d'annonce EN livré** (`marketing/ANNONCE-maj-et-repair.md`, nouvelle section 5) : demandé par
+> Maxime pour annoncer en anglais uniquement, sur les forums et groupes FB, les explications par
+> code (51/51, cf entrées du 14/08 ci-dessous), l'espagnol comme 3ᵉ langue, et l'appel à 5 volontaires
+> pour tester Repair en beta avant l'ouverture visée au 1er septembre. Deux versions (courte FB /
+> longue forum), même structure que les 4 posts déjà publiés dans ce fichier. Point de vigilance
+> tranché avec prudence : le "nouveau look" n'est PAS encore livré (la refonte visuelle n'est prévue
+> que lundi 17/08, voir plus bas) — le post le présente donc comme "coming soon", jamais comme déjà
+> là, pour ne pas survendre. Lien de téléchargement utilisé, vérifié dans le code (`UpdateChecker.cs`)
+> et `git remote -v` plutôt que deviné : `https://github.com/waylo1/pincab-toolbox/releases/latest`.
+> Faute de frappe de Maxime sur le nom de la page FB ("Flypsync") signalée puis confirmée par lui :
+> c'est bien "FlipSync" avec un i, cohérent avec tout le reste du repo.
+>
+> **Bouton "Check for updates" de l'ancienne version : confirmé qu'il verra bien la nouvelle
+> version**, mais seulement une fois que Maxime aura réellement publié une Release GitHub avec un
+> numéro supérieur à celle installée — le bouton compare contre l'API Releases
+> (`https://api.github.com/repos/waylo1/pincab-toolbox/releases/latest`), jamais contre `main`
+> directement, et reste manuel/opt-in (jamais en fond de tâche). Maxime confirme qu'il va faire cette
+> release et mettre à jour la landing page en même temps.
+>
+> **Refonte UI de lundi 17/08 16h Paris — déjà planifiée, rappel.** Deux tâches programmées enchaînées
+> (`trig_01RRE6QcC1mSRfd91RG8dDNZ` en Opus pour le plan, `trig_01UdTghpg9w4nMBfpbXbZGjw` en Sonnet
+> haut effort pour l'implémentation, la seconde déclenchée automatiquement par la première) : rien à
+> refaire ici, mentionné pour que la prochaine reprise sache que c'est déjà en place et pourquoi le
+> post d'annonce ne peut pas encore dire "nouveau look" au présent.
+>
+> **Suivi testeur — Joey Mahon.** Échange Messenger avec un testeur (Joey Mahon) qui a un problème en
+> cours, pas encore résolu de son côté — il reprend le dépannage "demain" (son cabinet privé, avec un
+> étudiant praticien qui vient de démarrer, l'a occupé sans arrêt). Rien à coder ici, juste noté pour
+> ne pas perdre le fil au prochain point : à relancer / suivre sa résolution. Aucun détail technique
+> du problème lui-même n'a été transmis dans cette session — à récupérer auprès de Maxime au besoin.
 
 ## 🛡️ MAJ 14/08 (quater) — le validateur attrape désormais lui-même un futur "oubli ROM_MISSING"
 

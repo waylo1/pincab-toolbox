@@ -308,3 +308,79 @@ than once. I only build a check when two people or two separate sources describe
 that is what keeps me from shipping yet another false positive.
 
 No dates promised. Thanks for the reception so far.
+
+---
+---
+
+## 5 · Facebook groups & forums — ANGLAIS (new build: explanations, languages, Repair beta call)
+
+**À vérifier avant de poster :** le nom exact de la page Facebook à faire suivre. Tu as écrit
+« Flypsync », mais tout le reste du repo (code, releases, posts 1 à 4 ci-dessus) écrit « FlipSync ».
+J'ai mis « FlipSync » dans le post ci-dessous — corrige si la page s'appelle vraiment autrement.
+
+### 5a · Facebook groups (short)
+
+**Pincab Toolbox / FlipSync — new build**
+
+**Every finding now explains itself.** Click any result in a scan and you get three things instead
+of a bare warning: what it actually means for your table, why it happens, and how to check the fix
+worked. That's now true for all 51 checks the scanner knows about, not just a handful.
+
+**The app is now trilingual.** English, French, and Spanish, three buttons at the top, English by
+default. Pick one, it sticks.
+
+**Repair — status update.** Not for sale yet. I'm aiming to open it for real on **September 1st**,
+and right now it's in hands-on testing. I'm looking for **5 volunteers with a real, current problem
+on their cab** — something Repair can actually attempt a fix for, not a clean install. If that's you,
+email **flipsync.contact@gmail.com** with what's wrong. Same rules as always apply: nothing runs
+without your say-so, everything is backed up and can be undone, and it will never download a ROM or
+a table.
+
+The scan itself stays free, forever, read-only, no telemetry.
+
+A visual refresh is in progress — more on that soon. Follow the FlipSync page to catch it first.
+
+Download: https://github.com/waylo1/pincab-toolbox/releases/latest
+
+### 5b · Forum (long version)
+
+**[Update] Pincab Toolbox / FlipSync — explanations for every check, Spanish support, and Repair is
+opening for beta testers**
+
+Three things in this update, all born from what people actually asked for.
+
+**Every check now tells you what it means, not just that something's wrong.** Up to now, most
+findings gave you a category and a severity and left you to figure out the rest. Every one of the
+51 checks the scanner runs now comes with three short answers when you click into it: what this
+actually means for the table, why it happens, and how to verify the fix worked once you've made it.
+No more guessing what "impact: critical" is supposed to tell you to do next.
+
+**Spanish joins English and French.** Three language buttons, side by side, at the top of the window.
+English stays the default. If your install was defaulting to French or picking the wrong language
+before, that's fixed too — English is now what a fresh install starts in, and switching is one click,
+no restart.
+
+**Repair is moving into beta.** Quick recap for anyone who missed the earlier posts: the scanner
+finds problems, Repair is the part that fixes them, locally, on your machine. It's not for sale — I
+said from the start I'd rather announce the price up front than surprise anyone, and that hasn't
+changed. What has changed is timing: I'm aiming to open Repair for real on **September 1st**, and
+between now and then I want it tested against actual broken cabs, not clean test installs.
+
+**I'm looking for 5 volunteers.** You need an actual, current problem Repair might plausibly fix —
+a blocked DLL, an extracted ROM folder that needs re-zipping, a zombie PinUpDisplay process, orphaned
+Popper media, a wrong default audio device. If that's you, email **flipsync.contact@gmail.com** with
+what's happening on your cab. I'll walk you through it directly. The same constraints that have been
+public since the first Repair post still hold: nothing runs without you approving it first, a backup
+is taken before anything changes, every action can be undone, everything is logged, and it will never
+touch a ROM or a table download — that line hasn't moved and won't.
+
+**One more thing, not shipped yet but coming:** a visual pass on the interface itself. Nothing to show
+today, so I'm not going to describe it before it exists — but if you want to see it first, follow the
+FlipSync Facebook page.
+
+As always: still free, still read-only, still no telemetry, nothing leaves your machine unless you
+tell it to.
+
+Download: https://github.com/waylo1/pincab-toolbox/releases/latest
+
+If you've got a bug or an idea, this thread or flipsync.contact@gmail.com both reach me.
