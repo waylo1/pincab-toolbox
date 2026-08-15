@@ -26,6 +26,27 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-15 · [groupe FB World of Virtual Pinball (WoVP)](https://facebook.com/) — Tony Truong, DMD score invisible/recouvert
+- code:        NOUVEAU (pas de code existant — rattaché au backlog B1 "AltColor / SERum Pair Integrity", `docs/AUDIT-Scanner-2026-08.md` §7 Famille B, déjà P1, preuve déjà jugée "forte")
+- bac:         FN
+- contexte:    table Michael Jackson (Bad / Data East), capture d'écran postée : le DMD affiche un
+  encadré jaune vide à la place du score, entouré d'artwork statique (danseurs). Verbatim : « Please
+  help dmd is not showing score, looks like it's getting covered up ».
+- analyse:     symptôme cohérent avec une paire de colorisation AltColor/Serum incomplète ou mal
+  associée à la ROM — le rendu reste bloqué sur une frame statique au lieu du calque dynamique du
+  score, ce qui donne visuellement l'impression d'un score "caché". Déjà documenté dans l'audit
+  (§7, item B1) avec preuve terrain "forte" (VPForums 53452, VPUniverse 10162, freezy#143, Pinball
+  Nirvana) — ce rapport n'est pas le premier signal, c'est une corroboration de plus sur un item déjà
+  qualifié P1. Le scanner actuel ne couvre PAS ce cas (aucun scanner d'intégrité de colorisation
+  n'existe aujourd'hui) — vérifié avant de répondre publiquement, réponse Facebook donnée sans
+  pointer vers le scanner pour ne pas survendre ce qu'il détecte réellement.
+- disposition: FN confirmé, pas encore corrigé. **Demande explicite de Maxime : ajouter à la liste
+  des sujets à traiter lundi** ("à résoudre ou à détecter"). Point de vigilance à trancher avec lui
+  avant d'y toucher : les deux tâches programmées de lundi 17/08 16h (Opus plan + Sonnet impl) sont
+  scopées spécifiquement à la refonte UI/UX (synthèse retours GPT/Gemini), pas à ce sujet scanner —
+  ne pas les élargir en silence. Ce point reste donc en file d'attente ici, prêt à être repris dans
+  une session scanner dédiée (le pack de preuve existe déjà dans l'audit, reste à construire B1).
+
 ## 2026-08-14 · Décision produit Maxime — anglais par défaut au premier lancement, espagnol ajouté comme 3ᵉ langue
 - code:        aucun code de finding, décision produit + feature de localisation
 - bac:         FEATURE
