@@ -47,6 +47,44 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
   changement de code (règle du projet : jamais de fix sans vérifier le vrai script). Rien à coder ici
   tant que cette info n'arrive pas — noté pour ne pas perdre le fil.
 
+### Addendum même jour — rapport de scan réel reçu, hypothèse à corriger
+
+> Joey a envoyé le vrai rapport HTML (`.\VisualPinball\Tables\Stranger Things - SE 1.42.vpx`, ROM
+> demandée `STLE.zip`). Deux points qui changent l'analyse ci-dessus :
+>
+> 1. **Ce n'est PAS le fichier ScottyWic testé la veille au soir** — "SE" = "Stranger Edition", table
+>    d'**Orbital Pinball** (confirmé par recherche web : threads VPUniverse/VPinball.com "Stranger
+>    Things | Stranger Edition"), pas la table originale ScottyWic mentionnée dans le message nocturne
+>    de Joey. Deux tables différentes, ne pas les confondre dans le suivi.
+> 2. **Recherche web sur cette table précise** : la communauté documente un fichier séparé
+>    `STLE.UltraDMD` (dossier à copier dans `VisualPinball\Tables`) + un dossier `STSE` pour
+>    PinUP PopUp Videos — **aucune mention publique d'un `STLE.zip` distribué comme vraie ROM
+>    VPinMAME**. Sources : [thread VPUniverse "Where's the DMD?"](https://vpuniverse.com/forums/topic/9355-orbital-pinball-stranger-things-stranger-edition-wheres-the-dmd/),
+>    [Stranger Things – Stranger Edition (VPUniverse)](https://vpuniverse.com/files/file/25396-stranger-things/),
+>    [topic VPinball.com](https://vpinball.com/forums/topic/stranger-things-stranger-edition/page/11/).
+>
+> **Signal le plus fort, et il vient de Joey lui-même, pas de la recherche web** : dans son message
+> de la veille, avant même de voir ce rapport, il avait écrit avoir testé cette table et
+> « the table is playing... it seems to be working fine except the DMD wasn't showing up ». Ça
+> contredit directement le texte du Finding Critical, qui affirme *« will not start »*. Une table qui
+> tourne et se joue ne « ne démarre pas » — si ce constat de Joey se confirme sur CETTE table précise
+> (Stranger Edition, pas ScottyWic), c'est un FP confirmé sur la sévérité/le message, pas seulement
+> une hypothèse.
+>
+> **Cause probable, pas encore vérifiée sur le vrai script** (`ScriptAnalyzer.AnalyzeRomUsage` lit un
+> vrai `CreateObject("VPinMAME.Controller")` non commenté pour lever `UsesController`) : le script
+> ouvre bien le contrôleur pour de vrai, donc `ROM_NOT_REQUIRED` ne peut pas s'appliquer tel quel —
+> mais rien ne prouve que la table CONDITIONNE son démarrage à la présence de la ROM (gestion
+> d'erreur genre `On Error Resume Next` autour de l'appel, table qui continue en dégradé). Pas
+> vérifiable sans le texte réel du script (non public, embarqué dans le `.vpx`) — **prochaine étape :
+> demander à Joey s'il peut exporter/coller le script de cette table précise (clic droit → View
+> Script dans l'éditeur VPX)** avant tout changement de code, comme toujours.
+>
+> **Le vrai problème DMD de Joey, lui, est déjà documenté publiquement et n'a rien à voir avec
+> ROM_MISSING** : il manque le dossier `STLE.UltraDMD` (mécanisme UltraDMD, différent du DMD piloté
+> par VPinMAME/AltColor) — fix connu et démontré dans le thread VPUniverse ci-dessus, indépendant de
+> ce qui est codé ou pas dans le scanner.
+
 ## 2026-08-15 · [groupe FB World of Virtual Pinball (WoVP)](https://facebook.com/) — Tony Truong, DMD score invisible/recouvert
 - code:        NOUVEAU (pas de code existant — rattaché au backlog B1 "AltColor / SERum Pair Integrity", `docs/AUDIT-Scanner-2026-08.md` §7 Famille B, déjà P1, preuve déjà jugée "forte")
 - bac:         FN
