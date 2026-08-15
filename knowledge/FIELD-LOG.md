@@ -26,6 +26,27 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-15 · Messenger — Joey Mahon, ROM_MISSING critique sur une table originale ScottyWic (Stranger Things), après les deux fix connus
+- code:        ROM_MISSING
+- bac:         FP (probable, pas encore confirmé à 100%)
+- contexte:    Joey teste une nouvelle install, backglass Pirates (POTC) qui pose problème par
+  ailleurs (thread séparé, pas un souci scanner). En marge de ce test, il installe la table
+  "Stranger Things" par ScottyWic (originale, plus tard retouchée par LoadedWeapon) sur la nouvelle
+  install, la table tourne (joue normalement, DMD à part cassé, hors sujet ici), mais le scan la
+  remonte en ROM_MISSING critique. Verbatim : « if memory serves and i could be wrong, the stranger
+  things table didn't have a rom? ».
+- analyse:     Stranger Things (ScottyWic) est une table originale, ne passe pas par VPinMAME,
+  ne devrait donc exiger aucune ROM — cohérent avec le rappel de Joey. Ce n'est PAS le même bug que
+  les deux causes déjà corrigées et annoncées (post EN "Original and homebrew tables flagged as ROM
+  missing... Fixed", lignes VPinMAME commentées + template de table à ROM) : Joey a rescan APRÈS ces
+  fix, donc si le faux positif persiste ici c'est une troisième cause distincte, pas une régression
+  des deux premières. Pas encore confirmé formellement : il manque le nom de fichier exact / version
+  de la table pour vérifier le script réel (`ScriptAnalyzer.AnalyzeRomUsage`) et trouver la vraie
+  cause plutôt que de deviner. Demandé à Joey dans la réponse précédente, en attente.
+- disposition: FP probable, PAS CORRIGÉ, en attente de la confirmation du nom de fichier avant tout
+  changement de code (règle du projet : jamais de fix sans vérifier le vrai script). Rien à coder ici
+  tant que cette info n'arrive pas — noté pour ne pas perdre le fil.
+
 ## 2026-08-15 · [groupe FB World of Virtual Pinball (WoVP)](https://facebook.com/) — Tony Truong, DMD score invisible/recouvert
 - code:        NOUVEAU (pas de code existant — rattaché au backlog B1 "AltColor / SERum Pair Integrity", `docs/AUDIT-Scanner-2026-08.md` §7 Famille B, déjà P1, preuve déjà jugée "forte")
 - bac:         FN
