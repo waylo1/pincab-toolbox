@@ -120,6 +120,25 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
   juste à garder comme signal produit positif.
 - disposition: Aucune action requise. Consigné pour `docs/SUCCESS-METRICS.md` / mémoire produit.
 
+## 2026-08-15 · Messenger — Joey Mahon, demande d'un onglet séparé pour les mises à jour de tables
+- code:        UPDATE_AVAILABLE
+- bac:         FEATURE
+- contexte:    Verbatim : « it may be helpful to have a separate tab that shows all the table updates
+  specifically without cluttering up the main screen with several info alerts on table updates (or
+  maybe you already have that managed and i cant see it yet since i only have a handful of tables
+  installed) ».
+- analyse:     Vérifié dans le vrai XAML avant de répondre (`MainWindow.xaml`) : seulement 4 onglets
+  existent (`TabScanner`, `TabDiff`, `TabRepair`, `TabAbout`), aucun onglet dédié aux mises à jour —
+  Joey a raison, ce n'est pas caché, ça n'existe juste pas. Aujourd'hui `UPDATE_AVAILABLE` (Update
+  Watcher, encore bêta) sort mélangé aux autres findings Info dans la liste du Scanner, exactement le
+  bruit qu'il décrit, et ça ne peut que s'aggraver une fois sa bibliothèque complète installée (il
+  n'a qu'une poignée de tables pour l'instant).
+- disposition: PAS CODÉ, remonté à Maxime. Recoupe directement le chantier déjà prévu lundi 17/08
+  16h (refonte UI/UX, synthèse GPT/Gemini) — candidat naturel à glisser dans le prompt de la tâche
+  Opus (plan) plutôt qu'à traiter isolément maintenant. Décision de scope à prendre par Maxime, pas
+  prise seule ici (même principe que pour le point AltColor/DMD plus tôt aujourd'hui : ne pas
+  élargir les tâches programmées en silence).
+
 ## 2026-08-15 · [groupe FB World of Virtual Pinball (WoVP)](https://facebook.com/) — Tony Truong, DMD score invisible/recouvert
 - code:        NOUVEAU (pas de code existant — rattaché au backlog B1 "AltColor / SERum Pair Integrity", `docs/AUDIT-Scanner-2026-08.md` §7 Famille B, déjà P1, preuve déjà jugée "forte")
 - bac:         FN
