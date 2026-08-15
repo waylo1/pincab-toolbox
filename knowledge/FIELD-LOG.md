@@ -85,6 +85,41 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 > par VPinMAME/AltColor) — fix connu et démontré dans le thread VPUniverse ci-dessus, indépendant de
 > ce qui est codé ou pas dans le scanner.
 
+## 2026-08-15 · Messenger — Joey Mahon, backglass POTC (thread séparé, pas ROM_MISSING) : bitness résolu, cause isolée à POTC seul
+- code:        B2S_MISSING (probable — pas confirmé, voir disposition)
+- bac:         FIX (partiel) + FN à confirmer
+- contexte:    Suite du thread backglass ouvert plus tôt le même jour (ACDC vs POTC, VPinballX 32-bit
+  vs VPinballX64). Joey a ré-enregistré `B2SBackglassServerRegisterApp.exe` en admin côté 32-bit
+  (fix trouvé par recherche web, wiki `vpinball/b2s-backglass`). Résultat : ACDC affiche maintenant
+  son backglass correctement sur LES DEUX bitness (32 et 64). POTC, en revanche, n'affiche plus RIEN
+  du tout (juste le bureau) sur les deux bitness aussi — avant le fix, POTC affichait par erreur le
+  backglass d'ACDC en 64-bit. Verbatim (partiel) : « Ran POTC and no backglass just desktop on both
+  VpinballX, and X64 ».
+- analyse:     Le fix bitness a fonctionné (ACDC le prouve sur les deux exe) — ce n'est donc plus un
+  problème de registration/COM, c'est spécifique à POTC. Interprétation : avant le fix, un état
+  bloqué/mis en cache faisait apparemment "hériter" le backglass d'ACDC sur n'importe quelle table en
+  64-bit (pas vérifié formellement, hypothèse) ; une fois ce cache/état cassé par le re-enregistrement,
+  on voit l'état réel de POTC : rien ne se charge du tout. Piste concrète et déjà en notre possession :
+  le propre rapport de scan de Joey (reçu plus tôt) contenait la ligne "8 similar findings
+  (B2S_MISSING) — collapsed to keep this list readable", jamais désagrégée dans le HTML. POTC est un
+  candidat plausible pour faire partie de ces 8, mais ce n'est PAS confirmé — le format HTML/MD/BBCode
+  regroupe (`Rolled()`), seuls TXT/JSON/PDF montrent chaque table individuellement (comportement
+  documenté, MAJ 13/08 ter).
+- disposition: PAS CONFIRMÉ. Demandé à Joey de ré-exporter son scan en .txt ou .json pour voir la
+  liste désagrégée des 8 B2S_MISSING et vérifier si POTC y figure, avant toute hypothèse de fix côté
+  scanner ou côté install. Rien à coder tant que cette confirmation n'arrive pas.
+
+## 2026-08-15 · Messenger — Joey Mahon, retour positif spontané sur Update Watcher
+- code:        UPDATE_AVAILABLE
+- bac:         FEATURE (retour positif, pas une demande)
+- contexte:    En marge du dépannage backglass, verbatim spontané : « for the record, I do like the
+  tool pointing out when there is an updated version of a table that exists out there and that
+  clicking the update button brings up the website where the table can be searched for and found ».
+- analyse:     Validation terrain directe d'une fonctionnalité déjà livrée (Update Watcher, marquée
+  bêta dans le rapport de scan : « matched 2/10 tables against the VPS database »). Rien à changer,
+  juste à garder comme signal produit positif.
+- disposition: Aucune action requise. Consigné pour `docs/SUCCESS-METRICS.md` / mémoire produit.
+
 ## 2026-08-15 · [groupe FB World of Virtual Pinball (WoVP)](https://facebook.com/) — Tony Truong, DMD score invisible/recouvert
 - code:        NOUVEAU (pas de code existant — rattaché au backlog B1 "AltColor / SERum Pair Integrity", `docs/AUDIT-Scanner-2026-08.md` §7 Famille B, déjà P1, preuve déjà jugée "forte")
 - bac:         FN
