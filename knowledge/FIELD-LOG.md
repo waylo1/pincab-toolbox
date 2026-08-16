@@ -26,6 +26,33 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-15 (soir) · Messenger — Joey Mahon, POTC changé de table (Hanibal's 4K Edition), fichiers complets mais backglass et PUP-Pack toujours muets
+- code:        B2S_MISSING (absent du nouveau rapport, plus le bon angle) + suivi ROM_MISSING (Stranger Things, inchangé)
+- bac:         FN à confirmer (le scanner ne peut rien voir ici) + suivi
+- contexte:    Suite du thread POTC. Joey a abandonné la table 'VP10-Pirates of the Caribbean-1.3'
+  d'origine, téléchargé une autre édition (Hanibal's 4K Edition, VPUniverse) avec son propre PUP-Pack
+  et un .directb2s pris sur un lien séparé (VPUniverse, "Stern 2006 Alt B2S Full DMD"), renommé pour
+  matcher la table. Nouveau scan (`pincabtoolboxreport202608151952.txt`) : ROM trouvée (potc_600as,
+  OK), PUP-Pack détecté (potc_600as, OK), plus aucun B2S_MISSING sur cette table, dépendances B2S OK
+  globalement. Donc côté présence de fichiers, tout est complet. Pourtant Joey rapporte : backglass
+  toujours invisible même avec noms de fichiers qui matchent, et le PUP-Pack ne s'active pas du tout.
+  Verbatim : « The backglass did not come up even when the filenames of the B2S matched the table.
+  The pup pack did not seem to engage at all ».
+- analyse:     Le scanner ne vérifie que la présence/le nommage des fichiers, jamais leur contenu
+  interne ni le comportement runtime (registre de ROM déclaré à l'intérieur du .directb2s, process
+  PinUP Player lancé ou non, config par-jeu dans Popper). Ce que rapporte Joey est cohérent avec un
+  problème hors du périmètre actuel du scanner, pas un FP/FN classique. Hypothèse proposée (pas
+  confirmée) : Joey lance POTC en double-cliquant VpinballX.exe/Vpinball64.exe directement plutôt que
+  via PinUP Popper (comme il l'a écrit textuellement l'échange précédent) — les PUP-Packs dépendent en
+  général de PinUP Player, démarré par Popper au lancement d'une table, pas par l'exe VPX seul. Le B2S
+  peut parfois marcher lancé en direct une fois enregistré (cas d'ACDC), mais ça n'explique pas
+  pourquoi POTC reste muet même avec fichiers complets. Reste à tester par Joey.
+- disposition: Répondu, proposé à Joey de tester le lancement via Popper + de lancer
+  B2SBackglassServer.exe seul pour voir s'il ouvre sans erreur. En attente de son retour. Si confirmé
+  que c'est un problème de contenu interne du .directb2s (rom name déclaré dedans) plutôt que de
+  lancement, ça deviendrait un candidat FEATURE réaliste (vérifier le rom name interne du .directb2s,
+  pas juste le nom de fichier) — à ne pas coder avant confirmation.
+
 ## 2026-08-15 · Messenger — Joey Mahon, ROM_MISSING critique sur une table originale ScottyWic (Stranger Things), après les deux fix connus
 - code:        ROM_MISSING
 - bac:         FP (probable, pas encore confirmé à 100%)
