@@ -26,6 +26,36 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-17 · Messenger — Joey Mahon, cause réelle du backglass/PUP-Pack POTC trouvée : install fantôme d'un ancien setup 2019, pas un bug scanner
+- code:        NOUVEAU (candidat) — aucun code existant ne couvre ce cas
+- bac:         FIX (confirmé par Joey) + FEATURE
+- contexte:    Clôture du long thread POTC (voir les deux entrées précédentes du 15/08). Joey avait
+  un cabinet monté en 2019 avec un setup manuel : `C:\DirectOutput`, `C:\Visual Pinball`,
+  `C:\PinUpSystem`. Une mise à jour ratée l'a poussé à faire une install fraîche via le "Baller
+  Installer" dans `C:\vPinball` (qui ne recrée pas de `DirectOutput` séparé et regroupe VP +
+  PinUpSystem). Avec PupEventViewer, il a trouvé qu'au lancement, `vpinball64.exe` du NOUVEL
+  install allait chercher un raccourci dans `Tables\Plugins64\Directoutput` qui pointait encore
+  vers `C:\Visual Pinball` (L'ANCIEN install de 2019) et son sous-dossier x64, et que
+  `PinUpPlayerB2SDriver` dans l'ancien dossier était une version différente (plus ancienne) de
+  celle livrée par le nouvel installeur. En remplaçant le driver périmé par celui du nouvel
+  install, le backglass ET le PUP-Pack ont fonctionné directement.
+- analyse:     Root cause confirmée, hors périmètre du scanner actuel par construction : il ne
+  scanne que la racine sélectionnée, il n'a aucune visibilité sur un second install ailleurs sur
+  le disque ni sur un raccourci qui pointe vers l'extérieur de cette racine. Le finding
+  `BITNESS_MISMATCH`/dépendances actuels vérifient la présence et la bitness des DLL dans la
+  racine scannée, pas la cohérence de version entre deux installs, ni où pointent réellement les
+  raccourcis de `Tables\Plugins64`. Verbatim de Joey, proposition explicite : « have the tool
+  select all pinball related directories instead of just the one so it could possibly check for
+  something like that ». Lui-même reconnaît que son cas (fresh install dans un autre dossier
+  après un ancien setup manuel de 2019) est probablement rare, pas la majorité des utilisateurs.
+- disposition: FIX confirmé côté Joey (rien à changer côté produit pour débloquer son cas
+  précis). FEATURE loggée, PAS codée : détecter des installs pinball résiduels/multiples sur le
+  disque et des raccourcis de plugin qui pointent hors de la racine scannée serait un chantier
+  à part entière (scan hors racine, résolution de raccourcis .lnk, comparaison de versions de
+  DLL entre dossiers), pas un ajustement mineur d'un scanner existant. Candidat pour le backlog
+  produit, pas pour la refonte UI en cours ni un correctif rapide. Répondu à Joey avec
+  remerciement, sans engagement de date.
+
 ## 2026-08-15 (soir) · Messenger — Joey Mahon, POTC changé de table (Hanibal's 4K Edition), fichiers complets mais backglass et PUP-Pack toujours muets
 - code:        B2S_MISSING (absent du nouveau rapport, plus le bon angle) + suivi ROM_MISSING (Stranger Things, inchangé)
 - bac:         FN à confirmer (le scanner ne peut rien voir ici) + suivi
