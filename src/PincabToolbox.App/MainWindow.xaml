@@ -30,12 +30,15 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- Lot 5 : en-têtes de colonnes plus lisibles — padding régularisé sur la grille 8px du lot 1
+             (8,6 → 10,8) et poids de police relevé (SemiBold) pour se détacher davantage des lignes.
+             Aucun x:Name, aucun tri/recherche touché (déjà là, §1.2 du plan). -->
         <Style TargetType="GridViewColumnHeader">
             <Setter Property="Background" Value="{StaticResource Panel}"/>
             <Setter Property="Foreground" Value="{StaticResource TextDim}"/>
             <Setter Property="BorderBrush" Value="{StaticResource Border}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Padding" Value="10,8"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
@@ -45,7 +48,8 @@
                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"
-                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontWeight="SemiBold"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -84,8 +88,10 @@
 
         <!-- Une ligne du tableau des tables analysées. Chaque cellule est alimentée en
              code-behind depuis un vrai résultat de scan ; "—" = non vérifié sur ce scan. -->
+        <!-- Lot 5 : padding régularisé sur la grille 8px du lot 1 (14,8 → 16,10) — plus aérien,
+             même contenu, même hauteur de virtualisation relative aux autres templates de ligne. -->
         <DataTemplate x:Key="TableRowTpl">
-            <Border BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="14,8">
+            <Border BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="16,10">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="2*"/>
@@ -103,7 +109,7 @@
 
         <!-- Une ligne de santé de composant : nom / fait mesuré (bitness, base lue…) / statut. -->
         <DataTemplate x:Key="CompRowTpl">
-            <Border BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="14,8">
+            <Border BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="16,10">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText}" Foreground="{Binding StatusBrush}"
                                FontSize="11.5" FontWeight="SemiBold" Margin="12,0,0,0" VerticalAlignment="Center"/>
@@ -118,7 +124,7 @@
              renvoie vers la ligne correspondante de l'onglet Tous les résultats. -->
         <DataTemplate x:Key="SideRowTpl">
             <Border Background="Transparent" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1"
-                    Padding="13,9" Cursor="Hand" MouseLeftButtonUp="SideRow_Click">
+                    Padding="16,10" Cursor="Hand" MouseLeftButtonUp="SideRow_Click">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -141,7 +147,7 @@
              un clic n'y trouverait donc plus rien. Ni Cursor="Hand" ni chevron « › », pour ne pas
              promettre une navigation qui n'existe pas. -->
         <DataTemplate x:Key="UpdateRowTpl">
-            <Border Background="Transparent" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="13,9">
+            <Border Background="Transparent" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="16,10">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -619,7 +625,9 @@
                                 <Setter Property="Foreground" Value="{StaticResource Text}"/>
                                 <Setter Property="Background" Value="{Binding RowBg}"/>
                                 <Setter Property="BorderThickness" Value="0"/>
-                                <Setter Property="Padding" Value="4,6"/>
+                                <!-- Lot 5 : densité — padding régularisé (4,6 → 6,8), lignes plus
+                                     aériennes. VirtualizingPanel et tri/recherche/filtres inchangés. -->
+                                <Setter Property="Padding" Value="6,8"/>
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
