@@ -353,37 +353,41 @@
 
                                 <!-- ─── accroche + pastilles ─── -->
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock x:Name="HeroHeadline" FontSize="18" FontWeight="Bold"
+                                    <!-- Lot 2 : renforcement du contraste de rang — la jauge de score
+                                         (ScoreValue, 24px Black) et l'accroche dominent maintenant plus
+                                         nettement ; pastilles et ligne méta descendent d'un cran
+                                         (espacement resserré sur la grille 8px du lot 1). -->
+                                    <TextBlock x:Name="HeroHeadline" FontSize="20" FontWeight="Bold"
                                                Foreground="{StaticResource Text}" TextWrapping="Wrap"/>
                                     <TextBlock x:Name="ScoreStatus" Foreground="{StaticResource TextDim}"
                                                FontSize="12.5" TextWrapping="Wrap" Margin="0,3,0,0"/>
 
-                                    <WrapPanel Margin="0,9,0,0">
-                                        <Border x:Name="PillCritical" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="9" Padding="10,5" Margin="0,0,7,5" Cursor="Hand" MouseLeftButtonUp="PillCritical_Click">
+                                    <WrapPanel Margin="0,8,0,0" Opacity="0.95">
+                                        <Border x:Name="PillCritical" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="9" Padding="8,4" Margin="0,0,8,4" Cursor="Hand" MouseLeftButtonUp="PillCritical_Click">
                                             <StackPanel Orientation="Horizontal">
                                                 <Rectangle Width="3" Height="17" RadiusX="1.5" RadiusY="1.5" Fill="{StaticResource Critical}" Margin="0,0,8,0"/>
                                                 <TextBlock x:Name="ChipCritical" Text="0" Foreground="{StaticResource Critical}" FontWeight="Bold" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
-                                        <Border x:Name="PillWarning" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="9" Padding="10,5" Margin="0,0,7,5" Cursor="Hand" MouseLeftButtonUp="PillWarning_Click">
+                                        <Border x:Name="PillWarning" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="9" Padding="8,4" Margin="0,0,8,4" Cursor="Hand" MouseLeftButtonUp="PillWarning_Click">
                                             <StackPanel Orientation="Horizontal">
                                                 <Rectangle Width="3" Height="17" RadiusX="1.5" RadiusY="1.5" Fill="{StaticResource Warning}" Margin="0,0,8,0"/>
                                                 <TextBlock x:Name="ChipWarning" Text="0" Foreground="{StaticResource Warning}" FontWeight="Bold" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
-                                        <Border x:Name="PillNote" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="9" Padding="10,5" Margin="0,0,7,5" Cursor="Hand" MouseLeftButtonUp="PillNote_Click">
+                                        <Border x:Name="PillNote" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="9" Padding="8,4" Margin="0,0,8,4" Cursor="Hand" MouseLeftButtonUp="PillNote_Click">
                                             <StackPanel Orientation="Horizontal">
                                                 <Rectangle Width="3" Height="17" RadiusX="1.5" RadiusY="1.5" Fill="{StaticResource NoteSev}" Margin="0,0,8,0"/>
                                                 <TextBlock x:Name="ChipNote" Text="0" Foreground="{StaticResource NoteSev}" FontWeight="Bold" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
-                                        <Border x:Name="PillInfo" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="9" Padding="10,5" Margin="0,0,7,5" Cursor="Hand" MouseLeftButtonUp="PillInfo_Click">
+                                        <Border x:Name="PillInfo" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="9" Padding="8,4" Margin="0,0,8,4" Cursor="Hand" MouseLeftButtonUp="PillInfo_Click">
                                             <StackPanel Orientation="Horizontal">
                                                 <Rectangle Width="3" Height="17" RadiusX="1.5" RadiusY="1.5" Fill="{StaticResource InfoSev}" Margin="0,0,8,0"/>
                                                 <TextBlock x:Name="ChipInfo" Text="0" Foreground="{StaticResource InfoSev}" FontWeight="Bold" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
-                                        <Border x:Name="PillOk" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="9" Padding="10,5" Margin="0,0,7,5" Cursor="Hand" Opacity="0.4" MouseLeftButtonUp="PillOk_Click">
+                                        <Border x:Name="PillOk" Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="9" Padding="8,4" Margin="0,0,8,4" Cursor="Hand" Opacity="0.4" MouseLeftButtonUp="PillOk_Click">
                                             <StackPanel Orientation="Horizontal">
                                                 <Rectangle Width="3" Height="17" RadiusX="1.5" RadiusY="1.5" Fill="{StaticResource OkSev}" Margin="0,0,8,0"/>
                                                 <TextBlock x:Name="ChipOk" Text="0" Foreground="{StaticResource OkSev}" FontWeight="Bold" VerticalAlignment="Center"/>
@@ -413,13 +417,16 @@
                          Avant le premier scan, la même rangée porte le texte d'accueil. ── -->
                     <StackPanel Grid.Row="2">
                         <TextBlock x:Name="LblPlaceholder" Foreground="{StaticResource TextDim}"
-                                   TextWrapping="Wrap" Margin="2,0,2,6"/>
-                        <WrapPanel x:Name="MetaRow" Visibility="Collapsed" Margin="2,0,2,2">
-                            <TextBlock x:Name="MetaMode" Foreground="{StaticResource TextDim}" FontSize="12" Margin="0,0,22,4"/>
-                            <TextBlock x:Name="MetaStarted" Foreground="{StaticResource TextDim}" FontSize="12" Margin="0,0,22,4"/>
-                            <TextBlock x:Name="MetaDuration" Foreground="{StaticResource TextDim}" FontSize="12" Margin="0,0,22,4"/>
-                            <TextBlock x:Name="MetaChecks" Foreground="{StaticResource TextDim}" FontSize="12" Margin="0,0,22,4"/>
-                            <TextBlock x:Name="MetaTables" Foreground="{StaticResource TextDim}" FontSize="12" Margin="0,0,22,4"/>
+                                   TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <!-- Lot 2 : ligne méta régularisée sur la grille 8px (24/4 au lieu de 22/4) et
+                             légèrement resserrée (FontSize 11.5) pour descendre d'un cran derrière le
+                             bandeau — mêmes x:Name, même contenu, purement une question de calage. -->
+                        <WrapPanel x:Name="MetaRow" Visibility="Collapsed" Margin="0,0,0,4">
+                            <TextBlock x:Name="MetaMode" Foreground="{StaticResource TextDim}" FontSize="11.5" Margin="0,0,24,4"/>
+                            <TextBlock x:Name="MetaStarted" Foreground="{StaticResource TextDim}" FontSize="11.5" Margin="0,0,24,4"/>
+                            <TextBlock x:Name="MetaDuration" Foreground="{StaticResource TextDim}" FontSize="11.5" Margin="0,0,24,4"/>
+                            <TextBlock x:Name="MetaChecks" Foreground="{StaticResource TextDim}" FontSize="11.5" Margin="0,0,24,4"/>
+                            <TextBlock x:Name="MetaTables" Foreground="{StaticResource TextDim}" FontSize="11.5" Margin="0,0,24,4"/>
                         </WrapPanel>
                     </StackPanel>
 
