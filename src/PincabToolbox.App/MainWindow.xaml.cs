@@ -96,6 +96,11 @@ public sealed class SideRow
     public required string Sub { get; init; }
     public required string Code { get; init; }
     public required string Subject { get; init; }
+
+    /// <summary>Lot 3 — masque la ligne de sous-texte quand elle est vide (onglet Mises à jour :
+    /// VPS_MATCH_SUMMARY/VPS_UNAVAILABLE n'ont pas de Subject). Visible par défaut pour ne rien
+    /// changer aux encadrés existants (Critiques/Remarques), qui ont toujours un sous-texte.</summary>
+    public Visibility SubVis { get; init; } = Visibility.Visible;
 }
 
 /// <summary>Une ligne de « Santé des composants » — uniquement des composants portés par un
@@ -453,6 +458,7 @@ public partial class MainWindow : Window
         StabComponentsHeader.Text = Loc.Get("stab.components");
         StabTablesHeader.Text = Loc.Get("stab.tables");
         StabSystemHeader.Text = Loc.Get("stab.system");
+        StabUpdatesHeader.Text = Loc.Get("stab.updates");
         BtnRepairCardOpen.Content = Loc.Get("repaircard.open");
         SideCompNote.Text = CompTabNote.Text = Loc.Get("side.comp.note");
         TblHTable.Text = TblHTable2.Text = Loc.Get("tbl.h.table");
@@ -463,6 +469,7 @@ public partial class MainWindow : Window
         {
             CompTabEmpty.Text = Loc.Get("sys.needscan");
             TablesTabEmpty.Text = Loc.Get("sys.needscan");
+            UpdatesTabEmpty.Text = Loc.Get("sys.needscan");
         }
         RefreshSystemTab();
 
@@ -818,7 +825,10 @@ public partial class MainWindow : Window
         ChipCritical.Text = $"{_report.Count(Severity.Critical)} {Loc.Get("filter.critical")}";
         ChipWarning.Text = $"{_report.Count(Severity.Warning)} {Loc.Get("filter.warning")}";
         ChipNote.Text = $"{_report.Count(Severity.Note)} {Loc.Get("filter.note")}";
-        ChipInfo.Text = $"{_report.Count(Severity.Info)} {Loc.Get("filter.info")}";
+        // Lot 3 : la pastille Info ne compte plus les findings "updates" (nouvel onglet dédié) —
+        // sinon elle promettrait des lignes qui ne sont plus dans "Tous les résultats".
+        var infoCountExUpdates = _report.Findings.Count(f => f.Severity == Severity.Info && f.Category != "updates");
+        ChipInfo.Text = $"{infoCountExUpdates} {Loc.Get("filter.info")}";
         ChipOk.Text = $"{_report.Count(Severity.Ok)} {Loc.Get("filter.ok")}";
 
         // health score chip
@@ -873,7 +883,8 @@ public partial class MainWindow : Window
         RefreshSideBoxes(compRows);
         RefreshTablesViews(tableRows);
         RefreshSystemTab();
-        RefreshInnerTabHeaders(causeCount, compRows.Count, tableRows.Count);
+        var updatesCount = RefreshUpdatesTab();
+        RefreshInnerTabHeaders(causeCount, compRows.Count, tableRows.Count, updatesCount);
 
         // Exhaustive over all 5 Severity values on purpose (not "_ => _showOk"): a wildcard here once
         // silently routed Note through the Ok toggle (hidden by default, wrong bucket) — the exact
@@ -892,7 +903,11 @@ public partial class MainWindow : Window
         // Rolled(), not Ordered(): repetitive per-table findings collapse to one counted row
         // so the handful that matter stay visible. Criticals are never collapsed.
         // The full text export keeps every line. (FIELD-LOG 2026-08-03.)
+        // Lot 3 : Category=="updates" en est exclu — ces findings vivent désormais uniquement dans
+        // l'onglet dédié Mises à jour (RefreshUpdatesTab), pour désencombrer cette liste sans rien
+        // masquer (retour Joey Mahon, FIELD-LOG). Ni le scanner ni les codes/sévérités ne changent.
         var rows = _report.Rolled()
+            .Where(f => f.Category != "updates")
             .Where(f => Show(f.Severity))
             .Select(f =>
             {
@@ -1456,13 +1471,46 @@ public partial class MainWindow : Window
         return sb.ToString();
     }
 
-    private void RefreshInnerTabHeaders(int causes, int comps, int tables)
+    /// <summary>
+    /// Lot 3 — onglet « Mises à jour » : les findings Category="updates" (UpdateWatcherScanner,
+    /// tous Severity.Info) désencombrés de "Tous les résultats". Le watcher produit toujours au
+    /// moins une ligne après un scan (VPS_MATCH_SUMMARY ou VPS_UNAVAILABLE, jamais les deux) — cet
+    /// onglet ne doit donc jamais paraître plus mûr que le scanner bêta qu'il reflète : on affiche
+    /// l'état réel, pas une promesse de fonctionnalité aboutie. Retourne le nombre de lignes
+    /// affichées (compteur d'onglet).
+    /// </summary>
+    private int RefreshUpdatesTab()
+    {
+        var updateRows = _report!.Rolled()
+            .Where(f => f.Category == "updates")
+            .Select(f => new SideRow
+            {
+                Dot = BrushInfo,
+                Text = Loc.FindingText(f),
+                Sub = string.IsNullOrEmpty(f.Subject) ? "" : f.Subject,
+                SubVis = string.IsNullOrEmpty(f.Subject) ? Visibility.Collapsed : Visibility.Visible,
+                Code = f.Code,
+                Subject = f.Subject,
+            })
+            .ToList();
+
+        UpdatesList.ItemsSource = updateRows;
+        UpdatesTabCard.Visibility = updateRows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        UpdatesTabEmpty.Text = updateRows.Count > 0 ? "" : Loc.Get("scan.empty");
+        return updateRows.Count;
+    }
+
+    private void RefreshInnerTabHeaders(int causes, int comps, int tables, int updates)
     {
         StabCausesHeader.Text = $"{Loc.Get("stab.causes")} · {causes}";
-        StabResultsHeader.Text = $"{Loc.Get("stab.results")} · {_report!.Findings.Count}";
+        // Lot 3 : le compteur de "Tous les résultats" exclut désormais les findings "updates",
+        // cohérent avec ce qui y est réellement listé (même principe que ChipInfo ci-dessus).
+        var resultsCount = _report!.Findings.Count(f => f.Category != "updates");
+        StabResultsHeader.Text = $"{Loc.Get("stab.results")} · {resultsCount}";
         StabComponentsHeader.Text = comps > 0 ? $"{Loc.Get("stab.components")} · {comps}" : Loc.Get("stab.components");
         StabTablesHeader.Text = tables > 0 ? $"{Loc.Get("stab.tables")} · {tables}" : Loc.Get("stab.tables");
         StabSystemHeader.Text = Loc.Get("stab.system");
+        StabUpdatesHeader.Text = updates > 0 ? $"{Loc.Get("stab.updates")} · {updates}" : Loc.Get("stab.updates");
     }
 
     /// <summary>Même requête que CompletenessScanner.LoadPopperGames — la colonne Frontend doit

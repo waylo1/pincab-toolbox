@@ -283,6 +283,7 @@ public static class Loc
         ["stab.components"] = "Components",
         ["stab.tables"] = "Tables",
         ["stab.system"] = "System",
+        ["stab.updates"] = "Updates",
         // Cartes de causes racines.
         ["card.conf"] = "Confidence",
         ["card.comp.one"] = "{0} component",
@@ -540,6 +541,7 @@ public static class Loc
         ["stab.components"] = "Composants",
         ["stab.tables"] = "Tables",
         ["stab.system"] = "Système",
+        ["stab.updates"] = "Mises à jour",
         ["card.conf"] = "Confiance",
         ["card.comp.one"] = "{0} composant",
         ["card.comp.many"] = "{0} composants",
@@ -782,6 +784,7 @@ public static class Loc
         ["stab.components"] = "Componentes",
         ["stab.tables"] = "Tablas",
         ["stab.system"] = "Sistema",
+        ["stab.updates"] = "Actualizaciones",
         ["card.conf"] = "Confianza",
         ["card.comp.one"] = "{0} componente",
         ["card.comp.many"] = "{0} componentes",

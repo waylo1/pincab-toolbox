@@ -135,6 +135,28 @@
             </Border>
         </DataTemplate>
 
+        <!-- Lot 3 : une ligne de l'onglet « Mises à jour » — mêmes classe SideRow et habillage visuel
+             que SideRowTpl (badge + texte + sous-texte), mais SANS le renvoi cliquable vers Tous les
+             résultats : les findings de catégorie "updates" en sont désormais exclus (RefreshList),
+             un clic n'y trouverait donc plus rien. Ni Cursor="Hand" ni chevron « › », pour ne pas
+             promettre une navigation qui n'existe pas. -->
+        <DataTemplate x:Key="UpdateRowTpl">
+            <Border Background="Transparent" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="13,9">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Ellipse Width="7" Height="7" Fill="{Binding Dot}" Margin="0,5,9,0" VerticalAlignment="Top"/>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="{Binding Text}" FontSize="12" TextWrapping="Wrap" LineHeight="17"/>
+                        <TextBlock Text="{Binding Sub}" FontSize="10.5" Foreground="{StaticResource TextDim}" Margin="0,2,0,0" TextWrapping="Wrap"
+                                   Visibility="{Binding SubVis}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
         <!-- Carte de cause racine (maquette 11/08) : badge de gravité, titre, puce de confiance,
              phrase joueur, phrase d'impact, chaîne causale, pied (touché / codes / manuel / étapes).
              Tout est construit en code-behind depuis Scenarios.DetectAll — jamais écrit en dur. -->
@@ -799,6 +821,30 @@
                                     <TextBlock x:Name="SysScanBody" FontSize="12.5" TextWrapping="Wrap" Margin="0,6,0,18" LineHeight="20"/>
                                     <TextBlock x:Name="SysMachineHeader" FontSize="10.5" FontWeight="Bold" Foreground="{StaticResource TextDim}"/>
                                     <TextBlock x:Name="SysMachineBody" FontSize="12.5" TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="20"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <!-- ══ MISES À JOUR (lot 3, retour Joey Mahon) ══ — véhicule tranché par le
+                             plan : 6ᵉ onglet interne du Scanner, pas un 5ᵉ onglet principal (toutes
+                             les vues « tranche du rapport » sont déjà des onglets internes alimentés
+                             par le même _report). Les findings Category="updates" (UpdateWatcherScanner,
+                             tous Severity.Info) sont désormais exclus de « Tous les résultats » — voir
+                             RefreshList — et vivent uniquement ici pour désencombrer la liste principale
+                             sans rien masquer. Toujours au moins une ligne après un scan : le watcher
+                             produit VPS_MATCH_SUMMARY ou VPS_UNAVAILABLE en toute circonstance — l'onglet
+                             ne reste jamais vide et muet, il montre l'état réel du scanner bêta. -->
+                        <TabItem x:Name="StabUpdates">
+                            <TabItem.Header><TextBlock x:Name="StabUpdatesHeader" Text="Mises à jour" FontSize="13"/></TabItem.Header>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="0,8,0,0" MaxWidth="780" HorizontalAlignment="Left">
+                                    <Border x:Name="UpdatesTabCard" Visibility="Collapsed" Background="{StaticResource Panel}"
+                                            BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12">
+                                        <StackPanel>
+                                            <ItemsControl x:Name="UpdatesList" ItemTemplate="{StaticResource UpdateRowTpl}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock x:Name="UpdatesTabEmpty" Foreground="{StaticResource TextDim}" TextWrapping="Wrap" Margin="2,4,0,0"/>
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>
