@@ -288,6 +288,11 @@ public partial class MainWindow : Window
 
     private static readonly Regex UrlRx = new(@"https?://[^\s""'<>)\]]+", RegexOptions.Compiled);
 
+    // Lot 6 — reconnaît "Reading table i/n: ..." (ScanEngine.cs:45, jamais touché ici) pour en tirer
+    // un ratio de progression déterminé. Les autres étapes ("Running {scanner}…", ScanEngine.cs:52)
+    // n'ont pas de total connu côté App et laissent donc la barre indéterminée.
+    private static readonly Regex ScanStepRx = new(@"^Reading table (\d+)/(\d+):", RegexOptions.Compiled);
+
     private static readonly Brush DiffDel = new SolidColorBrush(Color.FromArgb(0x38, 0xE5, 0x48, 0x4D));
     private static readonly Brush DiffIns = new SolidColorBrush(Color.FromArgb(0x38, 0x46, 0xC0, 0x6E));
     private static readonly Brush DiffMod = new SolidColorBrush(Color.FromArgb(0x38, 0xF5, 0xA5, 0x24));
@@ -618,6 +623,35 @@ public partial class MainWindow : Window
         catch { return false; }
     }
 
+    /// <summary>
+    /// Lot 6 — surface les étapes nommées que ScanEngine rapporte déjà via IProgress&lt;string&gt;
+    /// (jamais touché ici, ni sa signature ni ScanEngine lui-même) : le libellé d'étape remplace le
+    /// texte de statut avec un court fondu (180 ms, jamais bloquant — une BeginAnimation ne suspend
+    /// jamais le thread UI ni ne peut se trouver sur le chemin d'un MessageBox/dialogue). La barre
+    /// devient déterminée quand le message porte un ratio "i/n" réel ("Reading table i/n: …"),
+    /// repasse indéterminée pour les étapes sans total connu ("Running {scanner}…", recherche
+    /// d'installs sur un scan disque entier).
+    /// </summary>
+    private void ReportScanProgress(string message)
+    {
+        LblStatus.Text = message;
+        LblStatus.FontWeight = FontWeights.SemiBold;   // reset to Normal in BtnScan_Click's finally
+
+        var m = ScanStepRx.Match(message);
+        if (m.Success && int.TryParse(m.Groups[1].Value, out var i) && int.TryParse(m.Groups[2].Value, out var n) && n > 0)
+        {
+            ScanProgress.IsIndeterminate = false;
+            ScanProgress.Value = 100.0 * Math.Min(i, n) / n;
+        }
+        else
+        {
+            ScanProgress.IsIndeterminate = true;
+        }
+
+        var fade = new System.Windows.Media.Animation.DoubleAnimation(0.35, 1.0, TimeSpan.FromMilliseconds(180));
+        LblStatus.BeginAnimation(OpacityProperty, fade);
+    }
+
     private async void BtnScan_Click(object sender, RoutedEventArgs e)
     {
         if (_cts is not null) return;
@@ -645,6 +679,10 @@ public partial class MainWindow : Window
         BtnScan.Content = Loc.Get("scan.running");
         BtnCancel.Visibility = Visibility.Visible;
         ScanProgress.Visibility = Visibility.Visible;
+        // Lot 6 : repart déterminée=false à chaque scan — sinon un scan qui enchaîne directement sur
+        // la phase "Running {scanner}…" hériterait de la barre déterminée laissée par le scan précédent.
+        ScanProgress.IsIndeterminate = true;
+        ScanProgress.Value = 0;
         BtnExport.IsEnabled = false;
         BtnCopyForum.IsEnabled = false;
         LblPlaceholder.Text = "";
@@ -656,7 +694,7 @@ public partial class MainWindow : Window
         // same way Windows does (DirectoryInfo.Parent is null only for a drive root).
         var isWholeDrive = IsDriveRoot(root);
 
-        var progress = new Progress<string>(msg => LblStatus.Text = msg);
+        var progress = new Progress<string>(ReportScanProgress);
         try
         {
             var ct = _cts.Token;
@@ -748,6 +786,8 @@ public partial class MainWindow : Window
             BtnScan.Content = Loc.Get("scan.start");
             BtnCancel.Visibility = Visibility.Collapsed;
             ScanProgress.Visibility = Visibility.Collapsed;
+            // Lot 6 : le renfort visuel des étapes (SemiBold) ne vaut que pendant le scan.
+            LblStatus.FontWeight = FontWeights.Normal;
         }
     }
 
