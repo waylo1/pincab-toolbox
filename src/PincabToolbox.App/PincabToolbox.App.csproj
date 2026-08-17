@@ -32,13 +32,13 @@
          réelle (droits Bally/Williams) — voir docs/maquette-scanner-2026-08-11.html. -->
     <Resource Include="Assets\background.png" />
     <!-- Logo MC Automation fourni par Maxime, fond noir détouré pour se poser sur le bleu nuit.
-         logo.png = emblème seul (en-tête + icône de fenêtre) ; logo-full.png = emblème + nom,
-         gardé pour l'écran À propos et les visuels marketing. -->
+         logo.png = emblème seul (en-tête + icône de fenêtre). -->
     <Resource Include="Assets\logo.png" />
-    <Resource Include="Assets\logo-full.png" />
-    <!-- Retour Maxime (17/08) : écran de démarrage natif WPF avec l'emblème + le nom — s'affiche
-         pendant l'initialisation (chargement du profil, JIT), disparaît en fondu dès que la fenêtre
-         principale est prête. Aucun code requis, WPF le gère nativement via ce seul item MSBuild. -->
+    <!-- logo-full.png = emblème + nom. Fix build (18/08) : un item SplashScreen embarque déjà son
+         fichier comme ressource — le déclarer AUSSI en <Resource> sur le même chemin fait échouer
+         la génération (RG1000 "same key … assets/logo-full.png"). Un seul item suffit ; l'image
+         reste chargeable via "Assets/logo-full.png" (pack URI) pour l'écran À propos et les
+         visuels marketing si besoin plus tard — gardé pour ce même rôle qu'avant. -->
     <SplashScreen Include="Assets\logo-full.png" />
   </ItemGroup>
 
