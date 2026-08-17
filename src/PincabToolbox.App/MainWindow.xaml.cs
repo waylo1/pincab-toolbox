@@ -526,7 +526,11 @@ public partial class MainWindow : Window
     private void UpdateLangButtons()
     {
         var active = (Style)FindResource("AccentButton");
-        var inactive = (Style)FindResource(typeof(Button));
+        // Fix build (18/08) : "Button" n'était pas qualifié — CS0246 chez Maxime (pas d'implicit
+        // using WPF actif sur sa machine), alors que le reste du fichier qualifie déjà
+        // System.Windows.Controls.Button partout ailleurs (RowAction_Click, etc.). Bug préexistant
+        // du 13/08, sans rapport avec les lots 1-6 de la refonte.
+        var inactive = (Style)FindResource(typeof(System.Windows.Controls.Button));
         BtnLangEn.Style = Loc.Lang == "en" ? active : inactive;
         BtnLangFr.Style = Loc.Lang == "fr" ? active : inactive;
         BtnLangEs.Style = Loc.Lang == "es" ? active : inactive;
