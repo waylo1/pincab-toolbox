@@ -216,9 +216,10 @@ ressource ; tous les `Margin`/`Padding` sont des littéraux inline, ex. `Padding
 
 **Ce qu'il faut faire.**
 1. **Basculer les 5 sites d'orange de marque vers le vert de marque du logo.** Le logo EST la source de
-   marque (pas de charte séparée). Valeurs lues sur le logo, à confirmer à la pipette sur le nouvel
-   asset `Assets/logo-full.png` une fois ajouté : accent olive-lime **`#7CB342`**, `AccentDark` olive
-   foncé **`#557E27`**. Pour 606/686, recomposer les teintes sur le nouveau vert en gardant les mêmes
+   marque (pas de charte séparée). Vert échantillonné au pixel sur le logo (désormais présent dans le
+   dépôt, `Assets/logo-full.png`) : olive-lime dominant **`#708830`**, reflets plus vifs jusqu'à
+   ~`#94C818` ; `AccentDark` olive foncé **`#4E5F22`**. Prélève la valeur définitive à la pipette sur
+   `Assets/logo-full.png`. Pour 606/686, recomposer les teintes sur le nouveau vert en gardant les mêmes
    canaux alpha (`4D` / `22` / `55`). Garder le texte des boutons d'accent en quasi-noir (`#FF1A1206`,
    `App.xaml:60`) — contraste texte/bouton élevé sur ce vert clair (> 7:1, AA large).
 2. Ajouter dans `App.xaml <Application.Resources>` une échelle d'espacement 8px en ressources
