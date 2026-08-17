@@ -89,6 +89,14 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
+        <!-- Retour Maxime (17/08) : le ScrollBar système hérite d'un menu contextuel natif Windows
+             (« Défilement ici / Haut / Bas / Page précédente… ») sur certains thèmes/rendus — hors
+             palette de l'app, il jure visuellement. Désactivé globalement, sans toucher au défilement
+             lui-même ni aux styles ListView/ListBox existants (virtualisation intacte). -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="ContextMenuService.IsEnabled" Value="False"/>
+        </Style>
+
         <!-- Lot 4 : badge de sévérité partagé — une seule définition de la FORME (coins arrondis,
              padding, épaisseur de bordure), utilisée par le badge de gravité des cartes de cause
              (CauseCardTpl). La COULEUR reste fournie par l'appelant via Background/BorderBrush liés

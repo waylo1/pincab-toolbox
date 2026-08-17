@@ -36,6 +36,10 @@
          gardé pour l'écran À propos et les visuels marketing. -->
     <Resource Include="Assets\logo.png" />
     <Resource Include="Assets\logo-full.png" />
+    <!-- Retour Maxime (17/08) : écran de démarrage natif WPF avec l'emblème + le nom — s'affiche
+         pendant l'initialisation (chargement du profil, JIT), disparaît en fondu dès que la fenêtre
+         principale est prête. Aucun code requis, WPF le gère nativement via ce seul item MSBuild. -->
+    <SplashScreen Include="Assets\logo-full.png" />
   </ItemGroup>
 
   <ItemGroup>
