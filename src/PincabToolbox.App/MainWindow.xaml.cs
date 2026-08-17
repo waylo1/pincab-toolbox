@@ -220,7 +220,10 @@ public partial class MainWindow : Window
     // affiche alors « — » plutôt qu'une valeur déduite du silence (ADR-010).
     private HashSet<string>? _popperRegistered;
 
-    private static readonly Brush BrushCritical = new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6E));
+    // Lot 4 : réconciliation du rouge — les deux sources de vérité avaient divergé (App.xaml Critical
+    // #E5484D, déjà utilisé par les pastilles et les teintes de ligne, vs ce brosse-miroir #FF6B6E).
+    // App.xaml est la source canonique ; c'est donc elle qui gagne (une seule couleur, pas cinq).
+    private static readonly Brush BrushCritical = new SolidColorBrush(Color.FromRgb(0xE5, 0x48, 0x4D));
     private static readonly Brush BrushWarning = new SolidColorBrush(Color.FromRgb(0xF5, 0xA5, 0x24));
     // Severity.Note — distinct from Info on purpose (Doctrine Note, HANDOFF §"rendu App"): a heuristic
     // fact is neither a neutral confirmation (Info, blue) nor actionable (Warning, orange). Same violet
@@ -260,6 +263,18 @@ public partial class MainWindow : Window
         Severity.Note => BrushNote,
         Severity.Info => BrushInfo,
         _ => BrushOk,
+    };
+
+    /// <summary>Lot 4 — même mapping que <see cref="SevBrushOf"/> mais pour les teintes de fond de
+    /// ligne (RowCritical/RowWarning/…), consolidées ici pour que la liste des résultats et les
+    /// badges de carte ne puissent plus diverger sur une seule et même couleur de sévérité.</summary>
+    private static Brush RowBgOf(Severity s) => s switch
+    {
+        Severity.Critical => RowCritical,
+        Severity.Warning => RowWarning,
+        Severity.Note => RowNote,
+        Severity.Info => RowInfo,
+        _ => RowOk,
     };
 
     /// <summary>La couleur de gravité en version voilée (fond / bordure des badges de carte).</summary>
@@ -936,26 +951,11 @@ public partial class MainWindow : Window
                 {
                     Severity = f.Severity,
                     SevLabel = Loc.SeverityLabel(f.Severity),
-                    // Exhaustive: an un-handled severity must never fall through to the green Ok
-                    // brush by accident (that silently painted a heuristic Note finding as "fine").
-                    SevBrush = f.Severity switch
-                    {
-                        Severity.Critical => BrushCritical,
-                        Severity.Warning => BrushWarning,
-                        Severity.Note => BrushNote,
-                        Severity.Info => BrushInfo,
-                        Severity.Ok => BrushOk,
-                        _ => BrushOk,
-                    },
-                    RowBg = f.Severity switch
-                    {
-                        Severity.Critical => RowCritical,
-                        Severity.Warning => RowWarning,
-                        Severity.Note => RowNote,
-                        Severity.Info => RowInfo,
-                        Severity.Ok => RowOk,
-                        _ => RowOk,
-                    },
+                    // Lot 4 : appelle désormais SevBrushOf/RowBgOf au lieu de dupliquer le switch —
+                    // même mapping exhaustif qu'avant (tout ce qui n'est pas explicitement Critical/
+                    // Warning/Note/Info retombe sur Ok, jamais l'inverse), une seule définition.
+                    SevBrush = SevBrushOf(f.Severity),
+                    RowBg = RowBgOf(f.Severity),
                     Category = Loc.Get("cat." + f.Category),
                     Subject = f.Subject,
                     Message = msg,

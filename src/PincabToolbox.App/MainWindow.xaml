@@ -172,8 +172,10 @@
                     <StackPanel Grid.Column="1">
                         <StackPanel Margin="16,12,16,12">
                             <DockPanel>
-                                <Border DockPanel.Dock="Left" Background="{Binding BadgeBg}" BorderBrush="{Binding BadgeBorder}"
-                                        BorderThickness="1" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
+                                <!-- Lot 4 : forme partagée (App.xaml SeverityBadge) — couleur toujours
+                                     fournie par le binding, comme avant. -->
+                                <Border DockPanel.Dock="Left" Style="{StaticResource SeverityBadge}"
+                                        Background="{Binding BadgeBg}" BorderBrush="{Binding BadgeBorder}">
                                     <TextBlock Text="{Binding BadgeText}" Foreground="{Binding AccentBrush}" FontSize="10" FontWeight="Bold"/>
                                 </Border>
                                 <Border DockPanel.Dock="Right" BorderBrush="{StaticResource Border}" BorderThickness="1"

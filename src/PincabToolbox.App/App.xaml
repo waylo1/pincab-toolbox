@@ -88,5 +88,18 @@
             <Setter Property="Margin" Value="0,0,14,0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
+
+        <!-- Lot 4 : badge de sévérité partagé — une seule définition de la FORME (coins arrondis,
+             padding, épaisseur de bordure), utilisée par le badge de gravité des cartes de cause
+             (CauseCardTpl). La COULEUR reste fournie par l'appelant via Background/BorderBrush liés
+             en code-behind à SevBrushOf/SevTint (CauseCardRow.BadgeBg/BadgeBorder) — une valeur
+             locale prime toujours sur un Setter de Style, donc appliquer ce style ne change ni ne
+             duplique aucune couleur de sévérité. -->
+        <Style x:Key="SeverityBadge" TargetType="Border">
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="7,2"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
     </Application.Resources>
 </Application>
