@@ -2125,7 +2125,8 @@ public partial class MainWindow : Window
         sb.AppendLine("<title>Pincab Toolbox — Scan Report</title><style>");
         sb.AppendLine("body{background:#15151B;color:#ECECF2;font:15px/1.6 system-ui,'Segoe UI',Roboto,sans-serif;margin:0;padding:32px}");
         sb.AppendLine(".wrap{max-width:960px;margin:0 auto}");
-        sb.AppendLine("h1{font-size:24px;margin:0}h1 span{color:#FF9F1C}");
+        // Vert de marque (lot 1, rebranding 17/08) — remplace l'orange dans le rapport HTML exporté.
+        sb.AppendLine("h1{font-size:24px;margin:0}h1 span{color:#708830}");
         sb.AppendLine(".meta{color:#9C9CAC;font-size:13px;margin:4px 0 22px}");
         sb.AppendLine(".score{display:inline-flex;align-items:baseline;gap:8px;border:1px solid #34343F;background:#1E1E26;border-radius:12px;padding:12px 18px;margin-bottom:18px}");
         sb.AppendLine(".score b{font-size:30px;font-weight:900}.score .g{font-weight:700}");

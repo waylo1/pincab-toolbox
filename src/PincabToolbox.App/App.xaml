@@ -10,8 +10,13 @@
         <SolidColorBrush x:Key="Border" Color="#FF34343F"/>
         <SolidColorBrush x:Key="Text" Color="#FFECECF2"/>
         <SolidColorBrush x:Key="TextDim" Color="#FF9C9CAC"/>
-        <SolidColorBrush x:Key="Accent" Color="#FFFF9F1C"/>
-        <SolidColorBrush x:Key="AccentDark" Color="#FFCC7A00"/>
+        <!-- Rebranding 17/08 : le nouveau logo « PIN CAB TOOL BOX » porte une identité noir + vert
+             olive-lime + argent, l'orange n'est plus une couleur de marque. Vert échantillonné à la
+             pipette sur Assets/logo-full.png (dominant olive-lime ~#708830, reflets jusqu'à ~#94C818).
+             Volontairement plus jaune que l'émeraude de sévérité Ok/OkSev (#46C06E, §2.9 du plan) pour
+             qu'un score sain ne se confonde jamais avec la couleur de marque. -->
+        <SolidColorBrush x:Key="Accent" Color="#FF708830"/>
+        <SolidColorBrush x:Key="AccentDark" Color="#FF4E5F22"/>
         <SolidColorBrush x:Key="Critical" Color="#FFE5484D"/>
         <SolidColorBrush x:Key="Warning" Color="#FFF5A524"/>
         <SolidColorBrush x:Key="InfoSev" Color="#FF3E9CF3"/>
@@ -20,6 +25,14 @@
              separate annotation register without borrowing the alarm colours. -->
         <SolidColorBrush x:Key="NoteSev" Color="#FFB58DF5"/>
         <SolidColorBrush x:Key="OkSev" Color="#FF46C06E"/>
+
+        <!-- Échelle d'espacement 8px (lot 1) — jetons nommés par rôle, consommés par les lots 2 et 5
+             au fil des zones qu'ils retouchent. N'existait pas avant : tous les Margin/Padding
+             restent des littéraux inline ailleurs dans l'app, ce lot ne les remplace pas en masse. -->
+        <Thickness x:Key="SpaceXs">4</Thickness>
+        <Thickness x:Key="SpaceSm">8</Thickness>
+        <Thickness x:Key="SpaceMd">16</Thickness>
+        <Thickness x:Key="SpaceLg">24</Thickness>
 
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource Text}"/>

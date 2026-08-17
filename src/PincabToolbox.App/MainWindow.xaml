@@ -603,7 +603,8 @@
                                                     <Setter TargetName="RowBd" Property="Background" Value="#1FFFFFFF"/>
                                                 </Trigger>
                                                 <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="RowBd" Property="Background" Value="#4DFF9F1C"/>
+                                                    <!-- Vert de marque (lot 1, rebranding 17/08) — même canal alpha 4D qu'avant l'orange. -->
+                                                    <Setter TargetName="RowBd" Property="Background" Value="#4D708830"/>
                                                     <Setter Property="Foreground" Value="{StaticResource Text}"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
@@ -683,7 +684,8 @@
                                 <Button x:Name="DetailActionBtn" HorizontalAlignment="Left" Margin="0,13,0,0" Padding="14,7"
                                         FontWeight="SemiBold" Click="DetailAction_Click"/>
 
-                                <Border x:Name="DetailRepairTag" Visibility="Collapsed" Background="#22FF9F1C" BorderBrush="#55FF9F1C" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,11,0,0" HorizontalAlignment="Left" MaxWidth="420">
+                                <!-- Vert de marque (lot 1, rebranding 17/08) — mêmes canaux alpha 22/55 qu'avant l'orange. -->
+                                <Border x:Name="DetailRepairTag" Visibility="Collapsed" Background="#22708830" BorderBrush="#55708830" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,11,0,0" HorizontalAlignment="Left" MaxWidth="420">
                                     <StackPanel>
                                         <TextBlock x:Name="DetailRepairTagText" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" TextWrapping="Wrap" LineHeight="18"/>
                                         <Button x:Name="BtnGotoRepair" Click="BtnGotoRepair_Click" HorizontalAlignment="Left"
