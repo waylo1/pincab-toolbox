@@ -1186,7 +1186,15 @@
                         <TextBlock x:Name="OnbP2" Foreground="{StaticResource Text}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                         <TextBlock x:Name="OnbP3" Foreground="{StaticResource Text}" TextWrapping="Wrap"/>
                     </StackPanel>
-                    <Button x:Name="OnbStart" Style="{StaticResource AccentButton}" HorizontalAlignment="Left" Margin="0,24,0,0" Padding="20,9" Click="OnbStart_Click"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,24,0,0">
+                        <Button x:Name="OnbStart" Style="{StaticResource AccentButton}" HorizontalAlignment="Left" Padding="20,9" Click="OnbStart_Click"/>
+                        <!-- 18/08/2026 : lien secondaire vers l'onglet Tutoriel, pour qu'un utilisateur pressé
+                             qui ferme l'accueil sans lire les 3 puces retrouve son chemin vers le mode d'emploi
+                             sans avoir à deviner qu'un onglet dédié existe (amélioration proposée en revue
+                             CTO+Produit, feu vert de Maxime). -->
+                        <Button x:Name="OnbTutorial" Background="Transparent" BorderThickness="0" Foreground="{StaticResource TextDim}"
+                                HorizontalAlignment="Left" Padding="16,9" Click="OnbTutorial_Click" Cursor="Hand"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
         </Border>

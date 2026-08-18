@@ -278,6 +278,7 @@ public static class Loc
         ["onb.p2"] = "✓  100% local — nothing is uploaded, no account, no telemetry.",
         ["onb.p3"] = "✓  It finds what's broken, missing or mismatched — and explains how to fix it.",
         ["onb.start"] = "Let's go",
+        ["onb.tutorial"] = "See the tutorial first",
         // ── Écran Scanner porté sur la maquette 11/08 (docs/maquette-scanner-2026-08-11.html) ──
         // Sous-titre du bandeau : nombre de causes de fond réellement détectées (Scenarios.DetectAll).
         // Pas de promesse "tout se règle en cascade" — seule la relation cause→symptômes est affirmée.
@@ -554,6 +555,7 @@ public static class Loc
         ["onb.p2"] = "✓  100 % local — rien n'est envoyé, sans compte, sans télémétrie.",
         ["onb.p3"] = "✓  Il trouve ce qui est cassé, manquant ou incompatible — et explique comment corriger.",
         ["onb.start"] = "C'est parti",
+        ["onb.tutorial"] = "Voir d'abord le tutoriel",
         // ── Écran Scanner porté sur la maquette 11/08 (docs/maquette-scanner-2026-08-11.html) ──
         ["hero.causes.one"] = "Les résultats se ramènent à 1 cause de fond — corrige la cause plutôt que chaque symptôme un par un.",
         ["hero.causes.many"] = "Les résultats se ramènent à {0} causes de fond — corrige les causes plutôt que chaque symptôme un par un.",
@@ -812,6 +814,7 @@ public static class Loc
         ["onb.p2"] = "✓  100 % local — nada se sube, sin cuenta, sin telemetría.",
         ["onb.p3"] = "✓  Encuentra lo que está roto, falta o no coincide — y explica cómo corregirlo.",
         ["onb.start"] = "Empezar",
+        ["onb.tutorial"] = "Ver primero el tutorial",
         ["hero.causes.one"] = "Los resultados se reducen a 1 causa de fondo — corrige la causa, no cada síntoma uno por uno.",
         ["hero.causes.many"] = "Los resultados se reducen a {0} causas de fondo — corrige las causas, no cada síntoma uno por uno.",
         ["meta.mode"] = "Modo",

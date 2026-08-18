@@ -354,6 +354,14 @@ public partial class MainWindow : Window
         _settings.Save();
     }
 
+    private void OnbTutorial_Click(object sender, RoutedEventArgs e)
+    {
+        OnboardingOverlay.Visibility = Visibility.Collapsed;
+        _settings.OnboardingSeen = true;
+        _settings.Save();
+        MainTabs.SelectedItem = TabTutorial;
+    }
+
     /// <summary>Persist window bounds, last folder and language on close (best-effort).</summary>
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
@@ -526,6 +534,7 @@ public partial class MainWindow : Window
         OnbP2.Text = Loc.Get("onb.p2");
         OnbP3.Text = Loc.Get("onb.p3");
         OnbStart.Content = Loc.Get("onb.start");
+        OnbTutorial.Content = Loc.Get("onb.tutorial");
         if (string.IsNullOrEmpty(LblStatus.Text) || LblStatus.Text == "Prêt." || LblStatus.Text == "Ready.")
             LblStatus.Text = Loc.Get("status.ready");
         if (_report is not null) RefreshList();
