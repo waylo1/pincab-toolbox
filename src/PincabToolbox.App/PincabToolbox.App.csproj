@@ -20,8 +20,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PincabToolbox.Core\PincabToolbox.Core.csproj" />
-    <!-- Écran 1 (offre Repair gratuite) only — see RepairOfferBuilder.cs. Preflight/Apply/Undo
-         are never called from the App; wiring them is a separate, explicitly re-asked decision. -->
+    <!-- Écran 1 (offre Repair gratuite) via RepairOfferBuilder.cs. Preflight/Apply/Undo ARE wired
+         from the App (LOT H, spec 10/08, ADR-012) — see RepairSession.Apply/Preflight/Undo calls in
+         MainWindow.xaml.cs. This comment previously said the opposite (stale since 10/08 — Lot H was
+         decided and delivered that same day; the comment was never updated). Corrected 18/08/2026. -->
     <ProjectReference Include="..\PincabToolbox.Repair\PincabToolbox.Repair.csproj" />
   </ItemGroup>
 
