@@ -522,6 +522,7 @@ public partial class MainWindow : Window
         BtnRepairBuildPlan.Content = Loc.Get("repair.plan.build");
         ChkRepairSelectAll.Content = Loc.Get("repair.selectall");
         BtnRepairApply.Content = Loc.Get("repair.apply.button");
+        BtnRescore.Content = Loc.Get("repair.rescore.button");
         LblRepairDone.Text = Loc.Get("repair.done.label");
         RepairDoneEmpty.Text = Loc.Get("repair.done.empty");
         LblRepairUndone.Text = Loc.Get("repair.undone.label");
@@ -680,15 +681,26 @@ public partial class MainWindow : Window
         LblStatus.BeginAnimation(OpacityProperty, fade);
     }
 
-    private async void BtnScan_Click(object sender, RoutedEventArgs e)
+    private async void BtnScan_Click(object sender, RoutedEventArgs e) => await RunScanAsync(sender, e);
+
+    /// <summary>
+    /// LOT Rescore (18/08): extracted so "Revoir mon score" (<see cref="BtnRescore_Click"/>) can
+    /// await the exact same scan path BtnScan_Click already used — same TxtRoot/_demoRoot, same
+    /// profile, same scanner list, nothing duplicated — instead of writing a second, divergent copy.
+    /// BtnScan_Click itself is now a thin fire-and-forget wrapper around this method, unchanged in
+    /// every other respect. Returns whether the scan actually completed and <see cref="_report"/> was
+    /// updated (false on cancel or failure), so a caller that needs the fresh score afterwards knows
+    /// not to trust a stale report.
+    /// </summary>
+    private async Task<bool> RunScanAsync(object sender, RoutedEventArgs e)
     {
-        if (_cts is not null) return;
+        if (_cts is not null) return false;
         var root = (_demoRoot is not null && TxtRoot.Text == Loc.Get("scan.demolabel"))
             ? _demoRoot : TxtRoot.Text.Trim();
         if (root.Length == 0 || !Directory.Exists(root))
         {
             LblStatus.Text = Loc.Get("scan.placeholder");
-            return;
+            return false;
         }
 
         Profile profile;
@@ -699,7 +711,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             MessageBox.Show(this, "profiles/vpx-popper.json: " + ex.Message, "Pincab Toolbox");
-            return;
+            return false;
         }
 
         _cts = new CancellationTokenSource();
@@ -723,6 +735,7 @@ public partial class MainWindow : Window
         var isWholeDrive = IsDriveRoot(root);
 
         var progress = new Progress<string>(ReportScanProgress);
+        var completed = false;
         try
         {
             var ct = _cts.Token;
@@ -763,7 +776,14 @@ public partial class MainWindow : Window
                     .Add(new DmdConfigScanner())
                     .Add(new FeatureEnabledScanner())
                     .Add(new ScreenResUnparsedScanner())
-                    .Add(new NvramWritabilityScanner());
+                    .Add(new NvramWritabilityScanner())
+                    // Lot scanner 18/08 — les 4 derniers détecteurs de l'audit du 05/08
+                    // (docs/PROMPT-session-lot-complet-2026-08-18.md). Une ligne = un scanner,
+                    // comme tous les précédents, pour que Maxime puisse en désactiver un seul.
+                    .Add(new GlobalConfigB2SScanner())
+                    .Add(new FontDependencyScanner())
+                    .Add(new HardcodedPathScanner())
+                    .Add(new ScriptDoctorScanner());
                 // Le nombre de contrôles remonte avec le rapport (ligne méta « Contrôles N / N ») —
                 // compté sur le moteur réel, jamais une constante à maintenir à la main.
                 if (!isWholeDrive) return (engine.Run(root, profile, progress, ct), engine.Scanners.Count);
@@ -798,6 +818,7 @@ public partial class MainWindow : Window
             }
             BtnExport.IsEnabled = true;
             BtnCopyForum.IsEnabled = true;
+            completed = true;
         }
         catch (OperationCanceledException)
         {
@@ -816,6 +837,35 @@ public partial class MainWindow : Window
             ScanProgress.Visibility = Visibility.Collapsed;
             // Lot 6 : le renfort visuel des étapes (SemiBold) ne vaut que pendant le scan.
             LblStatus.FontWeight = FontWeights.Normal;
+        }
+        return completed;
+    }
+
+    /// <summary>
+    /// LOT Rescore (18/08) — offered on <see cref="RepairApplyStatus"/> after a successful or
+    /// partially successful Apply (see <see cref="BtnRepairApply_Click"/>): re-runs the SAME scan
+    /// (same root/profile, via <see cref="RunScanAsync"/>) and shows old→new score, honestly, even
+    /// when the score did not improve. Never invents or estimates a delta — both numbers come
+    /// straight from <see cref="ScanReport.Score"/>, before and after the real rescan.
+    /// </summary>
+    private async void BtnRescore_Click(object sender, RoutedEventArgs e)
+    {
+        if (_report is null) return;
+        var oldScore = _report.Score;
+
+        BtnRescore.IsEnabled = false;
+        try
+        {
+            var completed = await RunScanAsync(sender, e);
+            if (!completed || _report is null) return;   // cancelled/failed: nothing honest to show
+
+            var newScore = _report.Score;
+            RescoreStatus.Text = string.Format(Loc.Get("repair.rescore.result"), oldScore, newScore);
+            RescoreStatus.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            BtnRescore.IsEnabled = true;
         }
     }
 
@@ -1699,6 +1749,8 @@ public partial class MainWindow : Window
             DetailRepairTag.Visibility = Visibility.Collapsed;
         }
 
+        ShowTableCompanionTeaser(row.Code);
+
         DetailActionBtn.Content = row.ActionLabel;   // same action as the grid row, reachable without closing the panel
 
         DetailPath.Text = row.FilePath ?? "";
@@ -1711,6 +1763,48 @@ public partial class MainWindow : Window
         var has = !string.IsNullOrEmpty(text);
         content.Text = text ?? "";
         label.Visibility = content.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>Discreet contact address for the not-yet-released Table Companion product, kept as
+    /// a single constant so the mailto: teaser and any future mention share one source.</summary>
+    private const string TableCompanionContactEmail = "flipsync.contact@gmail.com";
+
+    /// <summary>
+    /// LOT Table Companion teaser (18/08, docs/PROMPT-session-lot-complet-2026-08-18.md): a discreet
+    /// opt-in for the two findings a future Table Companion product would fix (ALTCOLOR_INCOMPLETE,
+    /// ALTSOUND_SAMPLE_MISSING) — never shown for any other code. Zero network calls (ADR-002): a
+    /// plain <c>mailto:</c> link that opens the user's own mail client, nothing sent automatically,
+    /// nothing tracked. Honest by construction — the Loc text says plainly the product is not out
+    /// yet, never oversells it as available or imminent.
+    /// </summary>
+    private void ShowTableCompanionTeaser(string? code)
+    {
+        if (code is not ("ALTCOLOR_INCOMPLETE" or "ALTSOUND_SAMPLE_MISSING"))
+        {
+            DetailTeaser.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        DetailTeaserText.Text = Loc.Get("teaser.tablecompanion.text");
+        DetailTeaserLink.Inlines.Clear();
+
+        var subject = Uri.EscapeDataString("Table Companion");
+        var body = Uri.EscapeDataString($"Code: {code}");
+        var mailtoUri = $"mailto:{TableCompanionContactEmail}?subject={subject}&body={body}";
+
+        var link = new System.Windows.Documents.Hyperlink(
+            new System.Windows.Documents.Run(Loc.Get("teaser.tablecompanion.link")))
+        {
+            NavigateUri = new Uri(mailtoUri),
+        };
+        link.Click += (_, _) =>
+        {
+            try { Process.Start(new ProcessStartInfo(mailtoUri) { UseShellExecute = true }); }
+            catch { /* best-effort — never let a missing mail client crash the app */ }
+        };
+        DetailTeaserLink.Inlines.Add(link);
+
+        DetailTeaser.Visibility = Visibility.Visible;
     }
 
     private void BtnCloseDetail_Click(object sender, RoutedEventArgs e)
@@ -2000,11 +2094,39 @@ public partial class MainWindow : Window
             RepairApplyStatus.Text = string.Format(Loc.Get("repair.apply.status"), ok, failed);
             if (result.ForcedDryRun)
                 RepairApplyStatus.Text = Loc.Get("repair.forceddryrun.applied") + "\n" + RepairApplyStatus.Text;
+
+            // LOT Repair (18/08): the per-item failure reason existed inside the engine all along —
+            // now that ApplyResult carries it (ItemFailureReasons), show it instead of leaving a
+            // failed item as an unexplained count. Kept deliberately simple (raw English technical
+            // text, "name — reason", one line per failed item) rather than a Loc.Get key per reason,
+            // per the session prompt's own instruction — this is a diagnostic detail, not a Finding
+            // message that needs translating. Skips items where RecoveryRequired already covers them
+            // (see ItemFailureReasons' own doc comment) to avoid a duplicate display.
+            if (failed > 0 && result.ItemFailureReasons.Count > 0)
+            {
+                foreach (var kv in result.ItemOutcomes.Where(kv => !kv.Value))
+                {
+                    if (!result.ItemFailureReasons.TryGetValue(kv.Key, out var reason) || string.IsNullOrWhiteSpace(reason))
+                        continue;
+                    var name = _repairItemRows.FirstOrDefault(r => r.ItemId == kv.Key)?.Description ?? kv.Key;
+                    RepairApplyStatus.Text += $"\n{name} — {reason}";
+                }
+            }
+
             if (result.RecoveryRequired)
             {
                 RepairApplyStatus.Text += "\n" + Loc.Get("repair.apply.recovery")
                     + (string.IsNullOrEmpty(result.BackupPath) ? "" : " " + result.BackupPath);
             }
+
+            // LOT Rescore (18/08): only offered after a real, successful (or partially successful)
+            // Apply — at least one item actually fixed, and never for a forced dry-run, since that
+            // path performs zero disk I/O and rescanning it would just silently reproduce the same
+            // score. RescoreStatus is reset here too so a stale old→new line from a previous Apply
+            // never lingers under a fresh one.
+            RescoreStatus.Visibility = Visibility.Collapsed;
+            RescoreStatus.Text = "";
+            BtnRescore.Visibility = (ok > 0 && !result.ForcedDryRun) ? Visibility.Visible : Visibility.Collapsed;
 
             // Re-plan from the same scan so the checklist reflects what actually got fixed (a change
             // just applied must not still be offered as if it were still broken).

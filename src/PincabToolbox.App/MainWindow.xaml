@@ -752,6 +752,16 @@
                                     </StackPanel>
                                 </Border>
 
+                                <!-- LOT Table Companion teaser (18/08) — discret, ALTCOLOR_INCOMPLETE / ALTSOUND_SAMPLE_MISSING
+                                     uniquement. Zéro appel réseau (ADR-002) : un simple mailto:, jamais envoyé automatiquement.
+                                     Texte honnête ("pas encore sortie"), jamais survendu. -->
+                                <Border x:Name="DetailTeaser" Visibility="Collapsed" Background="#14708830" BorderBrush="#33708830" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,11,0,0" HorizontalAlignment="Left" MaxWidth="420">
+                                    <StackPanel>
+                                        <TextBlock x:Name="DetailTeaserText" Foreground="{StaticResource TextDim}" FontSize="11.5" TextWrapping="Wrap" LineHeight="16"/>
+                                        <TextBlock x:Name="DetailTeaserLink" FontSize="11.5" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
                                 <TextBlock x:Name="DetailPath" Foreground="{StaticResource TextDim}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Margin="0,11,0,0" Visibility="Collapsed"/>
                             </StackPanel>
                             </ScrollViewer>
@@ -1026,6 +1036,14 @@
                         <Button x:Name="BtnRepairApply" HorizontalAlignment="Left" Margin="0,4,0,0" Padding="14,7"
                                 FontWeight="SemiBold" Click="BtnRepairApply_Click"/>
                         <TextBlock x:Name="RepairApplyStatus" Margin="0,10,0,0" TextWrapping="Wrap" Foreground="{StaticResource TextDim}"/>
+
+                        <!-- LOT Rescore (18/08) : ne réapparaît qu'après un Apply réussi ou partiellement
+                             réussi (au moins un item corrigé) — relance le MÊME scan (même root/profil,
+                             BtnScan_Click réutilisé tel quel) et affiche ancien->nouveau score, honnêtement,
+                             même si le score n'a pas progressé. -->
+                        <Button x:Name="BtnRescore" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="14,7"
+                                Click="BtnRescore_Click" Visibility="Collapsed"/>
+                        <TextBlock x:Name="RescoreStatus" Margin="0,8,0,0" TextWrapping="Wrap" FontWeight="SemiBold" Visibility="Collapsed"/>
 
                         <!-- Réparé — plans with at least one fix still standing. Each row carries its own
                              "Annuler" button (Tag = PlanId): no separate list-selection step to forget,

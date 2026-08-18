@@ -26,6 +26,34 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-18 (session éco) · Revue CTO+Produit — 4 lots (Scanner, Repair, Rescore, Table Companion teaser)
+- code:        `GLOBALCONFIG_B2S_MISSING`, `FONT_FILE_MISSING`, `SCRIPT_HARDCODED_PATH`,
+  `SHARED_SCRIPT_LOCAL_COPY` (nouveaux) ; `ALTCOLOR_INCOMPLETE`/`ALTSOUND_SAMPLE_MISSING` (teaser,
+  pas de nouveau code)
+- bac:         FEATURE (4 lots livrés) + 2 pistes d'amélioration identifiées, NON codées
+- contexte:    session pilotée par `docs/PROMPT-session-lot-complet-2026-08-18.md`, sandbox
+  resynchronisé sur le vrai poste de Maxime en tout début de session (10 commits + merge en cours
+  découverts via une capture d'écran de l'onglet Tutoriel, absent d'ici jusque-là)
+- analyse:     LOT SCANNER — les 4 derniers détecteurs de l'audit du 05/08, pattern injected-delegate
+  standard, testés. LOT REPAIR — `ApplyResult.ItemFailureReasons` remonte enfin jusqu'à l'UI le motif
+  d'échec par item que le moteur calculait déjà en interne et jetait avant l'écran (additif, aucune
+  signature touchée, 7 nouveaux tests, 156 → 162). LOT RESCORE — bouton « Revoir mon score » qui
+  relance le même scan après un Apply réussi/partiel et affiche l'ancien → nouveau score honnêtement,
+  jamais un delta inventé. LOT TABLE COMPANION TEASER — opt-in `mailto:` discret sur les deux findings
+  concernés, zéro appel réseau (ADR-002), texte honnête ("pas encore sorti").
+- disposition: livré (4 commits séparés + 1 commit de sync, détail dans `TRANSMISSION.md` MAJ 18/08) ·
+  Core 540/540, Repair 162/162, Debug **et** Release · XML bien formé + 0 `CS1xxx` + crosscheck
+  x:Name/gestionnaires (14 orphelins, baseline inchangée) après chaque lot touchant l'App. Deux
+  améliorations à faible coût repérées, NON codées (feu vert à demander à Maxime) : (1)
+  `FONT_FILE_MISSING` ne vérifie que la présence sous l'install scannée, jamais le registre Windows
+  Fonts (P/Invoke non vérifiable sans hôte Windows dans ce sandbox) — un faux négatif est possible
+  pour une police installée globalement mais absente du dossier de l'install, limite documentée dans
+  le scanner, pas un bug caché. (2) Le bouton Rescore relit `TxtRoot`/`_demoRoot` au moment du clic
+  plutôt que de capturer explicitement le root/profil au moment de l'Apply — si le champ dossier
+  changeait entre les deux (flux normal très improbable), la comparaison porterait sur deux installs
+  différents ; pas corrigé ici, prudence délibérée plutôt que sur-ingénierie d'un cas limite jamais
+  observé en pratique.
+
 ## 2026-08-17 (quater) · [commentaire public, VPUniverse] — 3ᵉ occurrence indépendante de B2S_MISSING sur tables PUP-Pack, renforce l'entrée du 07/08
 - code:        `B2S_MISSING`
 - bac:         FP confirmé sur une sous-catégorie précise (déjà tranché le 07/08), pas re-analysé
