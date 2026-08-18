@@ -278,7 +278,10 @@ jamais été remis à jour après coup. Vérifié directement dans le code, pas 
 
 ## 10. Index documentaire
 
-**Point d'entrée de session** : `HANDOFF.md` (à la racine du dépôt) → puis ce fichier.
+**Point d'entrée de session** : `TRANSMISSION.md` (bloc du haut, à la racine du dépôt) → puis ce
+fichier. *(Corrigé le 18/08/2026 — pointait encore vers `HANDOFF.md`, un fichier du 27/07 jamais
+retenu comme le journal vivant que `TRANSMISSION.md` est devenu depuis ; supprimé dans le même lot,
+voir `TRANSMISSION.md` pour l'historique complet des sessions.)*
 
 | Document | Rôle | Statut |
 |---|---|---|
