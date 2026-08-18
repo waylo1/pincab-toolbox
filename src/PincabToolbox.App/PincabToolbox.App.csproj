@@ -32,14 +32,21 @@
          réelle (droits Bally/Williams) — voir docs/maquette-scanner-2026-08-11.html. -->
     <Resource Include="Assets\background.png" />
     <!-- Logo MC Automation fourni par Maxime, fond noir détouré pour se poser sur le bleu nuit.
-         logo.png = emblème seul (en-tête + icône de fenêtre). -->
+         logo.png = emblème seul (en-tête + icône de fenêtre) ; logo-full.png = emblème + nom,
+         gardé pour l'écran À propos et les visuels marketing. -->
     <Resource Include="Assets\logo.png" />
-    <!-- logo-full.png = emblème + nom. Fix build (18/08) : un item SplashScreen embarque déjà son
-         fichier comme ressource — le déclarer AUSSI en <Resource> sur le même chemin fait échouer
-         la génération (RG1000 "same key … assets/logo-full.png"). Un seul item suffit ; l'image
-         reste chargeable via "Assets/logo-full.png" (pack URI) pour l'écran À propos et les
-         visuels marketing si besoin plus tard — gardé pour ce même rôle qu'avant. -->
-    <SplashScreen Include="Assets\logo-full.png" />
+    <!-- ⚠ NE PAS repasser logo-full.png en <SplashScreen>. Tenté le 17/08, retiré le 18/08.
+         Un item SplashScreen fait générer par WPF un Main() qui ouvre, AVANT que l'Application
+         et le Dispatcher ne tournent, une fenêtre native superposée (layered + topmost + sans
+         bordure) créée directement en P/Invoke user32/gdi32. Sur un exe NON SIGNÉ publié en
+         single-file auto-extractible, ce profil de démarrage a suffi à faire basculer le
+         « Contrôle intelligent des applications » de Windows 11 en blocage DUR (« application
+         potentiellement dangereuse », sans bouton « Exécuter quand même », contrairement à
+         SmartScreen) : l'utilisateur ne pouvait plus lancer l'app du tout. C'était le seul
+         changement de build entre le dernier exe qui passait et celui qui bloquait.
+         À ne ré-tenter qu'après signature de code EV, ou via une fenêtre WPF ordinaire ouverte
+         depuis l'app une fois le runtime démarré (jamais ce mécanisme natif pré-init). -->
+    <Resource Include="Assets\logo-full.png" />
   </ItemGroup>
 
   <ItemGroup>
