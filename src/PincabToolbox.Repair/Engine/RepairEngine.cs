@@ -357,6 +357,7 @@ public sealed class RepairEngine : IRepairEngine
         }
 
         var outcomes = new Dictionary<string, bool>();
+        var failureReasons = new Dictionary<string, string?>();
         var recovery = false;
         string? backupPath = null;
 
@@ -386,13 +387,21 @@ public sealed class RepairEngine : IRepairEngine
             {
                 _journal.Write(Entry(JournalEvent.BackupFailed, plan.PlanId, item.ItemId, ex.Message));
                 outcomes[item.ItemId] = false;
+                failureReasons[item.ItemId] = ex.Message;
                 continue;
             }
             backupPath ??= path;
             _journal.Write(Entry(JournalEvent.BackupCreated, plan.PlanId, item.ItemId, path));
 
-            var (ok, needsRecovery) = ApplyItem(plan.PlanId, item);
+            var (ok, needsRecovery, reason) = ApplyItem(plan.PlanId, item);
             outcomes[item.ItemId] = ok;
+
+            // Rule 3 (LOT Repair, 18/08): if the item failed and the compensating rollback then
+            // succeeded, the displayed reason must stay the ORIGINAL cause — never "rollback
+            // succeeded". If the rollback itself failed (needsRecovery), RecoveryRequired is
+            // already the prioritized, dedicated display for that — no duplicate reason here.
+            if (!ok && !needsRecovery && reason is not null)
+                failureReasons[item.ItemId] = reason;
 
             if (needsRecovery)
             {
@@ -408,6 +417,7 @@ public sealed class RepairEngine : IRepairEngine
         {
             PlanId = plan.PlanId,
             ItemOutcomes = outcomes,
+            ItemFailureReasons = failureReasons,
             RecoveryRequired = recovery,
             BackupPath = backupPath,
         };
@@ -415,9 +425,12 @@ public sealed class RepairEngine : IRepairEngine
 
     /// <summary>
     /// Atomicity by compensation, at ITEM granularity.
-    /// Returns (success, recoveryRequired).
+    /// Returns (success, recoveryRequired, reason) — reason is the ORIGINAL failure cause (the
+    /// unknown-action message, or the failing action's own <see cref="ExecutionResult.Error"/>),
+    /// never overwritten by whatever <see cref="Compensate"/> itself reports (rule 3, LOT Repair
+    /// 18/08: a successful rollback must not erase why the item failed in the first place).
     /// </summary>
-    private (bool ok, bool recovery) ApplyItem(string planId, RepairPlanItem item)
+    private (bool ok, bool recovery, string? reason) ApplyItem(string planId, RepairPlanItem item)
     {
         var done = new List<PlannedChange>();
 
@@ -425,16 +438,18 @@ public sealed class RepairEngine : IRepairEngine
         {
             if (!_registry.TryGet(c.ActionId, out var action))
             {
-                _journal.Write(Entry(JournalEvent.ChangeFailed, planId, item.ItemId,
-                    $"unknown action {c.ActionId}", c));
-                return Compensate(planId, item, done);
+                var reason = $"unknown action {c.ActionId}";
+                _journal.Write(Entry(JournalEvent.ChangeFailed, planId, item.ItemId, reason, c));
+                var (_, recovery) = Compensate(planId, item, done);
+                return (false, recovery, reason);
             }
 
             var res = action.Execute(c);
             if (!res.Success)
             {
                 _journal.Write(Entry(JournalEvent.ChangeFailed, planId, item.ItemId, res.Error, c));
-                return Compensate(planId, item, done);
+                var (_, recovery) = Compensate(planId, item, done);
+                return (false, recovery, res.Error);
             }
 
             done.Add(c);
@@ -442,7 +457,7 @@ public sealed class RepairEngine : IRepairEngine
         }
 
         _journal.Write(Entry(JournalEvent.ItemCompleted, planId, item.ItemId));
-        return (true, false);
+        return (true, false, null);
     }
 
     private (bool ok, bool recovery) Compensate(string planId, RepairPlanItem item, List<PlannedChange> done)

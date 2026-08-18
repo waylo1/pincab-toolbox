@@ -545,6 +545,171 @@ public static class RepairTests
         A.Equal(2, res.ItemOutcomes.Count, "two independent items");
     }
 
+    // ═══════════════ 4bis. ItemFailureReasons (LOT Repair, 18/08) ═══════════════
+    //
+    // The reason was already computed at every point it is produced (backup exception message,
+    // unknown action id, a failing action's own ExecutionResult.Error) — it was simply discarded
+    // before reaching ApplyResult. These tests lock in the additive surface (ApplyResult.
+    // ItemFailureReasons) without touching a single existing ItemOutcomes assertion above.
+
+    /// <summary>Companion to Test_Apply_BackupFailure_NeverWrites: same scenario, but asserting the
+    /// PRECISE reason text rather than just "no success".</summary>
+    public static void Test_Apply_BackupFailure_ReasonIsThePreciseExceptionMessage()
+    {
+        var fs = new FakeFs();
+        fs.AddFile(@"C:\vpx\a.dll");
+        fs.Blocked.Add(@"C:\vpx\a.dll");
+        var pack = new KnowledgePack("2026.08", new[] { Build.Rule("unblock", "BLOCKED_DLL", "unblock_file") });
+        var journal = new InMemoryRepairJournal();
+        var backup = new FakeBackup { RefuseBackup = true };
+        var eng = new RepairEngine(
+            new RepairActionRegistry(new UnblockFileAction(fs)), pack, journal, backup,
+            new FakeProbe(), new FakeClock(), Build.Roots);
+
+        var plan = Build.Select(eng.Plan("scan-1", new[] { Build.Finding("BLOCKED_DLL", @"C:\vpx\a.dll") }, true));
+        var result = eng.Apply(plan);
+
+        var itemId = plan.Items[0].ItemId;
+        A.True(result.ItemFailureReasons.TryGetValue(itemId, out var reason), "a reason must be recorded for the item");
+        A.Equal("simulated backup failure", reason, "must be the exact exception message, not a paraphrase");
+    }
+
+    /// <summary>ADR-005: an unknown ActionId reaching ApplyItem (bypassing Plan's own auto-downgrade
+    /// to ManualOnly, same hand-crafted-plan technique as RepairSessionTests) must name the action id
+    /// in the surfaced reason — this is what lets the App show something diagnosable instead of just
+    /// "failed".</summary>
+    public static void Test_Apply_UnknownAction_ReasonNamesTheActionId()
+    {
+        var fs = new FakeFs();
+        fs.AddFile(@"C:\vpx\target", "before");
+        var eng = Engine(fs, KnowledgePack.Empty, new RepairActionRegistry(), out _, out _);
+
+        var plan = new RepairPlan
+        {
+            PlanId = "plan-unknown-action", CreatedAtUtc = DateTimeOffset.UtcNow, ScanReportId = "scan-1",
+            Items = new[]
+            {
+                new RepairPlanItem
+                {
+                    ItemId = "i1", TargetCode = "X", Mode = RepairMode.Automatic,
+                    Changes = new[]
+                    {
+                        new PlannedChange
+                        {
+                            ActionId = "not_a_real_action", Kind = ChangeKind.FileAttribute,
+                            Target = @"C:\vpx\target", Before = "before", After = "after", Reversible = true,
+                        }
+                    },
+                    Selected = true,
+                }
+            },
+        };
+
+        var result = eng.Apply(plan);
+
+        A.True(result.ItemOutcomes.TryGetValue("i1", out var ok) && !ok, "an unknown action must fail, not succeed");
+        A.True(result.ItemFailureReasons.TryGetValue("i1", out var reason), "a reason must be recorded");
+        A.True(reason!.Contains("not_a_real_action"), "the reason must name the unknown action id, for diagnosis");
+    }
+
+    /// <summary>The reason for a real write failure is the action's own ExecutionResult.Error, not a
+    /// generic engine-authored message — same scenario shape as
+    /// Test_Apply_OneFailingItemDoesNotRollBackIndependentOnes, minus the independent-item noise.</summary>
+    public static void Test_Apply_ExecuteFails_ReasonIsTheExecutionResultErrorVerbatim()
+    {
+        var fs = new FakeFs();
+        fs.AddFile(@"C:\vpx\ko", "b");
+        fs.FailWriteOn.Add(@"C:\vpx\ko");
+
+        var pack = new KnowledgePack("2026.08", new[] { Build.Rule("r", "BLOCKED_DLL", "scripted") });
+        var eng = Engine(fs, pack, new RepairActionRegistry(new ScriptedAction(fs)), out _, out _);
+
+        var plan = Build.Select(eng.Plan("scan-1", new[] { Build.Finding("BLOCKED_DLL", @"C:\vpx\ko") }, true));
+        var res = eng.Apply(plan);
+
+        var itemId = plan.Items[0].ItemId;
+        A.True(res.ItemFailureReasons.TryGetValue(itemId, out var reason), "a reason must be recorded");
+        A.Equal("write refused: C:\\vpx\\ko", reason, "must be the action's own ExecutionResult.Error, verbatim");
+    }
+
+    /// <summary>A successful item must leave no trace in ItemFailureReasons — it is a bonus
+    /// explanation for failures, never a second, possibly-null-valued source of truth for success.</summary>
+    public static void Test_Apply_SuccessfulItem_HasNoEntryInItemFailureReasons()
+    {
+        var (fs, eng, _) = Setup(blocked: @"C:\vpx\a.dll");
+        var plan = Build.Select(eng.Plan("scan-1", new[] { Build.Finding("BLOCKED_DLL", @"C:\vpx\a.dll") }, true));
+        var result = eng.Apply(plan);
+
+        A.True(result.ItemOutcomes.Values.Single(), "sanity: the item must actually have succeeded");
+        A.False(result.ItemFailureReasons.ContainsKey(plan.Items[0].ItemId), "a successful item gets no reason entry at all");
+    }
+
+    /// <summary>Rule 3 (LOT Repair, 18/08): when an item fails and the compensating rollback then
+    /// SUCCEEDS, the surfaced reason must stay the original cause — never overwritten by whatever
+    /// Compensate itself reports. Same playbook shape as
+    /// Test_Apply_RollsBackAnOrderedPlaybookInReverse, which already proves the rollback itself
+    /// succeeds cleanly here (no FailRevertOn set).</summary>
+    public static void Test_Apply_WhenRollbackSucceedsAfterFailure_ReasonStaysTheOriginalCause()
+    {
+        var (fs, eng, _) = ThreeStepPlaybook(failOn: @"C:\vpx\3");
+        var plan = Build.Select(eng.Plan("scan-1", Findings3(), true));
+
+        var res = eng.Apply(plan);
+
+        A.False(res.RecoveryRequired, "sanity: rollback must have succeeded, not required manual recovery");
+        var itemId = plan.Items[0].ItemId;
+        A.True(res.ItemFailureReasons.TryGetValue(itemId, out var reason), "a reason must survive the rollback");
+        A.Equal("write refused: C:\\vpx\\3", reason,
+            "the reason must be the ORIGINAL write failure, not a rollback-related message");
+    }
+
+    /// <summary>Companion to RepairSessionTests' forced-dry-run coverage: this locks in that
+    /// ItemFailureReasons stays consistent (empty) alongside ItemOutcomes reporting success — a
+    /// forced dry-run never reaches the real engine, so it can never produce a real failure reason.</summary>
+    public static void Test_Apply_ForcedDryRun_NeverProducesFailureReasons()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "pincab-repair-forcedryrun-reasons-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(root);
+            var target = Path.Combine(root, "would-be-written.txt");
+            File.WriteAllText(target, "untouched");
+
+            var session = new RepairSession(KnowledgePack.Empty, new[] { root }, appDataRoot: root, forceDryRun: true);
+            var plan = new RepairPlan
+            {
+                PlanId = "plan-dryrun-reasons", CreatedAtUtc = DateTimeOffset.UtcNow, ScanReportId = "scan-1",
+                Items = new[]
+                {
+                    new RepairPlanItem
+                    {
+                        ItemId = "i1", TargetCode = "X", Mode = RepairMode.Automatic,
+                        Changes = new[]
+                        {
+                            new PlannedChange
+                            {
+                                // fictitious action id, safe here because forced dry-run never reaches the registry
+                                ActionId = "not_a_real_action", Kind = ChangeKind.FileAttribute,
+                                Target = target, Before = "untouched", After = "would-be-changed", Reversible = true,
+                            }
+                        },
+                        Selected = true,
+                    }
+                },
+            };
+
+            var result = session.Apply(plan, new HashSet<string> { "i1" });
+
+            A.True(result.ForcedDryRun, "sanity: this must be the forced dry-run path");
+            A.True(result.ItemOutcomes.TryGetValue("i1", out var ok) && ok, "sanity: reported as ok, per existing forced-dry-run behaviour");
+            A.Equal(0, result.ItemFailureReasons.Count, "consistent with ItemOutcomes: nothing failed, so nothing to explain");
+        }
+        finally
+        {
+            try { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); } catch { /* best-effort cleanup */ }
+        }
+    }
+
     // ═══════════════ 5. Worst case: the rollback itself fails ═══════════════
 
     public static void Test_Apply_WhenRollbackFails_StopsAndAsksForRecovery()

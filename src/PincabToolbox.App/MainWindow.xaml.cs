@@ -2007,6 +2007,25 @@ public partial class MainWindow : Window
             RepairApplyStatus.Text = string.Format(Loc.Get("repair.apply.status"), ok, failed);
             if (result.ForcedDryRun)
                 RepairApplyStatus.Text = Loc.Get("repair.forceddryrun.applied") + "\n" + RepairApplyStatus.Text;
+
+            // LOT Repair (18/08): the per-item failure reason existed inside the engine all along —
+            // now that ApplyResult carries it (ItemFailureReasons), show it instead of leaving a
+            // failed item as an unexplained count. Kept deliberately simple (raw English technical
+            // text, "name — reason", one line per failed item) rather than a Loc.Get key per reason,
+            // per the session prompt's own instruction — this is a diagnostic detail, not a Finding
+            // message that needs translating. Skips items where RecoveryRequired already covers them
+            // (see ItemFailureReasons' own doc comment) to avoid a duplicate display.
+            if (failed > 0 && result.ItemFailureReasons.Count > 0)
+            {
+                foreach (var kv in result.ItemOutcomes.Where(kv => !kv.Value))
+                {
+                    if (!result.ItemFailureReasons.TryGetValue(kv.Key, out var reason) || string.IsNullOrWhiteSpace(reason))
+                        continue;
+                    var name = _repairItemRows.FirstOrDefault(r => r.ItemId == kv.Key)?.Description ?? kv.Key;
+                    RepairApplyStatus.Text += $"\n{name} — {reason}";
+                }
+            }
+
             if (result.RecoveryRequired)
             {
                 RepairApplyStatus.Text += "\n" + Loc.Get("repair.apply.recovery")

@@ -205,6 +205,22 @@ public sealed record ApplyResult
     public required IReadOnlyDictionary<string, bool> ItemOutcomes { get; init; }
 
     /// <summary>
+    /// Failure reason per failed item (key = ItemId), added alongside <see cref="ItemOutcomes"/>
+    /// rather than widening its type (LOT Repair, 18/08 — the data already existed at every point
+    /// it is produced, backup exception message, unknown action id, a failing action's own
+    /// <see cref="ExecutionResult.Error"/>; it was simply discarded before reaching here). A
+    /// missing key means either the item succeeded, or it never got a reason (its outcome is still
+    /// authoritative in <see cref="ItemOutcomes"/> either way — this is a bonus explanation, not a
+    /// second source of truth). English technical text (same register as
+    /// <see cref="RepairLimitation.MessageEn"/>): a diagnostic detail, not a Finding message to
+    /// translate. Deliberately excludes items where <see cref="RecoveryRequired"/> applies to them
+    /// (rollback itself failed) — that case already has its own dedicated, prioritized display; a
+    /// reason here too would be a duplicate, not an addition.
+    /// </summary>
+    public IReadOnlyDictionary<string, string?> ItemFailureReasons { get; init; } =
+        new Dictionary<string, string?>();
+
+    /// <summary>
     /// True when a rollback itself failed. The recovery screen must be shown, with the
     /// backup path and the exact list of files to restore by hand.
     /// </summary>
