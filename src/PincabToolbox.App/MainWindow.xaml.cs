@@ -1749,6 +1749,8 @@ public partial class MainWindow : Window
             DetailRepairTag.Visibility = Visibility.Collapsed;
         }
 
+        ShowTableCompanionTeaser(row.Code);
+
         DetailActionBtn.Content = row.ActionLabel;   // same action as the grid row, reachable without closing the panel
 
         DetailPath.Text = row.FilePath ?? "";
@@ -1761,6 +1763,48 @@ public partial class MainWindow : Window
         var has = !string.IsNullOrEmpty(text);
         content.Text = text ?? "";
         label.Visibility = content.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>Discreet contact address for the not-yet-released Table Companion product, kept as
+    /// a single constant so the mailto: teaser and any future mention share one source.</summary>
+    private const string TableCompanionContactEmail = "flipsync.contact@gmail.com";
+
+    /// <summary>
+    /// LOT Table Companion teaser (18/08, docs/PROMPT-session-lot-complet-2026-08-18.md): a discreet
+    /// opt-in for the two findings a future Table Companion product would fix (ALTCOLOR_INCOMPLETE,
+    /// ALTSOUND_SAMPLE_MISSING) — never shown for any other code. Zero network calls (ADR-002): a
+    /// plain <c>mailto:</c> link that opens the user's own mail client, nothing sent automatically,
+    /// nothing tracked. Honest by construction — the Loc text says plainly the product is not out
+    /// yet, never oversells it as available or imminent.
+    /// </summary>
+    private void ShowTableCompanionTeaser(string? code)
+    {
+        if (code is not ("ALTCOLOR_INCOMPLETE" or "ALTSOUND_SAMPLE_MISSING"))
+        {
+            DetailTeaser.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        DetailTeaserText.Text = Loc.Get("teaser.tablecompanion.text");
+        DetailTeaserLink.Inlines.Clear();
+
+        var subject = Uri.EscapeDataString("Table Companion");
+        var body = Uri.EscapeDataString($"Code: {code}");
+        var mailtoUri = $"mailto:{TableCompanionContactEmail}?subject={subject}&body={body}";
+
+        var link = new System.Windows.Documents.Hyperlink(
+            new System.Windows.Documents.Run(Loc.Get("teaser.tablecompanion.link")))
+        {
+            NavigateUri = new Uri(mailtoUri),
+        };
+        link.Click += (_, _) =>
+        {
+            try { Process.Start(new ProcessStartInfo(mailtoUri) { UseShellExecute = true }); }
+            catch { /* best-effort — never let a missing mail client crash the app */ }
+        };
+        DetailTeaserLink.Inlines.Add(link);
+
+        DetailTeaser.Visibility = Visibility.Visible;
     }
 
     private void BtnCloseDetail_Click(object sender, RoutedEventArgs e)

@@ -752,6 +752,16 @@
                                     </StackPanel>
                                 </Border>
 
+                                <!-- LOT Table Companion teaser (18/08) — discret, ALTCOLOR_INCOMPLETE / ALTSOUND_SAMPLE_MISSING
+                                     uniquement. Zéro appel réseau (ADR-002) : un simple mailto:, jamais envoyé automatiquement.
+                                     Texte honnête ("pas encore sortie"), jamais survendu. -->
+                                <Border x:Name="DetailTeaser" Visibility="Collapsed" Background="#14708830" BorderBrush="#33708830" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,11,0,0" HorizontalAlignment="Left" MaxWidth="420">
+                                    <StackPanel>
+                                        <TextBlock x:Name="DetailTeaserText" Foreground="{StaticResource TextDim}" FontSize="11.5" TextWrapping="Wrap" LineHeight="16"/>
+                                        <TextBlock x:Name="DetailTeaserLink" FontSize="11.5" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
                                 <TextBlock x:Name="DetailPath" Foreground="{StaticResource TextDim}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Margin="0,11,0,0" Visibility="Collapsed"/>
                             </StackPanel>
                             </ScrollViewer>

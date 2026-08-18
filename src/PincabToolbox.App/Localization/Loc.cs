@@ -138,6 +138,10 @@ public static class Loc
         ["detail.symptom"] = "WHAT YOU'LL NOTICE",
         ["detail.explanation"] = "GOOD TO KNOW",
         ["detail.verify"] = "HOW TO VERIFY",
+        // Lot Table Companion teaser, 18/08 — ALTCOLOR_INCOMPLETE / ALTSOUND_SAMPLE_MISSING only,
+        // zero network calls (ADR-002), plain mailto: opt-in. Honest: the product is not out yet.
+        ["teaser.tablecompanion.text"] = "Table Companion, a future tool to help fix ALT Color / ALT Sound artwork, is not out yet.",
+        ["teaser.tablecompanion.link"] = "Notify me at launch",
         // Écran 1 (UX-COPY-Repair.md) — facts computed from the real plan by RepairOfferBuilder,
         // never declared.
         ["repair.checks.fixable"] = "✓ Fixable automatically",
@@ -425,6 +429,10 @@ public static class Loc
         ["detail.symptom"] = "CE QUE VOUS REMARQUEREZ",
         ["detail.explanation"] = "BON À SAVOIR",
         ["detail.verify"] = "COMMENT VÉRIFIER",
+        // Lot Table Companion teaser, 18/08 — ALTCOLOR_INCOMPLETE / ALTSOUND_SAMPLE_MISSING
+        // uniquement, zéro appel réseau (ADR-002), simple mailto: en opt-in. Honnête : pas encore sorti.
+        ["teaser.tablecompanion.text"] = "Table Companion, un futur outil pour vous aider à corriger les artworks ALT Color / ALT Sound, n'est pas encore sorti.",
+        ["teaser.tablecompanion.link"] = "Me prévenir au lancement",
         // Écran 1 (UX-COPY-Repair.md) — faits calculés depuis le plan réel par RepairOfferBuilder,
         // jamais déclarés.
         ["repair.checks.fixable"] = "✓ Réparable automatiquement",
@@ -696,6 +704,10 @@ public static class Loc
         ["detail.symptom"] = "LO QUE NOTARÁS",
         ["detail.explanation"] = "PARA ENTENDERLO MEJOR",
         ["detail.verify"] = "CÓMO VERIFICARLO",
+        // Lot Table Companion teaser, 18/08 — solo ALTCOLOR_INCOMPLETE / ALTSOUND_SAMPLE_MISSING,
+        // cero llamadas de red (ADR-002), simple mailto: opcional. Honesto: todavía no está disponible.
+        ["teaser.tablecompanion.text"] = "Table Companion, una futura herramienta para ayudarle a corregir los artworks ALT Color / ALT Sound, todavía no está disponible.",
+        ["teaser.tablecompanion.link"] = "Avisarme en el lanzamiento",
         ["repair.checks.fixable"] = "✓ Reparable automáticamente",
         ["repair.checks.backup"] = "✓ Copia de seguridad antes del cambio",
         ["repair.checks.reversible"] = "✓ Reversible — deshacer en un clic",
