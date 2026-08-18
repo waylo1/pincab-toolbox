@@ -612,11 +612,27 @@
                         <!-- ══ TOUS LES RÉSULTATS ══ (le tableau existant, filtres et détail inchangés) -->
                         <TabItem x:Name="StabResults">
                             <TabItem.Header><TextBlock x:Name="StabResultsHeader" Text="Tous les résultats" FontSize="13"/></TabItem.Header>
+                            <!-- Lot 7 (plan verrouillé, §3) : panneau de détail latéral droit rétractable, isolé de la
+                                 liste plutôt qu'ancré/superposé en bas dessus. Deux colonnes : la liste (*) prend tout
+                                 sauf ce que le panneau occupe, le panneau (Auto, largeur fixe sur DetailPanel) se
+                                 réduit tout seul à 0 quand DetailPanel est Collapsed — aucun code C# à changer pour
+                                 le côté "rétractable", c'est le comportement natif d'une ColumnDefinition Auto sur un
+                                 enfant caché. MinWidth sur la colonne de la liste : même garde-fou que le fix du
+                                 11/08 (table écrasée à rien), appliqué ici à l'axe horizontal cette fois. -->
                             <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="480"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                    <ListView x:Name="ListFindings"
+                    <!-- Disabled → Auto (lot 7) : les 5 colonnes du GridView totalisent ~1140px fixes, jamais
+                         redimensionnées en code — tenaient tout juste dans la largeur par défaut de la fenêtre
+                         quand la liste avait toute la largeur. Avec le panneau de détail ouvert (colonne de 380px
+                         à droite), la liste peut descendre sous ce total : Auto évite un rognage silencieux des
+                         colonnes Sujet/Détails, la table reste consultable par défilement horizontal. -->
+                    <ListView x:Name="ListFindings" Grid.Column="0"
                               Background="{StaticResource Panel}" BorderBrush="{StaticResource Border}" BorderThickness="1"
-                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
                               SelectionChanged="ListFindings_SelectionChanged"
                               GridViewColumnHeader.Click="Header_Click"
                               VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
@@ -691,10 +707,14 @@
                         </ListView.View>
                     </ListView>
 
-                    <!-- detail panel — populated on row selection -->
-                    <Border x:Name="DetailPanel" VerticalAlignment="Bottom" Visibility="Collapsed" MaxHeight="250"
+                    <!-- detail panel — populated on row selection. Lot 7 : colonne droite au lieu d'un
+                         ancrage bas superposé ; largeur fixe (Width, pas MaxHeight) et plus aucun plafond
+                         de hauteur — le panneau prend toute la hauteur de la ligne de la Grid et défile en
+                         interne (ScrollViewer inchangé), donc plus jamais de troncature sur un contenu long
+                         (garde-fou de test du plan : Repair non-automatisable multi-raisons). -->
+                    <Border x:Name="DetailPanel" Grid.Column="1" Width="380" Visibility="Collapsed"
                             Background="{StaticResource Panel}" BorderBrush="{StaticResource Accent}" BorderThickness="1"
-                            CornerRadius="8" Padding="14,12" Margin="8,0,8,8">
+                            CornerRadius="8" Padding="14,12" Margin="8,0,0,0">
                         <Border.Effect><DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.55"/></Border.Effect>
                         <Grid>
                             <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,0,26,0">
