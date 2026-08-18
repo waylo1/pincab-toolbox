@@ -498,6 +498,7 @@ public partial class MainWindow : Window
         TxtRepairLicense.ToolTip = Loc.Get("repair.license.hint");
         BtnRepairVerifyLicense.Content = Loc.Get("repair.license.verify");
         BtnRepairBuildPlan.Content = Loc.Get("repair.plan.build");
+        ChkRepairSelectAll.Content = Loc.Get("repair.selectall");
         BtnRepairApply.Content = Loc.Get("repair.apply.button");
         LblRepairDone.Text = Loc.Get("repair.done.label");
         RepairDoneEmpty.Text = Loc.Get("repair.done.empty");
@@ -1810,6 +1811,27 @@ public partial class MainWindow : Window
             })
             .ToList();
         ListRepairItems.ItemsSource = null;   // force the ItemsControl to re-bind (rows are mutable POCOs)
+        ListRepairItems.ItemsSource = _repairItemRows;
+
+        // "Tout sélectionner" : visible seulement s'il y a au moins une ligne cochable (sinon rien à
+        // faire avec elle), et toujours redémarrée décochée — un plan neuf ne doit jamais hériter d'un
+        // état "tout coché" d'un plan précédent que l'utilisateur n'a pas revu.
+        ChkRepairSelectAll.Visibility = _repairItemRows.Any(r => r.CanApply) ? Visibility.Visible : Visibility.Collapsed;
+        ChkRepairSelectAll.IsChecked = false;
+    }
+
+    /// <summary>
+    /// Coche/décoche toutes les lignes CanApply=true d'un coup. N'importe jamais IsSelected sur une
+    /// ligne ManualOnly/Locked (CanApply=false) — sa case est déjà désactivée dans le DataTemplate,
+    /// mais on ne dépend pas de ça ici : le filtre est explicite. Même pattern de re-bind forcé que
+    /// RefreshRepairItemsList (RepairItemRow est un POCO mutable, sans INotifyPropertyChanged).
+    /// </summary>
+    private void ChkRepairSelectAll_Click(object sender, RoutedEventArgs e)
+    {
+        var check = ChkRepairSelectAll.IsChecked == true;
+        foreach (var row in _repairItemRows.Where(r => r.CanApply))
+            row.IsSelected = check;
+        ListRepairItems.ItemsSource = null;
         ListRepairItems.ItemsSource = _repairItemRows;
     }
 

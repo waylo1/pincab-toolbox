@@ -1000,6 +1000,12 @@
                         <TextBlock x:Name="RepairBlockers" Visibility="Collapsed" Margin="0,8,0,0" TextWrapping="Wrap"
                                    Foreground="{StaticResource Warning}"/>
 
+                        <!-- Tout sélectionner — repéré dans l'audit du 18/08 comme petit gain non fait : sur un
+                             plan à beaucoup d'éléments, cocher un par un est fastidieux. Visibilité pilotée en
+                             code (RefreshRepairItemsList) : masquée s'il n'y a aucune ligne CanApply=true (rien
+                             à cocher), pour ne jamais montrer un contrôle sans effet. -->
+                        <CheckBox x:Name="ChkRepairSelectAll" Visibility="Collapsed" Margin="0,10,0,0" Click="ChkRepairSelectAll_Click"/>
+
                         <!-- Items -->
                         <ItemsControl x:Name="ListRepairItems" Margin="0,14,0,0">
                             <ItemsControl.ItemTemplate>
