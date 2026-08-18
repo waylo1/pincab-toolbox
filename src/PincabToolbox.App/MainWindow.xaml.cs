@@ -522,6 +522,7 @@ public partial class MainWindow : Window
         BtnRepairBuildPlan.Content = Loc.Get("repair.plan.build");
         ChkRepairSelectAll.Content = Loc.Get("repair.selectall");
         BtnRepairApply.Content = Loc.Get("repair.apply.button");
+        BtnRescore.Content = Loc.Get("repair.rescore.button");
         LblRepairDone.Text = Loc.Get("repair.done.label");
         RepairDoneEmpty.Text = Loc.Get("repair.done.empty");
         LblRepairUndone.Text = Loc.Get("repair.undone.label");
@@ -680,15 +681,26 @@ public partial class MainWindow : Window
         LblStatus.BeginAnimation(OpacityProperty, fade);
     }
 
-    private async void BtnScan_Click(object sender, RoutedEventArgs e)
+    private async void BtnScan_Click(object sender, RoutedEventArgs e) => await RunScanAsync(sender, e);
+
+    /// <summary>
+    /// LOT Rescore (18/08): extracted so "Revoir mon score" (<see cref="BtnRescore_Click"/>) can
+    /// await the exact same scan path BtnScan_Click already used — same TxtRoot/_demoRoot, same
+    /// profile, same scanner list, nothing duplicated — instead of writing a second, divergent copy.
+    /// BtnScan_Click itself is now a thin fire-and-forget wrapper around this method, unchanged in
+    /// every other respect. Returns whether the scan actually completed and <see cref="_report"/> was
+    /// updated (false on cancel or failure), so a caller that needs the fresh score afterwards knows
+    /// not to trust a stale report.
+    /// </summary>
+    private async Task<bool> RunScanAsync(object sender, RoutedEventArgs e)
     {
-        if (_cts is not null) return;
+        if (_cts is not null) return false;
         var root = (_demoRoot is not null && TxtRoot.Text == Loc.Get("scan.demolabel"))
             ? _demoRoot : TxtRoot.Text.Trim();
         if (root.Length == 0 || !Directory.Exists(root))
         {
             LblStatus.Text = Loc.Get("scan.placeholder");
-            return;
+            return false;
         }
 
         Profile profile;
@@ -699,7 +711,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             MessageBox.Show(this, "profiles/vpx-popper.json: " + ex.Message, "Pincab Toolbox");
-            return;
+            return false;
         }
 
         _cts = new CancellationTokenSource();
@@ -723,6 +735,7 @@ public partial class MainWindow : Window
         var isWholeDrive = IsDriveRoot(root);
 
         var progress = new Progress<string>(ReportScanProgress);
+        var completed = false;
         try
         {
             var ct = _cts.Token;
@@ -805,6 +818,7 @@ public partial class MainWindow : Window
             }
             BtnExport.IsEnabled = true;
             BtnCopyForum.IsEnabled = true;
+            completed = true;
         }
         catch (OperationCanceledException)
         {
@@ -823,6 +837,35 @@ public partial class MainWindow : Window
             ScanProgress.Visibility = Visibility.Collapsed;
             // Lot 6 : le renfort visuel des étapes (SemiBold) ne vaut que pendant le scan.
             LblStatus.FontWeight = FontWeights.Normal;
+        }
+        return completed;
+    }
+
+    /// <summary>
+    /// LOT Rescore (18/08) — offered on <see cref="RepairApplyStatus"/> after a successful or
+    /// partially successful Apply (see <see cref="BtnRepairApply_Click"/>): re-runs the SAME scan
+    /// (same root/profile, via <see cref="RunScanAsync"/>) and shows old→new score, honestly, even
+    /// when the score did not improve. Never invents or estimates a delta — both numbers come
+    /// straight from <see cref="ScanReport.Score"/>, before and after the real rescan.
+    /// </summary>
+    private async void BtnRescore_Click(object sender, RoutedEventArgs e)
+    {
+        if (_report is null) return;
+        var oldScore = _report.Score;
+
+        BtnRescore.IsEnabled = false;
+        try
+        {
+            var completed = await RunScanAsync(sender, e);
+            if (!completed || _report is null) return;   // cancelled/failed: nothing honest to show
+
+            var newScore = _report.Score;
+            RescoreStatus.Text = string.Format(Loc.Get("repair.rescore.result"), oldScore, newScore);
+            RescoreStatus.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            BtnRescore.IsEnabled = true;
         }
     }
 
@@ -2031,6 +2074,15 @@ public partial class MainWindow : Window
                 RepairApplyStatus.Text += "\n" + Loc.Get("repair.apply.recovery")
                     + (string.IsNullOrEmpty(result.BackupPath) ? "" : " " + result.BackupPath);
             }
+
+            // LOT Rescore (18/08): only offered after a real, successful (or partially successful)
+            // Apply — at least one item actually fixed, and never for a forced dry-run, since that
+            // path performs zero disk I/O and rescanning it would just silently reproduce the same
+            // score. RescoreStatus is reset here too so a stale old→new line from a previous Apply
+            // never lingers under a fresh one.
+            RescoreStatus.Visibility = Visibility.Collapsed;
+            RescoreStatus.Text = "";
+            BtnRescore.Visibility = (ok > 0 && !result.ForcedDryRun) ? Visibility.Visible : Visibility.Collapsed;
 
             // Re-plan from the same scan so the checklist reflects what actually got fixed (a change
             // just applied must not still be offered as if it were still broken).

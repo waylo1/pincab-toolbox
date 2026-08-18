@@ -179,6 +179,9 @@ public static class Loc
         ["repair.apply.running"] = "Applying…",
         ["repair.apply.status"] = "{0} applied, {1} failed.",
         ["repair.apply.recovery"] = "Something went wrong while undoing a partial change — a backup is kept here, restore it by hand if needed:",
+        // Lot Rescore, 18/08: re-runs the same scan and shows old->new score honestly, even when it did not improve.
+        ["repair.rescore.button"] = "Check my score again",
+        ["repair.rescore.result"] = "Score: {0} → {1}",
         ["repair.done.label"] = "Repaired",
         ["repair.done.empty"] = "No fix applied yet.",
         ["repair.done.count"] = "{0} — {1} fix(es) applied",
@@ -463,6 +466,9 @@ public static class Loc
         ["repair.apply.running"] = "Application en cours…",
         ["repair.apply.status"] = "{0} appliqué(s), {1} échoué(s).",
         ["repair.apply.recovery"] = "Un problème est survenu en annulant une modification partielle, une sauvegarde est conservée ici, restaurez-la à la main si besoin :",
+        // Lot Rescore, 18/08 : relance le même scan et affiche l'ancien -> nouveau score honnêtement, même sans progrès.
+        ["repair.rescore.button"] = "Revoir mon score",
+        ["repair.rescore.result"] = "Score : {0} → {1}",
         ["repair.done.label"] = "Réparé",
         ["repair.done.empty"] = "Aucun correctif appliqué pour l'instant.",
         ["repair.done.count"] = "{0} — {1} correctif(s) appliqué(s)",
@@ -727,6 +733,9 @@ public static class Loc
         ["repair.apply.running"] = "Aplicando…",
         ["repair.apply.status"] = "{0} aplicado(s), {1} fallido(s).",
         ["repair.apply.recovery"] = "Algo salió mal al deshacer un cambio parcial — se conserva una copia de seguridad aquí, restáurela a mano si hace falta:",
+        // Lot Rescore, 18/08: vuelve a ejecutar el mismo escaneo y muestra la puntuación anterior -> nueva con honestidad, aunque no mejore.
+        ["repair.rescore.button"] = "Revisar mi puntuación",
+        ["repair.rescore.result"] = "Puntuación: {0} → {1}",
         ["repair.done.label"] = "Reparado",
         ["repair.done.empty"] = "Todavía no se aplicó ninguna corrección.",
         ["repair.done.count"] = "{0} — {1} corrección(es) aplicada(s)",
