@@ -26,6 +26,40 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-18 (session éco, fin de journée) · Blocage « Contrôle intelligent des applications » : NON déterministe — verdict cloud temporaire, pas une cause dans le code
+- code:        aucun code de finding — incident de build / distribution
+- bac:         FIX (résultat d'un diagnostic) + correction d'une conclusion antérieure trop assurée
+- contexte:    Après le merge des 4 lots du 18/08, Windows 11 bloque `publish\PincabToolbox.exe`
+  (« application potentiellement dangereuse », blocage DUR, aucun bouton « Exécuter quand même »).
+  Même symptôme que la veille (17-18/08), que le commit `be0a1ce` attribue « avec certitude » à un
+  item MSBuild `<SplashScreen>`.
+- analyse:     Bissection menée avec le bon point de comparaison, le commit `20ba4b3` (build de 13h44
+  qui se lançait normalement) et non `be0a1ce`. Lecture du diff : `csproj` inchangé hors un
+  commentaire, `App.xaml`/`App.xaml.cs` identiques bit à bit, aucun `<SplashScreen>` réintroduit,
+  zéro `DllImport` ajouté, aucun `Main()`/`OnStartup` custom, rien qui s'exécute avant le Dispatcher.
+  Les 7 nouveaux fichiers Core sont du I/O fichier managé pur.
+  Trois exe fabriqués et lancés (`test-sac.cmd`) : **A** = rebuild de `20ba4b3`, hash neuf → se lance ;
+  **B** = code actuel sans `IncludeNativeLibrariesForSelfExtract` → se lance ; **contrôle** = l'exe
+  `publish\` initialement bloqué, relancé tel quel, sans **aucune** modification → **se lance aussi**.
+  C'est le test de contrôle qui tranche : le blocage n'est pas reproductible, donc il n'est pas
+  déterministe. Mécanisme réel : Smart App Control interroge le service cloud Microsoft pour tout
+  binaire non signé, bloque tant qu'aucun verdict favorable n'est rendu, puis débloque une fois le
+  verdict rendu. La fenêtre de blocage est temporelle, pas structurelle.
+  ⚠ **Conséquence sur le diagnostic du 17-18/08** : on vient d'observer le même symptôme SANS
+  `<SplashScreen>`, résolu seul sans toucher au code. Le retrait du SplashScreen a peut-être corrigé
+  quelque chose, ou bien le verdict cloud s'était résolu entre-temps et le mérite a été attribué au
+  mauvais changement. Impossible de trancher rétroactivement, mais la certitude affichée dans le
+  message de `be0a1ce` n'est plus tenable et ne doit plus être citée comme un fait établi.
+  Piège de méthode à retenir : un protocole de bissection qui ne contrôle pas le temps ne prouve
+  rien face à un phénomène temporel. Sans le test de contrôle, un « correctif » (retirer
+  l'auto-extraction) allait être livré alors qu'il ne corrigeait rien.
+- disposition: Aucun changement de code — il n'y avait rien à corriger. Risque commercial consigné :
+  chaque nouvelle release non signée expose les utilisateurs à cette même fenêtre de blocage, sans
+  contournement possible de leur côté. Signature de code écartée par Maxime (budget nul, 18/08).
+  Piste gratuite proposée, NON mise en œuvre, à valider : soumettre l'exe au portail Microsoft
+  Security Intelligence (soumission développeur, gratuite) à chaque release pour faire rendre le
+  verdict cloud AVANT que les utilisateurs ne téléchargent, plutôt que de le subir après.
+
 ## 2026-08-18 (session éco) · Revue CTO+Produit — 4 lots (Scanner, Repair, Rescore, Table Companion teaser)
 - code:        `GLOBALCONFIG_B2S_MISSING`, `FONT_FILE_MISSING`, `SCRIPT_HARDCODED_PATH`,
   `SHARED_SCRIPT_LOCAL_COPY` (nouveaux) ; `ALTCOLOR_INCOMPLETE`/`ALTSOUND_SAMPLE_MISSING` (teaser,

@@ -1,5 +1,33 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 18/08/2026
 
+## ⚠️ À LIRE AVANT DE RE-DIAGNOSTIQUER UN BLOCAGE « Contrôle intelligent des applications »
+
+> **Ce blocage n'est PAS déterministe. Ne cherchez pas une cause dans le code avant d'avoir fait le
+> test de contrôle.** Établi le 18/08 au soir, preuve à l'appui : l'exe bloqué a été relancé tel
+> quel, sans **aucune** modification, et s'est lancé normalement. Un rebuild du commit connu-bon et
+> un build sans auto-extraction native se lançaient eux aussi — mais ça ne prouvait rien, puisque
+> l'original marchait déjà à nouveau.
+>
+> **Mécanisme réel** : Smart App Control interroge le service cloud Microsoft pour tout binaire non
+> signé. Il bloque tant qu'aucun verdict favorable n'est rendu, puis débloque une fois le verdict
+> rendu. La fenêtre de blocage est **temporelle**, pas structurelle.
+>
+> **Le test de contrôle, à faire EN PREMIER, avant toute bissection** : relancer l'exe bloqué, tel
+> quel, sans rien changer. S'il se lance, il n'y a rien à corriger dans le code. Un protocole de
+> bissection qui ne contrôle pas le temps ne prouve rien face à un phénomène temporel — sans ce
+> contrôle, un faux « correctif » allait être livré le 18/08.
+>
+> **Corollaire, important** : le commit `be0a1ce` (17-18/08) affirme « avec certitude » qu'un item
+> MSBuild `<SplashScreen>` était la cause du même symptôme. Le 18/08 au soir, le symptôme est apparu
+> **sans** SplashScreen et s'est résolu **seul**. Cette certitude n'est donc plus tenable : le
+> retrait du SplashScreen a peut-être corrigé quelque chose, ou le verdict cloud s'était simplement
+> résolu entre-temps. Ne plus citer `be0a1ce` comme un fait établi. Cela dit, le commentaire
+> d'avertissement laissé dans le `.csproj` reste prudent à respecter, faute de preuve contraire.
+>
+> **Remède durable** : la signature de code (écartée par Maxime le 18/08, budget nul). Piste gratuite
+> proposée et non mise en œuvre : soumettre chaque release au portail Microsoft Security Intelligence
+> (soumission développeur, gratuite) pour faire rendre le verdict AVANT la diffusion aux utilisateurs.
+
 ## 📣 MAJ 18/08 — 4 lots livrés (Scanner, Repair, Rescore, Table Companion teaser), sandbox resynchronisé sur le vrai poste de Maxime, email flipsync.contact ajouté à propos/tutoriel
 
 > **Sandbox resynchronisé.** Le clone de ce sandbox était 10 commits en retard sur le poste réel de
