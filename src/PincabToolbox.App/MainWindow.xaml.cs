@@ -763,7 +763,14 @@ public partial class MainWindow : Window
                     .Add(new DmdConfigScanner())
                     .Add(new FeatureEnabledScanner())
                     .Add(new ScreenResUnparsedScanner())
-                    .Add(new NvramWritabilityScanner());
+                    .Add(new NvramWritabilityScanner())
+                    // Lot scanner 18/08 — les 4 derniers détecteurs de l'audit du 05/08
+                    // (docs/PROMPT-session-lot-complet-2026-08-18.md). Une ligne = un scanner,
+                    // comme tous les précédents, pour que Maxime puisse en désactiver un seul.
+                    .Add(new GlobalConfigB2SScanner())
+                    .Add(new FontDependencyScanner())
+                    .Add(new HardcodedPathScanner())
+                    .Add(new ScriptDoctorScanner());
                 // Le nombre de contrôles remonte avec le rapport (ligne méta « Contrôles N / N ») —
                 // compté sur le moteur réel, jamais une constante à maintenir à la main.
                 if (!isWholeDrive) return (engine.Run(root, profile, progress, ct), engine.Scanners.Count);

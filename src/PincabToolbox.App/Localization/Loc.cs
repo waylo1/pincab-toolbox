@@ -252,8 +252,12 @@ public static class Loc
         ["cat.dmd-com-port"] = "DMD COM Port",
         ["cat.dpi-scaling"] = "DPI Scaling",
         ["cat.locale-separator"] = "Decimal Separator",
+        ["cat.globalconfig-b2s"] = "B2S Global Config",
+        ["cat.font-dependency"] = "Font Dependency",
+        ["cat.hardcoded-path"] = "Hardcoded Path",
+        ["cat.script-doctor"] = "Shared Script Doctor",
         ["about.tagline"] = "The mechanic for your pincab.",
-        ["about.body"] = "Pincab Toolbox scans your Visual Pinball X / PinUP Popper installation and tells you what is broken, missing or mismatched — before you hit Start on a table.\n\n• 100% local scanning — your cab, your files and your findings are never uploaded, no telemetry, no account.\n• Read-only — the free scanner never modifies a single file.\n• The Update Watcher uses the open-source Virtual Pinball Spreadsheet database and only ever links you to official pages. It never downloads tables, ROMs or media.\n• The one exception: the \"Check for updates\" button below is manual and opt-in — click it, and it contacts GitHub just to see if a newer version exists. Nothing about your cab, your tables or your scan results is ever sent. It never runs on its own.",
+        ["about.body"] = "Pincab Toolbox scans your Visual Pinball X / PinUP Popper installation and tells you what is broken, missing or mismatched — before you hit Start on a table.\n\n• 100% local scanning — your cab, your files and your findings are never uploaded, no telemetry, no account.\n• Read-only — the free scanner never modifies a single file.\n• The Update Watcher uses the open-source Virtual Pinball Spreadsheet database and only ever links you to official pages. It never downloads tables, ROMs or media.\n• The one exception: the \"Check for updates\" button below is manual and opt-in — click it, and it contacts GitHub just to see if a newer version exists. Nothing about your cab, your tables or your scan results is ever sent. It never runs on its own.\n\nQuestions, bug reports or feedback: flipsync.contact@gmail.com",
         ["about.version"] = "Version",
         ["about.checkupdate"] = "Check for updates",
         ["about.update.checking"] = "Checking…",
@@ -271,7 +275,7 @@ public static class Loc
         ["tutorial.step4.title"] = "4. Use Repair",
         ["tutorial.step4.body"] = "In the Repair tab, enter your license key and click \"Analyze what can be repaired\". Today, four fixes are automated: unblocking a file Windows flagged as downloaded, restoring a missing ROM archive, stopping a zombie PinUP Display process, and quarantining an orphaned media file. Every fix is backed up before it's applied and can be undone with one click. Everything else stays a manual step, with its own guidance right in the Scanner report.",
         ["tutorial.step5.title"] = "5. Export or ask for help",
-        ["tutorial.step5.body"] = "\"Export report\" saves your full report to a file. \"Copy for forum\" prepares a ready-to-paste summary for a help thread, without exposing file paths or other information you wouldn't want to post.",
+        ["tutorial.step5.body"] = "\"Export report\" saves your full report to a file. \"Copy for forum\" prepares a ready-to-paste summary for a help thread, without exposing file paths or other information you wouldn't want to post. Still stuck? Email flipsync.contact@gmail.com.",
         ["onb.title"] = "Welcome to Pincab Toolbox",
         ["onb.lead"] = "A quick health check for your virtual pinball cabinet. About one minute, and completely safe.",
         ["onb.p1"] = "✓  Read-only — it never modifies a single file.",
@@ -529,8 +533,12 @@ public static class Loc
         ["cat.dmd-com-port"] = "Port COM du DMD",
         ["cat.dpi-scaling"] = "Mise à l'échelle",
         ["cat.locale-separator"] = "Séparateur décimal",
+        ["cat.globalconfig-b2s"] = "Config globale B2S",
+        ["cat.font-dependency"] = "Dépendance de police",
+        ["cat.hardcoded-path"] = "Chemin codé en dur",
+        ["cat.script-doctor"] = "Docteur scripts partagés",
         ["about.tagline"] = "Le mécanicien de votre pincab.",
-        ["about.body"] = "Pincab Toolbox scanne votre installation Visual Pinball X / PinUP Popper et vous dit ce qui est cassé, manquant ou incompatible — avant que vous ne lanciez une table.\n\n• Scan 100 % local — votre cab, vos fichiers et vos résultats de scan ne sont jamais envoyés, zéro télémétrie, zéro compte.\n• Lecture seule — le scanner gratuit ne modifie jamais le moindre fichier.\n• L'Update Watcher s'appuie sur la base open source Virtual Pinball Spreadsheet et se contente de vous donner le lien officiel. Il ne télécharge jamais ni table, ni ROM, ni média.\n• Seule exception : le bouton « Vérifier les mises à jour » ci-dessous est manuel et volontaire — vous cliquez, et il contacte GitHub juste pour voir si une nouvelle version existe. Rien concernant votre cab, vos tables ou vos résultats de scan n'est jamais envoyé. Il ne se déclenche jamais tout seul.",
+        ["about.body"] = "Pincab Toolbox scanne votre installation Visual Pinball X / PinUP Popper et vous dit ce qui est cassé, manquant ou incompatible — avant que vous ne lanciez une table.\n\n• Scan 100 % local — votre cab, vos fichiers et vos résultats de scan ne sont jamais envoyés, zéro télémétrie, zéro compte.\n• Lecture seule — le scanner gratuit ne modifie jamais le moindre fichier.\n• L'Update Watcher s'appuie sur la base open source Virtual Pinball Spreadsheet et se contente de vous donner le lien officiel. Il ne télécharge jamais ni table, ni ROM, ni média.\n• Seule exception : le bouton « Vérifier les mises à jour » ci-dessous est manuel et volontaire — vous cliquez, et il contacte GitHub juste pour voir si une nouvelle version existe. Rien concernant votre cab, vos tables ou vos résultats de scan n'est jamais envoyé. Il ne se déclenche jamais tout seul.\n\nQuestions, bugs ou retours : flipsync.contact@gmail.com",
         ["about.version"] = "Version",
         ["about.checkupdate"] = "Vérifier les mises à jour",
         ["about.update.checking"] = "Vérification…",
@@ -548,7 +556,7 @@ public static class Loc
         ["tutorial.step4.title"] = "4. Utilisez Repair",
         ["tutorial.step4.body"] = "Dans l'onglet Repair, entrez votre clé de licence puis cliquez sur « Analyser ce qui peut être réparé ». Aujourd'hui, quatre corrections sont automatisées : débloquer un fichier que Windows a marqué comme téléchargé, restaurer une archive ROM manquante, arrêter un processus PinUP Display fantôme, et mettre de côté un fichier média orphelin. Chaque correction est sauvegardée avant d'être appliquée et peut être annulée en un clic. Tout le reste reste une étape manuelle, avec son propre guide directement dans le rapport du Scanner.",
         ["tutorial.step5.title"] = "5. Exportez ou demandez de l'aide",
-        ["tutorial.step5.body"] = "« Exporter le rapport » enregistre votre rapport complet dans un fichier. « Copier pour le forum » prépare un résumé prêt à coller dans un post d'entraide, sans exposer de chemins de fichiers ni d'autres informations que vous ne voudriez pas publier.",
+        ["tutorial.step5.body"] = "« Exporter le rapport » enregistre votre rapport complet dans un fichier. « Copier pour le forum » prépare un résumé prêt à coller dans un post d'entraide, sans exposer de chemins de fichiers ni d'autres informations que vous ne voudriez pas publier. Toujours bloqué ? Écrivez à flipsync.contact@gmail.com.",
         ["onb.title"] = "Bienvenue dans Pincab Toolbox",
         ["onb.lead"] = "Un diagnostic rapide de votre flipper virtuel. Environ une minute, et totalement sans risque.",
         ["onb.p1"] = "✓  Lecture seule — ne modifie jamais le moindre fichier.",
@@ -788,8 +796,12 @@ public static class Loc
         ["cat.dmd-com-port"] = "Puerto COM del DMD",
         ["cat.dpi-scaling"] = "Escala de pantalla",
         ["cat.locale-separator"] = "Separador decimal",
+        ["cat.globalconfig-b2s"] = "Config global B2S",
+        ["cat.font-dependency"] = "Dependencia de fuente",
+        ["cat.hardcoded-path"] = "Ruta codificada",
+        ["cat.script-doctor"] = "Doctor de scripts compartidos",
         ["about.tagline"] = "El mecánico de su pincab.",
-        ["about.body"] = "Pincab Toolbox escanea su instalación de Visual Pinball X / PinUP Popper y le dice qué está roto, falta o no coincide — antes de que pulse Iniciar en una tabla.\n\n• Escaneo 100% local — su cab, sus archivos y sus resultados nunca se suben, sin telemetría, sin cuenta.\n• Solo lectura — el escáner gratuito nunca modifica un solo archivo.\n• El Update Watcher usa la base de datos de código abierto Virtual Pinball Spreadsheet y solo le enlaza a páginas oficiales. Nunca descarga tablas, ROMs ni medios.\n• La única excepción: el botón \"Buscar actualizaciones\" de abajo es manual y opcional — lo pulsa usted, y contacta con GitHub solo para ver si existe una versión más reciente. Nada sobre su cab, sus tablas o sus resultados de escaneo se envía nunca. Nunca se ejecuta por su cuenta.",
+        ["about.body"] = "Pincab Toolbox escanea su instalación de Visual Pinball X / PinUP Popper y le dice qué está roto, falta o no coincide — antes de que pulse Iniciar en una tabla.\n\n• Escaneo 100% local — su cab, sus archivos y sus resultados nunca se suben, sin telemetría, sin cuenta.\n• Solo lectura — el escáner gratuito nunca modifica un solo archivo.\n• El Update Watcher usa la base de datos de código abierto Virtual Pinball Spreadsheet y solo le enlaza a páginas oficiales. Nunca descarga tablas, ROMs ni medios.\n• La única excepción: el botón \"Buscar actualizaciones\" de abajo es manual y opcional — lo pulsa usted, y contacta con GitHub solo para ver si existe una versión más reciente. Nada sobre su cab, sus tablas o sus resultados de escaneo se envía nunca. Nunca se ejecuta por su cuenta.\n\nPreguntas, errores o comentarios: flipsync.contact@gmail.com",
         ["about.version"] = "Versión",
         ["about.checkupdate"] = "Buscar actualizaciones",
         ["about.update.checking"] = "Comprobando…",
@@ -807,7 +819,7 @@ public static class Loc
         ["tutorial.step4.title"] = "4. Use Repair",
         ["tutorial.step4.body"] = "En la pestaña Repair, introduzca su clave de licencia y haga clic en «Analizar qué se puede reparar». Hoy, cuatro correcciones están automatizadas: desbloquear un archivo que Windows marcó como descargado, restaurar un archivo ZIP de ROM que falta, detener un proceso PinUP Display zombi, y poner en cuarentena un archivo multimedia huérfano. Cada corrección se respalda antes de aplicarse y puede deshacerse con un clic. Todo lo demás sigue siendo un paso manual, con su propia guía directamente en el informe del Escáner.",
         ["tutorial.step5.title"] = "5. Exporte o pida ayuda",
-        ["tutorial.step5.body"] = "«Exportar informe» guarda su informe completo en un archivo. «Copiar para el foro» prepara un resumen listo para pegar en un hilo de ayuda, sin exponer rutas de archivos ni otra información que no querría publicar.",
+        ["tutorial.step5.body"] = "«Exportar informe» guarda su informe completo en un archivo. «Copiar para el foro» prepara un resumen listo para pegar en un hilo de ayuda, sin exponer rutas de archivos ni otra información que no querría publicar. ¿Sigue atascado? Escriba a flipsync.contact@gmail.com.",
         ["onb.title"] = "Bienvenido a Pincab Toolbox",
         ["onb.lead"] = "Un chequeo rápido para su gabinete de pinball virtual. Cerca de un minuto, y totalmente seguro.",
         ["onb.p1"] = "✓  Solo lectura — nunca modifica un solo archivo.",
@@ -997,6 +1009,15 @@ public static class Loc
 
         // ── LOT G (NVRAM Folder Writability). Pas d'argument.
         ["NVRAM_FOLDER_NOT_WRITABLE"] = "Le dossier nvram de VPinMAME existe mais un vrai test d'écriture a échoué — les meilleurs scores et réglages par table vont échouer à s'enregistrer silencieusement, table après table, sans aucune erreur affichée.",
+
+        // ── Lot scanner 18/08 (docs/PROMPT-session-lot-complet-2026-08-18.md). Pas d'argument.
+        ["GLOBALCONFIG_B2S_MISSING"] = "B2S Backglass Server est installé, mais son fichier GlobalConfig_B2SServer.xml est manquant — B2S se charge sans aucune config globale, ce qui fait silencieusement disparaître tout réglage global (plugins par défaut, intégration DOF…) que vous aviez configuré pour toutes les tables.",
+        // {0} = nombre de tables affectées, {1} = nombre de polices manquantes, {2} = liste (5 max).
+        ["FONT_FILE_MISSING"] = "{0} table(s) référencent {1} fichier(s) de police ({2}) introuvables sous cette installation — l'affichage DMD/scoreboard peut basculer sur une police par défaut ou ne pas s'afficher comme prévu.",
+        // {0} = nom de la table, {1} = nombre de chemins cassés, {2} = premier chemin cassé.
+        ["SCRIPT_HARDCODED_PATH"] = "Le script de « {0} » référence {1} chemin(s) de fichier absolu(s) introuvable(s) sur cette machine (par ex. « {2} ») — ils semblent codés en dur depuis un autre ordinateur ; tout ce que le script charge depuis eux échouera silencieusement ici.",
+        // {0} = nom du script partagé (core.vbs, controller.vbs, VPMKeys.vbs, nudge.vbs).
+        ["SHARED_SCRIPT_LOCAL_COPY"] = "Une copie locale de « {0} » a été trouvée directement dans le dossier Tables. Visual Pinball charge un script partagé comme celui-ci depuis le premier endroit où il le trouve — une copie locale ici remplace silencieusement la version partagée/globale pour toutes les tables, pas seulement celle avec laquelle elle est arrivée, ce qui peut laisser certaines tables tourner sur une version différente de celle attendue.",
     };
 
     /// <summary>Spanish templates per finding code ({0}, {1}… map to Finding.Args).</summary>
@@ -1065,6 +1086,12 @@ public static class Loc
         ["ALTCOLOR_PRESENT_NOT_ENABLED"] = "« {0} » tiene un set de colorización AltColor/Serum completo instalado en altcolor/{0}/, pero la colorización DMD de VPinMAME está desactivada para esta ROM — el DMD se mostrará en mono.",
         ["SCREENRES_UNPARSED"] = "« {0} » está presente pero no en un formato que esta herramienta sepa verificar (sin marcador « # V2 », o una estructura no reconocida) — su posición de backglass/DMD no se verifica; esto no es una afirmación de que haya un problema.",
         ["NVRAM_FOLDER_NOT_WRITABLE"] = "La carpeta nvram de VPinMAME existe pero una prueba de escritura real falló — los mejores puntajes y ajustes por tabla fallarán al guardarse en silencio, tabla tras tabla, sin que se muestre ningún error.",
+
+        // ── Lot scanner 18/08 (docs/PROMPT-session-lot-complet-2026-08-18.md).
+        ["GLOBALCONFIG_B2S_MISSING"] = "B2S Backglass Server está instalado, pero falta su archivo GlobalConfig_B2SServer.xml — B2S se carga sin ninguna configuración global, lo que hace que cualquier ajuste global (plugins predeterminados, integración DOF…) que usted haya configurado desaparezca silenciosamente para todas las tablas.",
+        ["FONT_FILE_MISSING"] = "{0} tabla(s) hacen referencia a {1} archivo(s) de fuente ({2}) que no se encontraron en esta instalación — la pantalla DMD/scoreboard puede recurrir a una fuente predeterminada o no mostrarse como se espera.",
+        ["SCRIPT_HARDCODED_PATH"] = "El script de « {0} » hace referencia a {1} ruta(s) de archivo absoluta(s) que no existen en esta máquina (por ejemplo « {2} ») — parecen codificadas desde otro ordenador; todo lo que el script cargue desde ellas fallará en silencio aquí.",
+        ["SHARED_SCRIPT_LOCAL_COPY"] = "Se encontró una copia local de « {0} » directamente en la carpeta Tables. Visual Pinball carga un script compartido como este desde el primer lugar donde lo encuentra — una copia local aquí reemplaza silenciosamente la versión compartida/global para todas las tablas, no solo la que la trajo, lo que puede dejar algunas tablas usando una versión distinta a la esperada.",
     };
 
     /// <summary>French fix hints per finding code (English fallback is in the Core Finding.FixHint).</summary>
@@ -1120,6 +1147,12 @@ public static class Loc
         ["ALTCOLOR_PRESENT_NOT_ENABLED"] = "Dans les options par jeu de VPinMAME, activez la colorisation DMD (« Colorize DMD » / couleurs DMD externes) pour utiliser le jeu installé.",
         ["SCREENRES_UNPARSED"] = "Si la position de votre backglass semble fausse, relancez B2S_ScreenResIdentifier (ou votre éditeur ScreenRes) pour régénérer le fichier dans le format actuel.",
         ["NVRAM_FOLDER_NOT_WRITABLE"] = "Vérifiez que le dossier nvram n'est pas en lecture seule et que votre compte utilisateur Windows a le droit d'écriture dessus (clic droit → Propriétés → Sécurité).",
+
+        // ── Lot scanner 18/08 (docs/PROMPT-session-lot-complet-2026-08-18.md).
+        ["GLOBALCONFIG_B2S_MISSING"] = "Ouvrez le backglass d'une table dans le B2S Backglass Designer et enregistrez-le une fois — B2S recrée GlobalConfig_B2SServer.xml avec les valeurs par défaut. Réappliquez ensuite vos réglages globaux.",
+        ["FONT_FILE_MISSING"] = "S'il s'agit de polices scoreboard/DMD personnalisées, installez-les (clic droit sur le .ttf → Installer) ou placez-les quelque part sous cette installation pour qu'un futur scan les trouve.",
+        ["SCRIPT_HARDCODED_PATH"] = "Ouvrez le script de la table et remplacez le(s) chemin(s) absolu(s) codé(s) en dur par un chemin relatif à la table, ou copiez le(s) fichier(s) référencé(s) à l'endroit exact attendu par le script.",
+        ["SHARED_SCRIPT_LOCAL_COPY"] = "Si vous n'avez pas placé cette copie volontairement, supprimez-la pour que les tables reviennent au dossier de script partagé. Si vous l'avez fixée délibérément, aucune action nécessaire — c'est juste un signalement.",
     };
 
     /// <summary>Spanish fix hints per finding code (English fallback is in the Core Finding.FixHint).</summary>
@@ -1167,5 +1200,11 @@ public static class Loc
         ["ALTCOLOR_PRESENT_NOT_ENABLED"] = "En las opciones por juego de VPinMAME, active la colorización DMD (« Colorize DMD » / colores DMD externos) para usar el set instalado.",
         ["SCREENRES_UNPARSED"] = "Si la posición de su backglass parece incorrecta, vuelva a ejecutar B2S_ScreenResIdentifier (o su editor de ScreenRes) para regenerar el archivo en el formato actual.",
         ["NVRAM_FOLDER_NOT_WRITABLE"] = "Compruebe que la carpeta nvram no esté en modo solo lectura y que su cuenta de usuario de Windows tenga permiso de escritura sobre ella (clic derecho → Propiedades → Seguridad).",
+
+        // ── Lot scanner 18/08 (docs/PROMPT-session-lot-complet-2026-08-18.md).
+        ["GLOBALCONFIG_B2S_MISSING"] = "Abra el backglass de una tabla en el B2S Backglass Designer y guárdelo una vez — B2S recrea GlobalConfig_B2SServer.xml con los valores predeterminados. Luego vuelva a aplicar sus ajustes globales.",
+        ["FONT_FILE_MISSING"] = "Si son fuentes scoreboard/DMD personalizadas, instálelas (clic derecho en el .ttf → Instalar) o colóquelas en algún lugar de esta instalación para que un futuro escaneo las encuentre.",
+        ["SCRIPT_HARDCODED_PATH"] = "Abra el script de la tabla y reemplace la(s) ruta(s) absoluta(s) codificada(s) por una ruta relativa a la tabla, o copie el/los archivo(s) referenciado(s) a la ruta exacta que el script espera.",
+        ["SHARED_SCRIPT_LOCAL_COPY"] = "Si no colocó esta copia intencionalmente, elimínela para que las tablas vuelvan a usar la carpeta de script compartida. Si la fijó deliberadamente, no hace falta ninguna acción — esto es solo un aviso.",
     };
 }

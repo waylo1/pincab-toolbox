@@ -714,6 +714,54 @@
       "verificationFr": "Aucun fichier .zip portant le nom de ROM attendu (ni aucune de ses variantes connues) n'existe dans le dossier roms.",
       "verificationEn": "No .zip file matching the expected ROM name (or any of its known alternates) exists in the roms folder.",
       "verificationEs": "No existe ningún archivo .zip con el nombre de ROM esperado (ni ninguna de sus variantes conocidas) en la carpeta roms."
+    },
+    {
+      "code": "GLOBALCONFIG_B2S_MISSING",
+      "playerFr": "B2S Backglass Server est installé, mais il n'a aucun réglage global pris en compte.",
+      "playerEn": "B2S Backglass Server is installed, but it has no global settings taken into account.",
+      "playerEs": "B2S Backglass Server está instalado, pero no tiene en cuenta ningún ajuste global.",
+      "explanationFr": "B2S lit ses réglages globaux (plugins par défaut, intégration DOF…) depuis un fichier GlobalConfig_B2SServer.xml situé à côté de B2SBackglassServer.dll. Sans ce fichier, B2S démarre quand même mais ignore silencieusement tout réglage global.",
+      "explanationEn": "B2S reads its global settings (default plugins, DOF integration…) from a GlobalConfig_B2SServer.xml file next to B2SBackglassServer.dll. Without it, B2S still starts but silently ignores every global setting.",
+      "explanationEs": "B2S lee sus ajustes globales (plugins predeterminados, integración DOF…) desde un archivo GlobalConfig_B2SServer.xml junto a B2SBackglassServer.dll. Sin él, B2S arranca igualmente pero ignora en silencio cualquier ajuste global.",
+      "verificationFr": "B2SBackglassServer.dll est présent sous cette installation, mais aucun fichier GlobalConfig_B2SServer.xml n'existe dans le même dossier.",
+      "verificationEn": "B2SBackglassServer.dll is present under this install, but no GlobalConfig_B2SServer.xml file exists in the same folder.",
+      "verificationEs": "B2SBackglassServer.dll está presente en esta instalación, pero no existe ningún archivo GlobalConfig_B2SServer.xml en la misma carpeta."
+    },
+    {
+      "code": "FONT_FILE_MISSING",
+      "playerFr": "Une ou plusieurs de vos tables demandent une police que ce scan n'a pas trouvée.",
+      "playerEn": "One or more of your tables ask for a font this scan could not find.",
+      "playerEs": "Una o más de sus tablas piden una fuente que este escaneo no pudo encontrar.",
+      "explanationFr": "Certains scripts de table chargent une police .ttf spécifique pour le scoreboard ou le DMD. Ce contrôle ne lit que ce que le script nomme littéralement — il ne devine jamais un nom — et vérifie si un fichier portant ce nom existe quelque part sous cette installation.",
+      "explanationEn": "Some table scripts load a specific .ttf font for the scoreboard or DMD. This check only reads what the script literally names — it never guesses a name — and checks whether a file with that name exists anywhere under this install.",
+      "explanationEs": "Algunos scripts de tabla cargan una fuente .ttf específica para el scoreboard o el DMD. Esta comprobación solo lee lo que el script nombra literalmente — nunca adivina un nombre — y verifica si existe un archivo con ese nombre en algún lugar de esta instalación.",
+      "verificationFr": "Le script d'au moins une table référence un nom de fichier .ttf précis, et aucun fichier portant ce nom n'a été trouvé sous la racine scannée.",
+      "verificationEn": "At least one table's script references a specific .ttf file name, and no file with that name was found under the scanned root.",
+      "verificationEs": "El script de al menos una tabla hace referencia a un nombre de archivo .ttf concreto, y no se encontró ningún archivo con ese nombre en la raíz escaneada."
+    },
+    {
+      "code": "SCRIPT_HARDCODED_PATH",
+      "playerFr": "Le script de cette table pointe vers un fichier codé en dur sur un autre ordinateur.",
+      "playerEn": "This table's script points to a file hard-coded from another computer.",
+      "playerEs": "El script de esta tabla apunta a un archivo codificado desde otro ordenador.",
+      "explanationFr": "Certains créateurs de table laissent par erreur un chemin absolu de leur propre PC dans le script (ex. « C:\\Users\\leur-nom\\... »). Ça fonctionne chez eux, mais silencieusement pas ailleurs. Ce contrôle vérifie seulement les chemins absolus dont le fichier est confirmé absent sur cette machine précise — un chemin qui existe ici, même par coïncidence, n'est jamais signalé.",
+      "explanationEn": "Some table creators accidentally leave an absolute path from their own PC in the script (e.g. \"C:\\Users\\their-name\\...\"). It works on their machine and silently doesn't anywhere else. This check only flags absolute paths whose file is confirmed absent on this exact machine — a path that happens to exist here, even by coincidence, is never reported.",
+      "explanationEs": "Algunos creadores de tablas dejan por error una ruta absoluta de su propio PC en el script (por ejemplo, «C:\\Users\\su-nombre\\...»). Funciona en su máquina y en silencio no funciona en ninguna otra. Esta comprobación solo marca rutas absolutas cuyo archivo se confirma ausente en esta máquina exacta — una ruta que por coincidencia exista aquí nunca se reporta.",
+      "verificationFr": "Le script référence au moins un chemin absolu (lettre de lecteur + backslash) pointant vers un fichier, et ce fichier n'existe pas sur cette machine.",
+      "verificationEn": "The script references at least one absolute path (drive letter + backslash) pointing to a file, and that file does not exist on this machine.",
+      "verificationEs": "El script hace referencia a al menos una ruta absoluta (letra de unidad + barra invertida) que apunta a un archivo, y ese archivo no existe en esta máquina."
+    },
+    {
+      "code": "SHARED_SCRIPT_LOCAL_COPY",
+      "playerFr": "Une copie locale d'un script partagé a été trouvée directement dans votre dossier Tables.",
+      "playerEn": "A local copy of a shared script was found directly in your Tables folder.",
+      "playerEs": "Se encontró una copia local de un script compartido directamente en su carpeta Tables.",
+      "explanationFr": "core.vbs, controller.vbs, VPMKeys.vbs et nudge.vbs sont normalement partagés par toutes les tables. Visual Pinball charge la première copie qu'il trouve — si l'une d'elles vit directement dans Tables/, elle prend le pas sur la version partagée pour toutes les tables, pas seulement celle avec laquelle elle est arrivée.",
+      "explanationEn": "core.vbs, controller.vbs, VPMKeys.vbs and nudge.vbs are normally shared across every table. Visual Pinball loads whichever copy it finds first — if one of them lives directly in Tables/, it takes priority over the shared version for every table, not just the one it came with.",
+      "explanationEs": "core.vbs, controller.vbs, VPMKeys.vbs y nudge.vbs normalmente se comparten entre todas las tablas. Visual Pinball carga la primera copia que encuentra — si una de ellas vive directamente en Tables/, tiene prioridad sobre la versión compartida para todas las tablas, no solo la que la trajo.",
+      "verificationFr": "Un fichier nommé exactement core.vbs, controller.vbs, VPMKeys.vbs ou nudge.vbs existe directement à la racine du dossier Tables.",
+      "verificationEn": "A file named exactly core.vbs, controller.vbs, VPMKeys.vbs or nudge.vbs exists directly at the root of the Tables folder.",
+      "verificationEs": "Existe un archivo llamado exactamente core.vbs, controller.vbs, VPMKeys.vbs o nudge.vbs directamente en la raíz de la carpeta Tables."
     }
   ],
   "scenarios": [
