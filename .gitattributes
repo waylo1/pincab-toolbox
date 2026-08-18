@@ -1,0 +1,16 @@
+# Force a single, consistent line ending in the repository regardless of which OS commits —
+# this session runs Linux (LF), Maxime builds on Windows (checkouts default to CRLF without this
+# file). Without it, `git status` on Windows shows the entire tree as "modified" after any merge
+# from a Linux-authored bundle (verified 18/08/2026: 74 files, equal insertions/deletions, same
+# content — pure line-ending noise, not real changes). `text=auto` lets Git normalize text files
+# to LF in the repository itself and convert on checkout per the platform's usual convention;
+# binary-ish/generated files are excluded so they are never touched.
+* text=auto
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.bundle binary
