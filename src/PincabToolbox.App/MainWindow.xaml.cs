@@ -354,6 +354,14 @@ public partial class MainWindow : Window
         _settings.Save();
     }
 
+    private void OnbTutorial_Click(object sender, RoutedEventArgs e)
+    {
+        OnboardingOverlay.Visibility = Visibility.Collapsed;
+        _settings.OnboardingSeen = true;
+        _settings.Save();
+        MainTabs.SelectedItem = TabTutorial;
+    }
+
     /// <summary>Persist window bounds, last folder and language on close (best-effort).</summary>
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
@@ -439,6 +447,7 @@ public partial class MainWindow : Window
         TabDiffHeader.Text = Loc.Get("tab.diff");
         TabAboutHeader.Text = Loc.Get("tab.about");
         TabRepairHeader.Text = Loc.Get("tab.repair");
+        TabTutorialHeader.Text = Loc.Get("tab.tutorial");
         LblRoot.Text = Loc.Get("scan.root");
         BtnBrowse.Content = Loc.Get("scan.browse");
         BtnDemo.Content = Loc.Get("scan.demo");
@@ -471,6 +480,19 @@ public partial class MainWindow : Window
         BtnCheckUpdate.Content = Loc.Get("about.checkupdate");
         BtnGotoRepair.Content = Loc.Get("repair.goto");
 
+        TutorialTitle.Text = Loc.Get("tutorial.title");
+        TutorialIntro.Text = Loc.Get("tutorial.intro");
+        Tutorial1Title.Text = Loc.Get("tutorial.step1.title");
+        Tutorial1Body.Text = Loc.Get("tutorial.step1.body");
+        Tutorial2Title.Text = Loc.Get("tutorial.step2.title");
+        Tutorial2Body.Text = Loc.Get("tutorial.step2.body");
+        Tutorial3Title.Text = Loc.Get("tutorial.step3.title");
+        Tutorial3Body.Text = Loc.Get("tutorial.step3.body");
+        Tutorial4Title.Text = Loc.Get("tutorial.step4.title");
+        Tutorial4Body.Text = Loc.Get("tutorial.step4.body");
+        Tutorial5Title.Text = Loc.Get("tutorial.step5.title");
+        Tutorial5Body.Text = Loc.Get("tutorial.step5.body");
+
         // Écran Scanner porté sur la maquette 11/08 — libellés statiques ; les compteurs et
         // contenus dépendants du scan sont repris par RefreshList() en fin de méthode.
         StabCausesHeader.Text = Loc.Get("stab.causes");
@@ -498,6 +520,7 @@ public partial class MainWindow : Window
         TxtRepairLicense.ToolTip = Loc.Get("repair.license.hint");
         BtnRepairVerifyLicense.Content = Loc.Get("repair.license.verify");
         BtnRepairBuildPlan.Content = Loc.Get("repair.plan.build");
+        ChkRepairSelectAll.Content = Loc.Get("repair.selectall");
         BtnRepairApply.Content = Loc.Get("repair.apply.button");
         LblRepairDone.Text = Loc.Get("repair.done.label");
         RepairDoneEmpty.Text = Loc.Get("repair.done.empty");
@@ -511,6 +534,7 @@ public partial class MainWindow : Window
         OnbP2.Text = Loc.Get("onb.p2");
         OnbP3.Text = Loc.Get("onb.p3");
         OnbStart.Content = Loc.Get("onb.start");
+        OnbTutorial.Content = Loc.Get("onb.tutorial");
         if (string.IsNullOrEmpty(LblStatus.Text) || LblStatus.Text == "Prêt." || LblStatus.Text == "Ready.")
             LblStatus.Text = Loc.Get("status.ready");
         if (_report is not null) RefreshList();
@@ -1810,6 +1834,27 @@ public partial class MainWindow : Window
             })
             .ToList();
         ListRepairItems.ItemsSource = null;   // force the ItemsControl to re-bind (rows are mutable POCOs)
+        ListRepairItems.ItemsSource = _repairItemRows;
+
+        // "Tout sélectionner" : visible seulement s'il y a au moins une ligne cochable (sinon rien à
+        // faire avec elle), et toujours redémarrée décochée — un plan neuf ne doit jamais hériter d'un
+        // état "tout coché" d'un plan précédent que l'utilisateur n'a pas revu.
+        ChkRepairSelectAll.Visibility = _repairItemRows.Any(r => r.CanApply) ? Visibility.Visible : Visibility.Collapsed;
+        ChkRepairSelectAll.IsChecked = false;
+    }
+
+    /// <summary>
+    /// Coche/décoche toutes les lignes CanApply=true d'un coup. N'importe jamais IsSelected sur une
+    /// ligne ManualOnly/Locked (CanApply=false) — sa case est déjà désactivée dans le DataTemplate,
+    /// mais on ne dépend pas de ça ici : le filtre est explicite. Même pattern de re-bind forcé que
+    /// RefreshRepairItemsList (RepairItemRow est un POCO mutable, sans INotifyPropertyChanged).
+    /// </summary>
+    private void ChkRepairSelectAll_Click(object sender, RoutedEventArgs e)
+    {
+        var check = ChkRepairSelectAll.IsChecked == true;
+        foreach (var row in _repairItemRows.Where(r => r.CanApply))
+            row.IsSelected = check;
+        ListRepairItems.ItemsSource = null;
         ListRepairItems.ItemsSource = _repairItemRows;
     }
 
