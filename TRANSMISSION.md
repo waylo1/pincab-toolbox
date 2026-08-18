@@ -1,4 +1,32 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 15/08/2026
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 17/08/2026
+
+## 📣 MAJ 17/08 — POTC résolu (install fantôme), pattern ROM_MISSING Orbital Pin identifié, sync GitHub à jour, clé gratuite promise à Joey Mahon
+
+> **Thread POTC de Joey Mahon clôturé** : cause réelle trouvée par Joey lui-même (pas par le
+> scanner), un pilote `PinUpPlayerB2SDriver` périmé référencé depuis un ancien install 2019
+> toujours accroché à son nouvel install. FIELD-LOG mis à jour avec le détail technique complet et
+> sa proposition de feature (détecter des installs pinball résiduels sur le disque), loggée sans
+> être codée.
+>
+> **Nouveau pattern FP probable identifié via deux commentaires publics indépendants** : sur les
+> tables Orbital Pin (Leprechaun King, Stranger Things — Stranger Edition), le nom détecté comme
+> ROM VPinMAME par `ScriptAnalyzer` correspond en fait au nom du dossier PUP-Pack, les deux tables
+> tournant sans le fichier ROM présent. Pas encore vérifié sur un vrai script, mais deux cas
+> indépendants qui convergent sur le même mécanisme, à surveiller pour une éventuelle règle
+> scanner dédiée plus tard.
+>
+> **Session planifiée du plan UI lundi ratée** (conteneur cloud vierge, pas d'accès au dépôt),
+> mais le travail d'arbitrage livré a été récupéré et committé (`knowledge/UX-REDESIGN-PRE-SYNTHESIS-DRAFT.md`).
+> Nouveau prompt Opus préparé pour relancer une vraie phase 1 avec accès au code, à lancer
+> manuellement par Maxime (clone GitHub direct, le dépôt est maintenant à jour).
+>
+> **Dépôt GitHub resynchronisé** : les 36 commits accumulés dans ce sandbox (bloqué en push
+> permanent) ont été poussés depuis le PC de Maxime via bundle, confirmé que le push fonctionne
+> normalement depuis sa machine.
+>
+> **Décision produit Maxime** : offrir une clé gratuite (normalement payante) à Joey Mahon pour la
+> prochaine version, en échange de la poursuite des tests. Geste de remerciement pour les
+> nombreuses heures passées à isoler le bug POTC, pas une politique générale de gratuité.
 
 ## 📣 MAJ 15/08 — post d'annonce EN (forum + FB) rédigé, planning UI de lundi confirmé, suivi testeur Joey Mahon noté
 

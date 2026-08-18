@@ -26,6 +26,89 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-17 (quater) · [commentaire public, VPUniverse] — 3ᵉ occurrence indépendante de B2S_MISSING sur tables PUP-Pack, renforce l'entrée du 07/08
+- code:        `B2S_MISSING`
+- bac:         FP confirmé sur une sous-catégorie précise (déjà tranché le 07/08), pas re-analysé
+- contexte:    Nouveau commentateur (autre que Joey Mahon et l'auteur de l'entrée du 07/08),
+  question directe : « Should there be a warning for missing backglasses for games that have a
+  puppack installed? ». Même plainte, formulée indépendamment, aucun lien visible avec les deux
+  précédentes. A aussi posté une capture d'écran (lien VPUniverse) pour un souci d'install séparé,
+  36 installées, "un peu plus de 160 tables VP+FP" ; capture non lisible depuis cette session (lien
+  `.url` uniquement, pas l'image elle-même), donc pas encore diagnostiqué, redemandé en direct.
+- analyse:     Pas de nouvelle analyse nécessaire, le cas est déjà entièrement tranché techniquement
+  dans l'entrée du 07/08 ci-dessous : une table avec PUP-Pack associé n'a structurellement jamais de
+  `.directb2s`, ce n'est pas une install cassée. Ce qui change ici, c'est le compteur de signal :
+  3ᵉ rapport indépendant du même comportement (07/08 commentaire forum, complétude implicite sur le
+  cas POTC/Joey mi-août, et maintenant celui-ci), sur une amélioration déjà identifiée et toujours
+  pas codée dix jours après le premier signalement.
+- disposition: Répondu honnêtement : confirmé que c'est un comportement connu et documenté, pas un
+  bug de son install, toujours pas de correctif livré, sans donner de date. Aucun code changé.
+  Le signal cumulé (3 rapports indépendants) mérite d'être remonté à Maxime comme candidat sérieux
+  pour la refonte ou un correctif ciblé, pas juste reloggé silencieusement — à traiter en dehors de
+  cette réponse publique.
+
+## 2026-08-17 (ter) · [commentaire public] — suite : dossier unique clarifié, hypothèse forte du commentateur sur Leprechaun King (nom de ROM = nom du PUP-Pack)
+- code:        ROM_MISSING
+- bac:         WORDING (dossier) + FP probable renforcé (pattern Orbital Pin)
+- contexte:    Suite du commentaire précédent. La personne clarifie sa vraie structure, un seul
+  install, pas deux en parallèle : `vPinball\FuturePinball`, `vPinball\PinUPSystem`,
+  `vPinball\VisualPinball`. Mon hypothèse de double-install (calquée sur le cas Joey de la même
+  journée) ne s'appliquait donc pas ici, structure différente. Elle précise aussi que Leprechaun
+  King tourne très bien SANS que la « ROM » ne soit présente, et propose elle-même l'explication :
+  le nom détecté par le scanner ne serait pas une vraie ROM VPinMAME mais le nom du dossier
+  PUP-Pack référencé dans le script. Elle note que Leprechaun King et Stranger Things (Stranger
+  Edition) sont les deux seules tables Orbital Pin qu'elle possède, et que les deux sont
+  concernées.
+- analyse:     Deux choses distinctes. (1) Dossier : la racine à donner au scanner est le
+  sous-dossier `VisualPinball` précisément (celui qui contient directement `Tables` et
+  `VPinMAME`), pas `vPinball` (le parent, qui contient aussi FuturePinball/PinUPSystem, deux
+  émulateurs/frontends différents non liés à VPinMAME). (2) L'hypothèse PUP-Pack est solide et
+  change la lecture du cas Stranger Things SE (entrée du 15/08) : ce n'est plus un cas isolé, ce
+  sont maintenant DEUX tables Orbital Pin indépendantes où le nom détecté comme ROM par
+  `ScriptAnalyzer.AnalyzeRomUsage` correspond exactement au nom du dossier PUP-Pack, et où la
+  table tourne sans le fichier ROM. Ça pointe vers un pattern spécifique aux tables Orbital Pin :
+  le script ouvre bien `VPinMAME.Controller` (donc `UsesController = true`, confirmé par le code
+  du scanner) et lui assigne un `GameName` qui sert au hook DMD/PUP-Pack, sans que le jeu ne
+  dépende réellement du core VPinMAME pour sa logique (table originale scriptée, pas une
+  reproduction pilotée par ROM). Toujours pas vérifié sur le texte réel d'un script Orbital, mais
+  deux rapports indépendants qui convergent exactement sur le même mécanisme, c'est un signal
+  fort, plus fort qu'une simple coïncidence.
+- disposition: Répondu publiquement sur les deux points, dossier `VisualPinball` précis + confirmé
+  que l'hypothèse PUP-Pack est plausible et cohérente avec le cas Stranger Things déjà en cours
+  d'investigation, sans l'affirmer comme certain (toujours pas de script réel lu). Pas de code
+  changé. Si un troisième cas Orbital Pin confirme le même pattern, ou si un script réel est
+  obtenu, ça devient un candidat concret pour une règle scanner dédiée (ex. : ne pas traiter le
+  `GameName` comme ROM requise quand il matche un dossier PUP-Pack existant sur une table qui
+  n'a par ailleurs aucun autre signe de dépendance VPinMAME) — pas encore le cas.
+
+## 2026-08-17 (bis) · [commentaire public] — question sur ROM_MISSING (Leprechaun King + Stranger Things SE) et sur quel dossier scanner
+- code:        ROM_MISSING
+- bac:         WORDING (question légitime, pas un bug rapporté) + recoupe le FP probable déjà noté le 15/08
+- contexte:    Nouveau commentateur (pas Joey), demande pourquoi 'Leprechaun King' (installé par
+  défaut par Popper) et 'Stranger Things - Stranger Edition' sont signalés ROM_MISSING alors que
+  toutes les tables sont directement dans le dossier Tables, sans sous-dossier. Demande aussi
+  explicitement quel dossier pointer comme racine : celui de Visual Pinball ou celui du 'Baller
+  Installer' (vPinball).
+- analyse:     Deux points bien distincts à répondre. (1) Le check ROM ne regarde jamais la
+  structure de sous-dossiers dans Tables, seulement si le script ouvre vraiment
+  VPinMAME.Controller et si le zip exact existe dans VPinMAME\roms de la racine scannée — donc la
+  vraie question posée (quelle racine pointer) est la bonne à traiter en premier. (2) Si la
+  personne a deux installs en parallèle (ancien Visual Pinball + nouveau vPinball du Baller
+  Installer), scanner celui qui n'est pas réellement utilisé par Popper donnera de fausses
+  alertes ROM_MISSING même quand tout est correct côté install actif — schéma identique à la
+  cause racine trouvée chez Joey Mahon le même jour (voir entrée du dessus), mais ici côté ROM
+  plutôt que backglass. Sur les deux tables citées : Leprechaun King a déjà été vu ROM_OK
+  (`leprechaun`) sur une install correcte (rapport Joey du 15/08), donc c'est une vraie ROM
+  requise, pas un FP. Stranger Things - Stranger Edition reste le FP probable déjà documenté
+  (STLE.zip ne semble pas être une vraie ROM VPinMAME publiée, cf. recherche web du 15/08),
+  toujours pas confirmé sur le vrai script.
+- disposition: Répondu publiquement : expliqué le fonctionnement réel du check, conseillé de
+  pointer la racine sur l'install réellement utilisée par Popper (pas les deux), confirmé
+  Leprechaun King comme ROM légitime et signalé Stranger Things SE comme suspect FP en cours
+  d'investigation, sans surpromettre de fix. Aucun changement de code : cette question, plus le
+  cas Joey de la même journée, renforce l'idée d'un futur check "plusieurs installs / mauvaise
+  racine pointée" déjà loggé en FEATURE — toujours pas codé.
+
 ## 2026-08-17 · Messenger — Joey Mahon, cause réelle du backglass/PUP-Pack POTC trouvée : install fantôme d'un ancien setup 2019, pas un bug scanner
 - code:        NOUVEAU (candidat) — aucun code existant ne couvre ce cas
 - bac:         FIX (confirmé par Joey) + FEATURE
