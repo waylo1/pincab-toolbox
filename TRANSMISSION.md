@@ -1,6 +1,63 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 17/08/2026
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 18/08/2026
 
-## 📣 MAJ 17/08 — POTC résolu (install fantôme), pattern ROM_MISSING Orbital Pin identifié, sync GitHub à jour, clé gratuite promise à Joey Mahon
+## 📣 MAJ 18/08 — 4 lots livrés (Scanner, Repair, Rescore, Table Companion teaser), sandbox resynchronisé sur le vrai poste de Maxime, email flipsync.contact ajouté à propos/tutoriel
+
+> **Sandbox resynchronisé.** Le clone de ce sandbox était 10 commits en retard sur le poste réel de
+> Maxime (découvert via une capture d'écran montrant un onglet Tutoriel absent d'ici) et avait un
+> merge local en cours. Contenu réel synchronisé sans y toucher côté Maxime, sauf un incident mineur
+> et corrigé : un `git status` lancé via le pont a laissé un `.git/index.lock` périmé sur sa machine —
+> déplacé (pas supprimé, le pont ne peut pas supprimer) dans `_to_delete/index.lock.stale-from-claude`
+> à la racine du dossier `Pincab suite`, Maxime peut le jeter. Aucune autre commande git n'a plus été
+> lancée sur son dépôt vivant après cet incident. Commit dédié, clairement nommé, séparé des 4 lots.
+>
+> **LOT SCANNER — les 4 derniers détecteurs de l'audit du 05/08, livré, testé.**
+> `GLOBALCONFIG_B2S_MISSING` (Warning, déterministe : B2S installé sans son fichier de config global,
+> silencieux si B2S absent) ; `FONT_FILE_MISSING` (Note, A2 — polices `.ttf` citées dans un script et
+> introuvables sous l'install, **jamais une lecture du registre Windows Fonts**, décision de périmètre
+> documentée dans le code car non vérifiable sans hôte Windows) ; `SCRIPT_HARDCODED_PATH` (Note, A3 —
+> chemins absolus codés en dur confirmés absents sur cette machine, un finding résumé par table) ;
+> `SHARED_SCRIPT_LOCAL_COPY` (Note, A1 — présence de `core.vbs`/`controller.vbs`/`VPMKeys.vbs`/`nudge.vbs`
+> en local, détection seule, aucun correctif). Pattern injected-delegate + tests purs, comme tous les
+> scanners précédents. Textes Loc.cs (FR/ES vouvoiement) + 4 nouvelles entrées `knowledge/pack-2026.08.json`.
+>
+> **LOT REPAIR — le motif d'échec par item remonte enfin jusqu'à l'UI.** `ApplyResult.ItemFailureReasons`
+> (additif, `ItemOutcomes` et les signatures `IRepairEngine.Apply`/`RepairSession.Apply` inchangés) expose
+> ce que le moteur savait déjà en interne (message d'exception du backup, id d'action inconnue,
+> `ExecutionResult.Error` de l'action) — jusqu'ici jeté avant d'atteindre l'écran. `BtnRepairApply_Click`
+> l'affiche maintenant, une ligne par item échoué. Si le rollback réussit après l'échec, le motif affiché
+> reste la cause d'origine, jamais un message de rollback (règle 3). 7 nouveaux tests, 156 → 162, aucune
+> des 8 assertions existantes sur `ItemOutcomes` touchée.
+>
+> **LOT RESCORE — bouton « Revoir mon score ».** Après un Apply réussi ou partiellement réussi (jamais en
+> simulation forcée), un bouton relance le MÊME scan (même dossier, même profil — `BtnScan_Click` a été
+> extrait en `RunScanAsync` pour pouvoir être ré-attendu, aucune copie divergente) et affiche
+> ancien → nouveau score honnêtement, y compris si le score n'a pas progressé. Aucun delta inventé.
+>
+> **LOT TABLE COMPANION TEASER — opt-in discret.** Sur `ALTCOLOR_INCOMPLETE`/`ALTSOUND_SAMPLE_MISSING`
+> uniquement, le panneau de détail propose d'être prévenu au lancement d'un futur outil (texte honnête,
+> « pas encore sorti », jamais survendu). Zéro appel réseau (ADR-002) : un `mailto:` vers
+> `flipsync.contact@gmail.com`, ouvert par le client mail de l'utilisateur, rien d'automatique.
+>
+> **Ajout demandé en cours de session** : l'adresse `flipsync.contact@gmail.com` ajoutée dans la section
+> « À propos » et dans le tutoriel section 5 « Exportez ou demandez de l'aide » (Loc.cs, FR/EN/ES).
+>
+> **Livraison.** 4 commits séparés, chacun revert-able seul (`561087a` scanner, `b94d175` repair,
+> `767b7d6` rescore, `506ce23` teaser), plus le commit de sync (`6516a0b`). Core (540/540) et Repair
+> (162/162) verts en Debug **et** Release. XML bien formé + 0 `CS1xxx` + crosscheck x:Name/gestionnaires
+> vérifiés après chaque lot touchant l'App (baseline 14 orphelins inchangée). Bundle `git bundle`
+> livré via `SendUserFile` + déposé sur le poste de Maxime, instructions PowerShell exactes fournies
+> (fetch + merge + build) — **à faire AVANT tout : conclure ou abandonner le merge local déjà en cours**,
+> découvert pendant la resynchronisation, sinon `git fetch`/`merge` du bundle sera refusé.
+>
+> **Revue CTO + Produit (clôture) — voir le message de session pour le détail complet.** Rien de bloquant
+> identifié sur les 4 lots. Deux points de vigilance à connaître : (1) `FONT_FILE_MISSING` ne vérifie que
+> la présence sous l'install scannée, pas le registre Windows Fonts — un faux négatif est possible pour
+> une police installée globalement mais absente du dossier ; limite documentée dans le code, pas un bug.
+> (2) Le bouton Rescore relit `TxtRoot`/`_demoRoot` au moment du clic, pas au moment de l'Apply — si
+> quelqu'un changeait le champ dossier entre les deux (flux normal très improbable), la comparaison
+> porterait sur deux installs différents. Amélioration à faible coût identifiée mais **non codée** (feu
+> vert à demander à Maxime avant de la faire) : capturer explicitement root+profil au moment de l'Apply
+> plutôt que de relire les champs UI au moment du clic Rescore.
 
 > **Thread POTC de Joey Mahon clôturé** : cause réelle trouvée par Joey lui-même (pas par le
 > scanner), un pilote `PinUpPlayerB2SDriver` périmé référencé depuis un ancien install 2019
