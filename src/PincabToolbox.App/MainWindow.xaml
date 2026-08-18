@@ -1077,6 +1077,68 @@
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
+            <!-- ============ TUTORIEL ============
+                 Demandé oralement par Maxime, jamais documenté ailleurs dans le repo avant ce lot.
+                 Cinq étapes fixes (pas de contenu dépendant d'un scan) : Scanner → lire les résultats
+                 → causes racines → Repair → exporter/partager. L'étape Repair ne cite QUE les 4 actions
+                 réellement câblées via repairRules dans knowledge/pack-2026.08.json (unblock_file,
+                 restore_rom_archive, kill_zombie_pinup_display, quarantine_orphaned_media) — ne pas
+                 en ajouter d'autres ici sans les avoir d'abord câblées côté Repair. -->
+            <TabItem x:Name="TabTutorial">
+                <TabItem.Header><TextBlock x:Name="TabTutorialHeader" Text="Tutorial" FontSize="14"/></TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="24" MaxWidth="820" HorizontalAlignment="Left">
+                        <TextBlock x:Name="TutorialTitle" FontSize="26" FontWeight="Black"/>
+                        <TextBlock x:Name="TutorialIntro" TextWrapping="Wrap" FontSize="14" LineHeight="21"
+                                   Foreground="{StaticResource TextDim}" Margin="0,6,0,20"/>
+
+                        <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Accent}" BorderThickness="1"
+                                CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock x:Name="Tutorial1Title" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Accent}"/>
+                                <TextBlock x:Name="Tutorial1Body" TextWrapping="Wrap" FontSize="13.5" LineHeight="20"
+                                           Foreground="{StaticResource Text}" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Accent}" BorderThickness="1"
+                                CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock x:Name="Tutorial2Title" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Accent}"/>
+                                <TextBlock x:Name="Tutorial2Body" TextWrapping="Wrap" FontSize="13.5" LineHeight="20"
+                                           Foreground="{StaticResource Text}" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Accent}" BorderThickness="1"
+                                CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock x:Name="Tutorial3Title" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Accent}"/>
+                                <TextBlock x:Name="Tutorial3Body" TextWrapping="Wrap" FontSize="13.5" LineHeight="20"
+                                           Foreground="{StaticResource Text}" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Accent}" BorderThickness="1"
+                                CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock x:Name="Tutorial4Title" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Accent}"/>
+                                <TextBlock x:Name="Tutorial4Body" TextWrapping="Wrap" FontSize="13.5" LineHeight="20"
+                                           Foreground="{StaticResource Text}" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Accent}" BorderThickness="1"
+                                CornerRadius="8" Padding="16,14" Margin="0,0,0,4">
+                            <StackPanel>
+                                <TextBlock x:Name="Tutorial5Title" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Accent}"/>
+                                <TextBlock x:Name="Tutorial5Body" TextWrapping="Wrap" FontSize="13.5" LineHeight="20"
+                                           Foreground="{StaticResource Text}" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
             <!-- ============ ABOUT ============ -->
             <TabItem x:Name="TabAbout">
                 <TabItem.Header><TextBlock x:Name="TabAboutHeader" Text="About" FontSize="14"/></TabItem.Header>

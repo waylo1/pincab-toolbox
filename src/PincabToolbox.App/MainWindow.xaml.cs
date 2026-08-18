@@ -439,6 +439,7 @@ public partial class MainWindow : Window
         TabDiffHeader.Text = Loc.Get("tab.diff");
         TabAboutHeader.Text = Loc.Get("tab.about");
         TabRepairHeader.Text = Loc.Get("tab.repair");
+        TabTutorialHeader.Text = Loc.Get("tab.tutorial");
         LblRoot.Text = Loc.Get("scan.root");
         BtnBrowse.Content = Loc.Get("scan.browse");
         BtnDemo.Content = Loc.Get("scan.demo");
@@ -470,6 +471,19 @@ public partial class MainWindow : Window
         AboutVersion.Text = Loc.Get("about.version") + " " + CurrentVersion;
         BtnCheckUpdate.Content = Loc.Get("about.checkupdate");
         BtnGotoRepair.Content = Loc.Get("repair.goto");
+
+        TutorialTitle.Text = Loc.Get("tutorial.title");
+        TutorialIntro.Text = Loc.Get("tutorial.intro");
+        Tutorial1Title.Text = Loc.Get("tutorial.step1.title");
+        Tutorial1Body.Text = Loc.Get("tutorial.step1.body");
+        Tutorial2Title.Text = Loc.Get("tutorial.step2.title");
+        Tutorial2Body.Text = Loc.Get("tutorial.step2.body");
+        Tutorial3Title.Text = Loc.Get("tutorial.step3.title");
+        Tutorial3Body.Text = Loc.Get("tutorial.step3.body");
+        Tutorial4Title.Text = Loc.Get("tutorial.step4.title");
+        Tutorial4Body.Text = Loc.Get("tutorial.step4.body");
+        Tutorial5Title.Text = Loc.Get("tutorial.step5.title");
+        Tutorial5Body.Text = Loc.Get("tutorial.step5.body");
 
         // Écran Scanner porté sur la maquette 11/08 — libellés statiques ; les compteurs et
         // contenus dépendants du scan sont repris par RefreshList() en fin de méthode.
