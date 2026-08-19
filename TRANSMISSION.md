@@ -1,5 +1,59 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 19/08/2026
 
+## 📣 MAJ 19/08 (session landing + release + clés) — audit landing, récap testeurs, LicenseTool corrigé
+
+> **Session exécutant `docs/PROMPT-session-landing-release-cles-2026-08-19.md` en entier.** Trois
+> missions indépendantes, lues d'abord dans l'ordre imposé (`TRANSMISSION.md`, tous les `docs/adr/`,
+> `docs/legal/CGU-CGV-mentions-legales.md`, `knowledge/FIELD-LOG.md`), puis exécutées. La landing et
+> `flipsync-site/legal/` ne sont pas dans git : récupérées via le pont sur la machine de Maxime
+> (`C:\Users\User\Desktop\Pincab suite\flipsync-site\`), jamais copiées dans le dépôt.
+>
+> **Mission 1 — audit de cohérence landing → `docs/AUDIT-landing-2026-08-19.md`.** Deux corrections
+> proposées (rien modifié directement, Maxime tranche) : la puce "System decimal separator that
+> breaks table physics" est survendue par rapport à la doctrine interne `Severity.Note` (`Knowledge.cs`
+> dit "can misbehave", pas "breaks") ; et l'encart anglophone de `cgu.html` dit encore "12 months of
+> updates included", ce qui contredit à la fois `ADR-013` et le texte français §4 de la même page —
+> jamais mis à jour lors de l'alignement du 19/08 (soir). Le reste (prix absent de la landing, liens,
+> mentions légales, portée réelle du Repair "closed beta") est cohérent avec le code.
+>
+> **Mission 2 — récap des nouveautés → `docs/RELEASE-NOTES-depuis-v0.1.1-alpha.md`.** 102 commits
+> triés entre visible-testeur (rebranding vert, vouvoiement, espagnol, nouveaux checks Scanner, motifs
+> d'échec Repair visibles, bouton Rescore, export PDF, écran de démarrage retiré puis rétabli
+> autrement) et invisible-interne (refactor `Diagnostics`, CI, housekeeping de merges/bundles, entrées
+> `FIELD-LOG` pures). Deux niveaux de lecture dans le même fichier, comme demandé.
+>
+> ⚠️ **Point non résolu, à vérifier par Maxime directement sur github.com.** Le lien de téléchargement
+> de la landing (`releases/latest/download/PincabToolbox.zip`) redirige, testé depuis ce sandbox, vers
+> l'asset de **`v0.1.2-alpha`** (07/08) — pas `v0.1.1-alpha` (30/07) que ce prompt de session tenait
+> pour seule release publiée. Impossible de confirmer par une deuxième méthode : les pages
+> `github.com/waylo1/pincab-toolbox/releases` et l'API GitHub renvoient "GitHub access to this
+> repository is not enabled for this session" depuis ce sandbox. Je ne tranche pas sur une info
+> vérifiée une seule fois et par une seule méthode — à vérifier en 5 secondes sur GitHub. Si
+> `v0.1.2-alpha` est bien "Latest", ce n'est pas un bug (le lien reste correct, il suit toujours la
+> dernière release), mais ça veut dire que d'éventuels testeurs qui téléchargent aujourd'hui reçoivent
+> déjà `v0.1.2-alpha`, pas `v0.1.1-alpha`.
+>
+> **Mission 3 — clés de licence testeurs.** Les clés ne sont **pas générées ici** (outil offline,
+> touche la clé privée, machine de Maxime uniquement) — seules les commandes PowerShell exactes sont
+> livrées (voir le message de session). Deux incohérences de `tools/PincabToolbox.LicenseTool`
+> traitées différemment, comme demandé : (a) le défaut `--updates-months 12` est un reliquat d'`ADR-002`
+> périmé par `ADR-013` (mises à jour sans limite de durée) — **non corrigé unilatéralement**, les deux
+> options restent ouvertes dans le `README.md` de l'outil, avec `--updates-months 1200` comme
+> contournement pratique en attendant la décision de Maxime ; (b) le message affiché par `issue`
+> mentionnant Lemon Squeezy — **corrigé directement**, dans `Program.cs` et le `README.md`, référence
+> Stripe/`ADR-013` désormais. Build de l'outil vérifié propre (0 warning, 0 erreur). Rappel une seule
+> fois, sans insister : `license-private-key.pem` n'a toujours pas de sauvegarde.
+>
+> **Baseline de tests reconfirmée dans cette session** (le sandbox n'avait pas `dotnet` installé au
+> démarrage de cette session, installé via `apt-get install dotnet-sdk-8.0`, puis fixtures régénérées
+> via `tests/fixtures/make_fixtures.py`, absentes par défaut dans un clone neuf) : **540/540** Core,
+> **163/163** Repair. Les deux modifications de `PincabToolbox.LicenseTool` ne touchent aucun code
+> testé par ces deux suites — risque nul, vérifié quand même.
+>
+> **Non touché, comme demandé** : aucun tunnel d'achat construit, aucune communication publique
+> publiée, `license-private-key.pem` jamais lu ni copié. `git push` refusé depuis ce sandbox (403,
+> dépôt hors périmètre autorisé) — livraison par fichiers + commandes git à lancer par Maxime lui-même.
+
 ## 📣 MAJ 19/08 (soir) — ADR-013 : prix unique 3,99 + Stripe en direct · logo de démarrage rétabli sans `<SplashScreen>`
 
 > **`ADR-013` supersede `ADR-002` (prix) et `ADR-009` (intégralement).** Décisions de Maxime,
