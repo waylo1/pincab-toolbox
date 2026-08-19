@@ -104,7 +104,7 @@ public static class Program
         Console.WriteLine($"Licence émise pour {payload.Email}");
         Console.WriteLine($"  Mises à jour incluses jusqu'au : {payload.UpdatesUntilUtc:yyyy-MM-dd}");
         Console.WriteLine();
-        Console.WriteLine("Clé de licence (à envoyer au client, ex. via Lemon Squeezy) :");
+        Console.WriteLine("Clé de licence (à envoyer au client après paiement Stripe, ADR-013) :");
         Console.WriteLine();
         Console.WriteLine(licenseKey);
         return 0;

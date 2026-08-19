@@ -1,8 +1,9 @@
 # Outil de licence — OFFLINE UNIQUEMENT
 
-Génère et signe les licences Repair (ADR-002 : perpétuelle, vérification 100 % locale, aucun appel
-réseau). C'est la SEULE partie du projet qui touche la clé privée — elle ne voyage jamais dans
-l'App elle-même.
+Génère et signe les licences Repair (ADR-002 : vérification 100 % locale, aucun appel réseau ;
+ADR-013 : achat unique à prix fixe, licence perpétuelle, mises à jour incluses **sans limite de
+durée**, encaissement Stripe en direct). C'est la SEULE partie du projet qui touche la clé privée —
+elle ne voyage jamais dans l'App elle-même.
 
 ## Une seule fois : générer ta paire de clés
 
@@ -25,11 +26,18 @@ dotnet run --project tools/PincabToolbox.LicenseTool -- issue \
   --key ~/pincab-license-key.pem --email client@exemple.com --updates-months 12
 ```
 
-Affiche la clé de licence à copier-coller dans l'email/la livraison au client (ex. déclenché
-automatiquement par un webhook Lemon Squeezy plus tard — pour l'instant, à la main).
+Affiche la clé de licence à copier-coller dans l'email envoyé au client après son paiement Stripe
+(ADR-013 — encaissement en direct, pas de Merchant of Record ; pour l'instant l'envoi reste manuel,
+aucun webhook n'est câblé).
 
-`--updates-months` ne fixe QUE la fenêtre de mise à jour du Knowledge Pack (ADR-002) — la licence
-elle-même ne périme jamais, Repair reste débloqué indéfiniment même après cette date.
+⚠️ **`--updates-months` (défaut 12) est un reliquat d'ADR-002, périmé depuis ADR-013 (19/08/2026) :
+la licence Repair n'a plus de fenêtre de mise à jour bornée, les mises à jour sont incluses **sans
+limite de durée** et il n'y a plus de renouvellement à vendre.** Le paramètre lui-même n'a pas été
+retiré ici — le corriger (nouveau défaut, ou suppression) est une décision produit à trancher par
+Maxime, pas faite unilatéralement dans ce commit. En attendant cette décision, passer une valeur
+très large (ex. `--updates-months 1200`, soit 100 ans) obtient le même résultat pratique pour les
+clés émises dès maintenant : la licence elle-même n'a jamais expiré, seule la fenêtre de mise à jour
+l'était.
 
 ## Vérifier une clé sans lancer l'App
 
