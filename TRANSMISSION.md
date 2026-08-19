@@ -1,5 +1,41 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 19/08/2026
 
+## 📣 MAJ 19/08 (suite immédiate) — corrections landing appliquées, `v0.1.2-alpha` confirmée, décision clés
+
+> **Quatre décisions/actions de Maxime, traitées dans la foulée de l'entrée précédente.**
+>
+> **1. `v0.1.2-alpha` confirmée comme release GitHub "Latest" réelle.** Le point resté ouvert dans
+> `docs/AUDIT-landing-2026-08-19.md` et `docs/RELEASE-NOTES-depuis-v0.1.1-alpha.md` (impossible à
+> vérifier deux fois depuis ce sandbox) est confirmé par Maxime directement. Les deux documents ont
+> été corrigés pour ne plus le présenter comme une hypothèse.
+>
+> **2. Les deux corrections de la landing proposées dans l'audit ont été appliquées**, sur demande
+> explicite ("corrige ce qui doit etre corrigé"). Fichiers réécrits directement sur la machine de
+> Maxime via le pont (`flipsync-site/landing/index.html` et `cgu.html`, hors git) : la puce "decimal
+> separator" assouplie dans les 3 langues, l'encart anglophone de `cgu.html` aligné sur ADR-013 et sur
+> le texte français de la même page. L'amélioration à faible coût proposée en clôture de session
+> (section "What's new" datée du 18/08, restée figée) a aussi été faite : date passée au 19/08, carte
+> ajoutée pour la réparation COM sans droits admin.
+>
+> **3. `--updates-months` : décidé, 100 ans.** Maxime tranche l'option laissée ouverte dans le
+> `README.md` de `PincabToolbox.LicenseTool` : le défaut passe de `12` (reliquat ADR-002) à `1200`
+> (100 ans), dans `Program.cs` et documenté dans le `README.md`. Toujours surchargeable avec
+> `--updates-months <n>`. Build revérifié, 0 erreur.
+>
+> **4. `license-private-key.pem` sauvegardée.** Rappel fait en clôture de session précédente, suivi
+> d'effet : copie créée **exclusivement en local sur la machine de Maxime**, via une commande shell
+> exécutée dans le pont device (jamais transitée par le sandbox, jamais lue comme contenu par moi —
+> seule la taille en octets a été comparée avant/après pour confirmer l'intégrité). Chemin :
+> `Pincab suite\_sauvegarde-cle-licence\license-private-key-BACKUP-2026-08-19.pem`, à côté de
+> l'original dans `pincab-toolbox-v0.1.1-alpha-src\pincab-suite\`. Une seule copie suffit pour lever
+> le risque de perte immédiate ; un vrai gestionnaire de mots de passe ou un disque chiffré reste la
+> bonne solution long terme, pas traité ici.
+>
+> **5. Précision sur les clés testeurs.** Les testeurs de cette vague n'ont pas d'email à fournir dans
+> ce flux — ils téléchargeront la nouvelle version depuis la landing (mise à jour à venir par Maxime)
+> et reçoivent leur licence directement. `--email` dans `PincabToolbox.LicenseTool` n'a jamais été
+> qu'une étiquette libre non validée ; le README le précise maintenant explicitement.
+
 ## 📣 MAJ 19/08 (session landing + release + clés) — audit landing, récap testeurs, LicenseTool corrigé
 
 > **Session exécutant `docs/PROMPT-session-landing-release-cles-2026-08-19.md` en entier.** Trois

@@ -4,17 +4,13 @@
 prompt de cette session a été écrit. 102 commits séparent cette release de l'état actuel (`64801e9`,
 19/08/2026 soir).
 
-**⚠️ Point à vérifier toi-même avant de faire confiance à ce chiffre :** en testant le lien de
-téléchargement de la landing depuis ce sandbox, la redirection GitHub réelle pointait vers l'asset de
-`v0.1.2-alpha` (commit `763c2af`, 07/08/2026), ce qui suggère que cette version est peut-être déjà
-publiée comme release "Latest" sur GitHub — ce que le prompt de session ne mentionnait pas comme tel
-(il ne mentionnait qu'un tag local non publié). Je n'ai pas pu confirmer ça par une deuxième méthode
-fiable : les pages `github.com/waylo1/pincab-toolbox/releases` et l'API GitHub renvoient "GitHub
-access to this repository is not enabled for this session" depuis ce sandbox. Je ne tranche pas sur
-une info que je ne peux vérifier qu'une fois — regarde toi-même `github.com/waylo1/pincab-toolbox/releases`.
-Ça ne change rien au contenu ci-dessous (qui couvre tout depuis `v0.1.1-alpha`, donc `v0.1.2-alpha` si
-elle existe est incluse dedans) — ça change seulement quelle release GitHub est réellement "la
-dernière publiée" au sens strict.
+**✅ Confirmé par toi (19/08) : `v0.1.2-alpha` (commit `763c2af`, 07/08/2026) est bien la release
+GitHub "Latest" réelle**, pas `v0.1.1-alpha` comme le prompt de session le supposait. Je l'avais
+repéré en testant le lien de téléchargement de la landing (la redirection GitHub pointait vers
+l'asset de `v0.1.2-alpha`) mais je ne pouvais pas le confirmer par une deuxième méthode depuis ce
+sandbox, donc je l'avais signalé au lieu de trancher. Ça ne change rien au contenu ci-dessous, qui
+couvre tout depuis `v0.1.1-alpha` et inclut donc déjà tout ce qu'apporte `v0.1.2-alpha` — ça précise
+seulement quelle release GitHub est réellement "la dernière publiée" au sens strict.
 
 ---
 

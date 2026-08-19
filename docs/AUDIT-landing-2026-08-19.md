@@ -9,11 +9,16 @@ rapport à ce que le logiciel fait réellement aujourd'hui, avant de la montrer 
 
 Je ne modifie rien sur la landing. Ce document propose, tu trancheras.
 
+> ✅ **MAJ 19/08, plus tard le même jour — les deux corrections ci-dessous ont été appliquées, sur
+> ta confirmation.** Fichiers réécrits directement sur ta machine (`flipsync-site/landing/index.html`
+> et `cgu.html`), pas dans git (ils n'y sont pas). Le reste de cette section garde le détail du
+> "pourquoi", pour mémoire.
+
 ---
 
-## 1. Ce qui doit être corrigé — survendu / incohérent
+## 1. Ce qui a été corrigé — survendu / incohérent
 
-### 1.1 SURVENDU — « System decimal separator that breaks table physics »
+### 1.1 SURVENDU (corrigé) — « System decimal separator that breaks table physics »
 
 - **Où** : section « What the free scanner checks » → carte « System & processes », dernière puce.
 - **Promesse landing (EN)** : *"System decimal separator that breaks table physics"* (FR : *"Séparateur
@@ -26,13 +31,12 @@ Je ne modifie rien sur la landing. Ce document propose, tu trancheras.
   ("peut perturber"). Sur un point technique que peu de testeurs sauront vérifier eux-mêmes, l'écart
   de certitude est le genre de détail qui, découvert après coup, entame la crédibilité — exactement le
   scénario du 30/07.
-- **Remplacement proposé** :
+- **Texte appliqué** :
   - EN : *"System decimal separator that can affect physics on some tables"*
   - FR : *"Séparateur décimal système qui peut perturber la physique de certaines tables"*
-  - ES (à adapter dans le même esprit, non rédigé ici faute de relecture native) : ton à assouplir de
-    la même façon.
+  - ES : *"Separador decimal del sistema que puede afectar a la física de algunas mesas"*
 
-### 1.2 INCOHÉRENCE — durée des mises à jour, `cgu.html`, encart anglophone
+### 1.2 INCOHÉRENCE (corrigée) — durée des mises à jour, `cgu.html`, encart anglophone
 
 - **Où** : `flipsync-site/legal/cgu.html`, encart résumé "English speakers" (~lignes 83-93).
 - **Texte actuel (EN)** : *"The paid Repair module is currently in closed beta (not on general sale) —
@@ -47,9 +51,9 @@ Je ne modifie rien sur la landing. Ce document propose, tu trancheras.
   contredit elle-même selon la langue lue est un problème de crédibilité et potentiellement un
   problème juridique (le CGU/CGV fait foi, il ne peut pas dire deux choses différentes). L'encart
   anglais n'a manifestement pas été mis à jour quand le reste de la page a été aligné sur ADR-013.
-- **Remplacement proposé (EN)** : *"The paid Repair module is currently in closed beta (not on general
-  sale) — when it opens, it's a one-time purchase (perpetual license) with updates included **with no
-  time limit**, not a subscription to use the software."*
+- **Texte appliqué (EN)** : *"The paid Repair module is currently in closed beta (not on general
+  sale) — when it opens, it's a one-time purchase (perpetual license) with updates included with no
+  time limit, not a subscription to use the software, and no renewal to ever pay."*
 
 *(Aucune autre incohérence de ce type détectée dans `cgu.html` sur la portion lue — le reste de
 l'encart anglophone et le §6 médiateur sont cohérents avec le texte français correspondant.)*
@@ -75,18 +79,13 @@ l'encart anglophone et le §6 médiateur sont cohérents avec le texte français
 | Contact | `mailto:flipsync.contact@gmail.com` | Adresse cohérente avec le reste du projet — je ne peux pas vérifier depuis le sandbox que la boîte est active, à confirmer de ton côté. |
 | Téléchargement (x2, hero + CTA finale) | `https://github.com/waylo1/pincab-toolbox/releases/latest/download/PincabToolbox.zip` | Techniquement correct : ce format d'URL suit toujours la release marquée « Latest » sur GitHub, pas une version figée. Pas un défaut de la landing. |
 
-**⚠️ Point à vérifier toi-même, je ne suis pas sûr à 100 % :** en testant ce lien de téléchargement
-depuis le sandbox, la redirection HTTP réelle de GitHub pointait vers l'asset de **`v0.1.2-alpha`**
-(07/08), pas `v0.1.1-alpha` (30/07) — ce qui suggérerait que `v0.1.2-alpha` est en fait déjà publiée
-comme release GitHub "Latest", contrairement à ce que ce prompt de session supposait. Mais l'accès aux
-pages `github.com/waylo1/pincab-toolbox/releases` et à l'API GitHub est bloqué depuis ce sandbox
-("GitHub access to this repository is not enabled for this session"), donc je n'ai pas pu confirmer
-ça par une deuxième méthode indépendante et fiable. Je ne veux pas trancher sur une info que je ne
-peux pas vérifier deux fois : ouvre `github.com/waylo1/pincab-toolbox/releases` toi-même, ça prend
-5 secondes. Si `v0.1.2-alpha` est bien "Latest", ce n'est pas un bug de la landing (le lien
-fonctionne, il pointe juste vers une version plus récente que celle attendue) — mais ça change la
-base de comparaison de `docs/RELEASE-NOTES-depuis-v0.1.1-alpha.md` (voir ce document, section
-correspondante).
+**✅ Confirmé par toi (19/08) : `v0.1.2-alpha` est bien la release GitHub "Latest".** En testant ce
+lien de téléchargement depuis le sandbox, la redirection HTTP réelle de GitHub pointait vers l'asset
+de `v0.1.2-alpha` (07/08), pas `v0.1.1-alpha` (30/07) — je ne pouvais pas le confirmer par une
+deuxième méthode depuis ce sandbox (accès GitHub restreint sur ce dépôt), donc je l'avais signalé
+sans trancher. Ce n'est pas un bug de la landing : le lien suit automatiquement la release "Latest",
+il pointait déjà vers la bonne version. Voir `docs/RELEASE-NOTES-depuis-v0.1.1-alpha.md` pour ce que
+ça change dans la base de comparaison des nouveautés.
 
 ### 2.3 Mentions légales (footer landing)
 
@@ -114,20 +113,17 @@ correspondante).
 | "100% Local & read-only" / "0 Telemetry/accounts" | Aucun code de télémétrie trouvé ; les 5 règles inviolables d'ADR-004 ("on vérifie, on ne fournit jamais") s'appliquent. **Nuance à connaître** : le bouton "Check for updates" (`UpdateChecker.cs`, commit du 07/08) est le tout premier appel réseau du projet — mais il est manuel, opt-in, et ne concerne que la vérification de version, pas de la télémétrie sur l'utilisateur. La formulation de la landing ("0 Telemetry") reste juste, elle ne dit pas "0 appel réseau". | Conforme, nuance à connaître |
 | "Closed beta: Repair" — 4 correctifs listés (Unblock file, Restore ROM, Quarantine orphaned media, Kill zombie PinUpDisplay) | `knowledge/pack-2026.08.json` : exactement 4 `actionId` distincts référencés par une règle (`unblock_file`, `restore_rom_archive`, `quarantine_orphaned_media`, `kill_zombie_pinup_display`). `register_com_component` est codé mais n'a aucune règle qui le déclenche (inerte, choix assumé ADR-012) — la landing ne le liste donc pas, c'est cohérent. | Conforme |
 | FAQ (5 questions : VPX 10.8, PinUP Popper, modification de fichiers, droits admin, Future Pinball) | Recoupé avec ADR-004 et le comportement réel (lecture seule, pas de modification hors Repair). | Conforme |
-| "What's new" daté du 18 août (4 nouveaux checks, motifs d'échec Repair visibles, bouton Rescore) | Correspond exactement au lot de livraison du 08/18 (commits `561087a`, `b94d175`, `767b7d6`). | Conforme, mais **daté** : le code a bougé depuis (ADR-013, réparation COM sans admin, écran de démarrage — voir `RELEASE-NOTES-depuis-v0.1.1-alpha.md`). Pas un défaut, juste une section à envisager de mettre à jour avant l'envoi aux testeurs si tu veux qu'elle reflète l'état du 19/08. |
+| "What's new" (4 nouveaux checks, motifs d'échec Repair visibles, bouton Rescore) | Correspond exactement au lot de livraison du 08/18 (commits `561087a`, `b94d175`, `767b7d6`). | Conforme. **Mise à jour appliquée le 19/08** : date passée au 19 août, 4e carte ajoutée pour la réparation COM sans droits admin (commit `bc76baf`), cohérente avec `RELEASE-NOTES-depuis-v0.1.1-alpha.md`. |
 
 ---
 
 ## 4. Verdict global
 
-La landing est **globalement prête pour des testeurs**, sous réserve de deux corrections concrètes
-avant envoi :
-
-1. Assouplir la puce "decimal separator" (survendu, §1.1).
-2. Corriger l'encart anglophone de `cgu.html` sur la durée des mises à jour (incohérence légale
-   interne, §1.2) — celle-ci me semble la plus importante des deux : c'est un document légal qui se
-   contredit selon la langue.
+La landing est **prête pour des testeurs**. Les deux corrections concrètes identifiées ont été
+appliquées le 19/08 (§1.1 puce "decimal separator" assouplie, §1.2 encart anglophone de `cgu.html`
+aligné sur ADR-013 et sur le texte français), et la section "What's new" a été mise à jour pour
+inclure la réparation COM sans droits admin.
 
 Le reste (prix absent, liens, mentions légales, FAQ, périmètre Repair) est cohérent avec le code réel.
-Le seul point que je ne peux pas trancher moi-même est la release GitHub réellement "Latest" (§2.2) —
-à vérifier par toi directement sur github.com.
+Le point qui restait à trancher par toi (§2.2, release GitHub réellement "Latest") est confirmé :
+`v0.1.2-alpha`.
