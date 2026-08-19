@@ -1,7 +1,14 @@
 # ADR-009 — Plateforme de paiement : Lemon Squeezy (Merchant of Record)
 
-**Statut** : ✅ **Accepté** · **Date** : 27/07/2026 · **Décideur** : Maxime Chauvin
+**Statut** : ❌ **Superseded par `ADR-013` (19/08/2026)** · **Date** : 27/07/2026 · **Décideur** : Maxime Chauvin
 **Dé-parque** : `PROJECT-BRAIN §5` et `docs/PARKING-plateformes-paiement.md` (la décision y était volontairement reportée).
+
+> ❌ **Décision abandonnée le 19/08/2026.** L'encaissement se fait par **Stripe en direct**, pas par
+> un Merchant of Record — voir `ADR-013`. Conséquence assumée : MC Automation redevient responsable
+> de la TVA du pays de l'acheteur au-delà du seuil UE de 10 000 €, ce que le MoR prenait en charge.
+> Le raisonnement fiscal développé ci-dessous **reste exact** et explique précisément ce qui est
+> abandonné — il est conservé à ce titre, ainsi que Paddle comme plan B si le sujet TVA devenait
+> un jour trop lourd à porter seul.
 
 ---
 

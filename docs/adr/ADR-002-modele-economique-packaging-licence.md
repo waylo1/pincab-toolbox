@@ -1,7 +1,13 @@
 # ADR-002 — Modèle économique, packaging et licence
 
-**Statut** : Accepté · **Date** : 25/07/2026 · **Décideur** : Maxime Chauvin
+**Statut** : ⚠️ **Partiellement superseded par `ADR-013` (19/08/2026)** · **Date** : 25/07/2026 · **Décideur** : Maxime Chauvin
 **Remplace** : `../_archive/strategie-prix.md` (archivé)
+
+> ⚠️ **Le prix et la durée de licence décrits ici ne sont plus en vigueur.** `ADR-013` fixe un prix
+> unique de **3,99** (même nombre en EUR/USD/GBP), achat unique, licence perpétuelle, mises à jour
+> incluses sans limite de durée. Le renouvellement optionnel à 9 €/an décrit plus bas est
+> **supprimé**. Tout le reste de cet ADR (Scanner gratuit à vie, vérification de licence 100 %
+> locale, zéro télémétrie, Knowledge Pack) **reste en vigueur**.
 
 ---
 

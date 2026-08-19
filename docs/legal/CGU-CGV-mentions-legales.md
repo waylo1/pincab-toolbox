@@ -66,8 +66,8 @@ Le code source de l'application et ses releases sont distribués via :
 - **GitHub Inc.**, 88 Colin P Kelly Jr St, San Francisco, CA 94107, États-Unis —
   [github.com](https://github.com)
 
-Les paiements pour la licence Repair sont traités par un prestataire de paiement tiers — voir §4.4
-et §5.
+Les paiements pour la licence Repair sont traités par **Stripe**, prestataire de services de paiement
+(`ADR-013`) — voir §4.4 et §5.
 
 ## 3. Conditions générales d'utilisation (CGU) — le site et le Scanner gratuit
 
@@ -131,21 +131,19 @@ professionnel, à distance depuis le site ou tout canal de vente indiqué par l'
 > large. Les présentes CGV s'appliquent dès la première vente réelle et doivent être ajustées si les
 > conditions commerciales (prix, durée de licence) changent au moment du lancement public.
 
-### 4.2 Description du produit — licence perpétuelle, mises à jour renouvelables
+### 4.2 Description du produit — licence perpétuelle, mises à jour incluses sans limite de durée
 
-Conformément à `docs/adr/ADR-002-modele-economique-packaging-licence.md` (décision de Maxime,
-25/07/2026), une licence Repair est un **achat perpétuel**, pas un abonnement à l'usage du logiciel :
+Conformément à `docs/adr/ADR-013-prix-unique-3-99-et-encaissement-stripe.md` (décision de Maxime,
+19/08/2026, qui supersede `ADR-002` sur ce point), une licence Repair est un **achat unique et
+perpétuel**, pas un abonnement :
 - l'achat déverrouille durablement les actions de réparation automatiques du module Repair, dans
   l'exécutable unique qui contient aussi le Scanner gratuit ;
-- il inclut **12 mois de mises à jour** du module Repair et de sa base de connaissance (Knowledge
-  Pack : nouveaux correctifs, compatibilité avec les nouvelles versions de VPX) ;
-- passé ces 12 mois, **sans renouvellement**, Repair continue de fonctionner indéfiniment avec le
-  dernier Knowledge Pack reçu — il cesse seulement d'en recevoir de nouveaux. Aucune fonctionnalité
-  déjà acquise n'est reprise ou bridée.
-- un **renouvellement optionnel** (§4.3) prolonge l'accès aux mises à jour de 12 mois supplémentaires.
+- il inclut les mises à jour du module Repair et de sa base de connaissance (Knowledge Pack :
+  nouveaux correctifs, compatibilité avec les nouvelles versions de VPX) **sans limite de durée** ;
+- il n'y a **aucun renouvellement à payer**, ni annuel ni autre. Rien ne s'éteint, rien ne se bride,
+  aucune fonctionnalité acquise n'est reprise.
 
-Chaque action de réparation, qu'elle soit effectuée sous licence active ou sur les mises à jour
-acquises précédemment :
+Chaque action de réparation :
 - effectue une sauvegarde avant toute modification (quand la nature de l'action le permet — certaines
   actions, par nature, ne sont pas réversibles ; l'application l'indique explicitement avant
   confirmation) ;
@@ -157,37 +155,53 @@ acquises précédemment :
 
 ### 4.3 Prix
 
-Grille au 19/08/2026 (`ADR-002`) :
+Prix unique au 19/08/2026 (`ADR-013`) — achat unique, aucun abonnement, aucun renouvellement :
 
-| Palier | Prix | Contenu |
-|---|---|---|
-| Repair — tarif early bird | 12 € | Licence perpétuelle + 12 mois de mises à jour |
-| Repair — tarif normal | 19 € | Licence perpétuelle + 12 mois de mises à jour |
-| Renouvellement (optionnel) | 9 € / an | Prolonge l'accès aux mises à jour de 12 mois |
+| Devise | Prix |
+|---|---|
+| Euro | 3,99 € |
+| Dollar américain | 3.99 $ |
+| Livre sterling | 3.99 £ |
 
-Prix en euros, TVA non applicable (article 293 B du CGI — voir §1). Le prix définitif est celui
+**Le prix est le même nombre quelle que soit la devise** ; il ne s'agit pas d'une conversion au taux
+du jour. La devise appliquée est celle proposée à l'acheteur au moment de la commande.
+
+TVA non applicable en France, article 293 B du CGI (voir §1 et §4.4bis). Le prix définitif est celui
 indiqué sur la page de paiement au moment de la transaction ; MC Automation se réserve le droit de
-faire évoluer cette grille pour les achats futurs, sans effet rétroactif sur une licence déjà vendue.
+faire évoluer ce prix pour les achats futurs, sans effet rétroactif sur une licence déjà vendue.
 
-> **Rappel `ADR-002` :** le renouvellement n'est justifié que par un Knowledge Pack qui s'enrichit
-> réellement. Si le pack cesse d'évoluer, le renouvellement doit cesser d'être vendu — ce n'est pas
-> une simple clause de style.
+> **Rappel `ADR-013` :** les mises à jour étant incluses à vie, la valeur promise repose entièrement
+> sur un Knowledge Pack qui continue de s'enrichir. Si le pack cesse d'évoluer, c'est la promesse de
+> vente elle-même qui doit être revue — ce n'est pas une simple clause de style.
 
 ### 4.4 Paiement et livraison
 
-> **Plateforme de paiement — décision encore ouverte au 19/08/2026 (`ADR-002`).** Stripe sert
-> aujourd'hui à émettre les premières clés de test/remerciement (génération manuelle, hors
-> automatisation). `ADR-002` recommande de reconsidérer Lemon Squeezy pour la vente publique : en
-> tant que Merchant of Record, il gère la TVA UE sur les renouvellements récurrents à la place de
-> MC Automation — pertinent puisque, contrairement à une vente ponctuelle, un renouvellement annuel à
-> des clients d'autres pays de l'UE peut faire entrer en jeu le guichet unique OSS. `ADR-002` note
-> explicitement que ce choix reste **à valider avec un comptable**, non tranché ici. Le paragraphe
-> ci-dessous s'applique quel que soit le prestataire finalement choisi ; le nommer précisément avant
-> la première vente publique.
+> **Plateforme de paiement — tranchée le 19/08/2026 par `ADR-013`.** Le choix est **Stripe, en
+> direct**. `ADR-009` (Lemon Squeezy en Merchant of Record) est abandonné : c'est `ADR-013` qui fait
+> foi. Conséquence fiscale assumée et documentée en §4.4bis.
 
-Le paiement est traité par un prestataire de paiement tiers. MC Automation ne stocke ni ne voit
-jamais le numéro de carte bancaire du client — voir la politique de confidentialité du prestataire
-retenu pour le traitement de cette donnée.
+Le paiement est traité par **Stripe**, qui agit en qualité de **prestataire de services de paiement**
+et non de revendeur officiel (*Merchant of Record*) : **MC Automation demeure le vendeur** au sens
+juridique vis-à-vis de l'acheteur, et émet la facture.
+
+MC Automation ne stocke ni ne voit jamais le numéro de carte bancaire du client — voir la politique
+de confidentialité de Stripe pour le traitement de cette donnée.
+
+### 4.4bis TVA sur les ventes internationales
+
+MC Automation bénéficie de la **franchise en base de TVA** (article 293 B du CGI) : aucune TVA n'est
+facturée sur les ventes réalisées en France.
+
+L'encaissement se faisant par un simple prestataire technique (§4.4) et non par un revendeur
+officiel, MC Automation reste redevable de la TVA du pays de l'acheteur pour les ventes B2C
+transfrontalières dans l'Union européenne, au-delà du **seuil européen unique de 10 000 €** — seuil
+qui s'applique **même sous franchise en base**. En dessous : aucune formalité. Au-delà : facturation
+au taux du pays de l'acheteur et déclaration via le **guichet unique OSS**. Les ventes hors Union
+européenne relèvent des règles propres à chaque juridiction.
+
+> **ACTION MAXIME (§4.4bis)** — à cadrer avec un comptable avant la première vente publique. À 3,99,
+> le seuil de 10 000 € représente environ 2 500 ventes : pas un problème du jour 1, mais un seuil à
+> surveiller et non à découvrir.
 
 La livraison consiste en l'envoi, par email, d'une **clé de licence numérique** générée
 individuellement pour l'adresse email du client, vérifiée localement par l'application (signature
@@ -203,8 +217,8 @@ jours ne s'applique pas à la fourniture d'un contenu numérique non fourni sur 
 (ici : une clé de licence envoyée par email) **dont l'exécution a commencé après accord préalable
 exprès du consommateur, qui a renoncé expressément à son droit de rétractation**.
 
-> **ACTION MAXIME (§4.5) — texte à faire cocher explicitement avant paiement**, par exemple sur la
-> page produit Stripe ou juste avant le bouton de paiement :
+> **ACTION MAXIME (§4.5) — texte à faire cocher explicitement avant paiement**, dans le checkout
+> Stripe (§4.4), juste avant le bouton de paiement :
 > « Je reconnais que la licence Repair est un contenu numérique livré immédiatement après paiement,
 > et je renonce expressément à mon droit de rétractation de 14 jours. »
 >
@@ -232,10 +246,9 @@ Repair, est limitée au montant effectivement payé par le client pour la licenc
 
 ### 4.8 Durée
 
-La licence Repair est **perpétuelle** (§4.2) : elle ne s'éteint jamais et n'est pas résiliée à la fin
-de la période de mises à jour. Seul l'accès aux **nouvelles** mises à jour du module Repair et de sa
-base de connaissance s'arrête après 12 mois sans renouvellement (§4.3) ; les actions de réparation
-déjà acquises restent utilisables sans limite de temps. Le Scanner gratuit continue lui aussi de
+La licence Repair est **perpétuelle** (§4.2) : elle ne s'éteint jamais, n'est jamais résiliée et
+n'est limitée par aucune échéance. Les mises à jour du module Repair et de sa base de connaissance
+sont incluses **sans limite de durée** et sans renouvellement à payer (§4.3). Le Scanner gratuit continue lui aussi de
 fonctionner sans limitation (§3), avec ou sans licence Repair.
 
 ## 5. Politique de confidentialité (RGPD)
@@ -266,15 +279,14 @@ Lors de l'achat d'une licence Repair, les données suivantes sont traitées :
   contrat de vente (article 6.1.b du RGPD). Conservée pendant la durée de la relation commerciale
   puis archivée selon les délais légaux de conservation comptable (10 ans, obligation légale).
 - **Données de paiement** (numéro de carte, etc.) : jamais reçues ni stockées par MC Automation —
-  traitées directement par le prestataire de paiement retenu (§4.4, encore à trancher entre Stripe
-  et Lemon Squeezy au 19/08/2026), sous sa propre politique de confidentialité.
+  traitées directement par Stripe (§4.4, `ADR-013`), sous sa propre politique de confidentialité.
 
 Aucune donnée n'est vendue, louée ou partagée à des fins publicitaires. Aucun profilage n'est
 effectué.
 
 ### 5.5 Sous-traitants
 
-- **Prestataire de paiement** (Stripe ou Lemon Squeezy, §4.4) — voir §5.4.
+- **Stripe** (prestataire de services de paiement, §4.4) — voir §5.4.
 - **Vercel** (hébergement du site) — voir §2.
 - **GitHub** (distribution du logiciel, vérification manuelle de version) — voir §2.
 

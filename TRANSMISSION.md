@@ -1,5 +1,42 @@
 # TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 19/08/2026
 
+## 📣 MAJ 19/08 (soir) — ADR-013 : prix unique 3,99 + Stripe en direct · logo de démarrage rétabli sans `<SplashScreen>`
+
+> **`ADR-013` supersede `ADR-002` (prix) et `ADR-009` (intégralement).** Décisions de Maxime,
+> verbatim : « le logiciel est à 3,99 dollars ou euros ou pounds c'est le même prix peu importe la
+> monnaie, c'est stripe pas merchand of record et le tunnel d'achat attend quand je te le dirais ».
+> Concrètement : **prix unique 3,99, même nombre dans les trois devises** (pas de conversion au taux
+> du jour) ; **achat unique**, licence perpétuelle, **mises à jour incluses sans limite de durée** ;
+> le renouvellement optionnel à 9 €/an d'`ADR-002` est **supprimé** (confirmé explicitement, il
+> coûterait plus du double du produit) ; **encaissement Stripe en direct**, MC Automation reste le
+> vendeur légal. Le tunnel d'achat **ne doit pas être construit** avant demande explicite.
+>
+> **Conséquence fiscale réelle, à ne pas oublier.** En abandonnant le Merchant of Record, MC
+> Automation redevient responsable de la TVA du pays de l'acheteur au-delà du **seuil UE de
+> 10 000 €** de ventes B2C transfrontalières — seuil qui s'applique **même en franchise en base**.
+> À 3,99 ça fait environ 2 500 ventes : pas un problème du jour 1, mais un seuil à surveiller. Les
+> ventes hors UE (US, UK) ont leurs propres règles. Point à cadrer avec un comptable avant la vente
+> publique, documenté en `ADR-013` et en §4.4bis de `docs/legal/CGU-CGV-mentions-legales.md`.
+> Documents réalignés dans le même lot : CGV FR et EN, `cgu.html` du landing, `docs/legal/`,
+> en-têtes d'`ADR-002` et `ADR-009` marqués superseded.
+>
+> **Logo de démarrage rétabli — et surtout, rétabli par la seule voie autorisée.** Le logo avait
+> disparu au retrait de l'item MSBuild `<SplashScreen>` le 18/08. Le commentaire d'avertissement du
+> `.csproj` laissait deux portes de sortie : la signature de code EV (**définitivement exclue**, voir
+> la section « Contrôle intelligent des applications » plus bas), ou « une fenêtre WPF ordinaire
+> ouverte depuis l'app une fois le runtime démarré ». C'est cette seconde voie qui est implémentée :
+> `SplashWindow.xaml`/`.cs` + `App.OnStartup`. **Aucun P/Invoke, aucun code avant le Dispatcher, et
+> volontairement AUCUNE transparence** (`AllowsTransparency` créerait une fenêtre *layered* au sens
+> Win32, exactement le profil incriminé). Le splash s'affiche 1,6 s, `ShutdownMode` est neutralisé le
+> temps du démarrage puis rendu à `OnLastWindowClose`, `Application.MainWindow` est réaffecté à la
+> vraie fenêtre. Échec d'ouverture du splash = démarrage normal sans splash, jamais un crash.
+> **L'item `<SplashScreen>` ne doit jamais revenir** — l'avertissement du `.csproj` est inchangé.
+>
+> ⚠️ **À vérifier au premier build Windows** : l'App ne compile pas dans le sandbox Linux
+> (`net8.0-windows`). `SplashWindow.xaml` est bien formé et les ressources `{StaticResource Bg}` /
+> `{StaticResource Accent}` existent dans `App.xaml`, mais le rendu réel (taille, cadrage du logo)
+> n'a pas pu être vu.
+
 ## 📣 MAJ 19/08 — RegisterComComponentAction : le blocage admin est réglé, la réparation reste éteinte dans le pack pour une autre raison
 
 > **Demande de Maxime (19/08, verbatim) : « faut pas de droit d'admin mais il faut qu'elle existent et
@@ -65,9 +102,25 @@
 > résolu entre-temps. Ne plus citer `be0a1ce` comme un fait établi. Cela dit, le commentaire
 > d'avertissement laissé dans le `.csproj` reste prudent à respecter, faute de preuve contraire.
 >
-> **Remède durable** : la signature de code (écartée par Maxime le 18/08, budget nul). Piste gratuite
-> proposée et non mise en œuvre : soumettre chaque release au portail Microsoft Security Intelligence
-> (soumission développeur, gratuite) pour faire rendre le verdict AVANT la diffusion aux utilisateurs.
+> **🚫 CONTRAINTE PERMANENTE — l'achat d'un certificat de signature de code est DÉFINITIVEMENT exclu.**
+> Écarté par Maxime le 18/08 (budget nul), **re-confirmé explicitement le 19/08 : « pas d'achat de
+> signature, note-toi le bien, ça n'arrivera jamais, il faut toujours que tu trouves une solution ».**
+> Ne plus jamais le proposer, sous aucune forme — ni certificat OV, ni EV, ni Azure Trusted Signing,
+> ni « juste pour la réputation SmartScreen ». Toute réponse à un blocage doit chercher une solution
+> à coût nul. Cette ligne est une décision de fond, pas un arbitrage à re-tenter à chaque session.
+>
+> **Remède durable, gratuit, toujours pas mis en œuvre** : soumettre chaque release au portail
+> Microsoft Security Intelligence (soumission développeur, gratuite) pour faire rendre le verdict
+> AVANT la diffusion aux utilisateurs. C'est la seule piste identifiée qui traite la cause plutôt que
+> le symptôme, et elle est gratuite — à faire avant la première diffusion publique d'un binaire.
+>
+> **⚠️ 19/08 — la règle ci-dessus a été enfreinte, exemple à ne pas reproduire.** Face au même
+> symptôme (538 tests en `FileLoadException 0x800711C7` sur `PincabToolbox.Core.dll`, juste après
+> une livraison de fichiers sources), le réflexe a été de (1) chercher une cause dans le code, (2)
+> demander de désactiver Smart App Control, (3) proposer l'achat d'un certificat — les trois choses
+> que cette section interdit explicitement, écrites noir sur blanc dix lignes plus haut. Le test de
+> contrôle (relancer tel quel, sans rien changer) n'a été proposé qu'après. **Lire cette section
+> AVANT de répondre à un blocage, pas après.**
 
 ## 📣 MAJ 18/08 — 4 lots livrés (Scanner, Repair, Rescore, Table Companion teaser), sandbox resynchronisé sur le vrai poste de Maxime, email flipsync.contact ajouté à propos/tutoriel
 
