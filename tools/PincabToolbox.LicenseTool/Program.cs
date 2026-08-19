@@ -77,7 +77,7 @@ public static class Program
         var email = Opt(args, "--email");
         if (keyPath is null || email is null)
         {
-            Console.Error.WriteLine("usage: license-tool issue --key <private-key.pem> --email <email> [--updates-months 12]");
+            Console.Error.WriteLine("usage: license-tool issue --key <private-key.pem> --email <email> [--updates-months 1200]");
             return 1;
         }
         if (!File.Exists(keyPath))
@@ -86,7 +86,10 @@ public static class Program
             return 1;
         }
 
-        var months = int.TryParse(Opt(args, "--updates-months"), out var m) ? m : 12;
+        // ADR-013 (19/08/2026) : mises à jour incluses sans limite de durée. 1200 mois (100 ans) est
+        // le défaut décidé par Maxime pour représenter "sans limite" en pratique, sans réécrire tout
+        // le modèle de licence (qui reste une date de fin de fenêtre de mise à jour).
+        var months = int.TryParse(Opt(args, "--updates-months"), out var m) ? m : 1200;
 
         using var key = ECDsa.Create();
         key.ImportFromPem(File.ReadAllText(keyPath));
@@ -153,7 +156,7 @@ public static class Program
         Console.WriteLine("  license-tool init [--out private-key.pem] [--force]");
         Console.WriteLine("      Génère une nouvelle paire de clés. À faire UNE SEULE FOIS.");
         Console.WriteLine();
-        Console.WriteLine("  license-tool issue --key private-key.pem --email client@exemple.com [--updates-months 12]");
+        Console.WriteLine("  license-tool issue --key private-key.pem --email client@exemple.com [--updates-months 1200]");
         Console.WriteLine("      Émet une clé de licence pour un client, à envoyer après paiement.");
         Console.WriteLine();
         Console.WriteLine("  license-tool verify --public-key <base64> --license <clé>");

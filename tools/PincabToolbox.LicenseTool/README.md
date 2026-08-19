@@ -19,25 +19,26 @@ dotnet run --project tools/PincabToolbox.LicenseTool -- init --out ~/pincab-lice
   `src/PincabToolbox.Repair/Licensing/LicenseVerifier.cs`, constante `EmbeddedPublicKeyBase64`,
   puis recompile. C'est ce qui verrouille l'App sur CETTE paire de clés précise.
 
-## À chaque vente : émettre une clé pour le client
+## À chaque vente (ou à chaque testeur) : émettre une clé
 
 ```
 dotnet run --project tools/PincabToolbox.LicenseTool -- issue \
-  --key ~/pincab-license-key.pem --email client@exemple.com --updates-months 12
+  --key ~/pincab-license-key.pem --email client@exemple.com
 ```
 
 Affiche la clé de licence à copier-coller dans l'email envoyé au client après son paiement Stripe
 (ADR-013 — encaissement en direct, pas de Merchant of Record ; pour l'instant l'envoi reste manuel,
 aucun webhook n'est câblé).
 
-⚠️ **`--updates-months` (défaut 12) est un reliquat d'ADR-002, périmé depuis ADR-013 (19/08/2026) :
-la licence Repair n'a plus de fenêtre de mise à jour bornée, les mises à jour sont incluses **sans
-limite de durée** et il n'y a plus de renouvellement à vendre.** Le paramètre lui-même n'a pas été
-retiré ici — le corriger (nouveau défaut, ou suppression) est une décision produit à trancher par
-Maxime, pas faite unilatéralement dans ce commit. En attendant cette décision, passer une valeur
-très large (ex. `--updates-months 1200`, soit 100 ans) obtient le même résultat pratique pour les
-clés émises dès maintenant : la licence elle-même n'a jamais expiré, seule la fenêtre de mise à jour
-l'était.
+`--email` n'est qu'une étiquette libre stockée dans la licence (jamais validée comme une vraie
+adresse, l'outil n'envoie lui-même aucun mail) — pour un testeur qui n'a pas d'email à donner, une
+étiquette du genre `--email testeur-1` fonctionne tout aussi bien.
+
+✅ **`--updates-months` — décidé le 19/08/2026 par Maxime : défaut passé de 12 (reliquat d'ADR-002)
+à `1200` (100 ans).** ADR-013 supprime toute fenêtre de mise à jour bornée sur la licence Repair —
+`1200` est la façon pratique de représenter « sans limite » sans réécrire le modèle de licence
+(qui reste, en interne, une date de fin de fenêtre). Peut toujours être surchargé avec
+`--updates-months <n>` si un jour un besoin différent apparaît.
 
 ## Vérifier une clé sans lancer l'App
 
