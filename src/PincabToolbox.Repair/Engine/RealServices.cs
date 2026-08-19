@@ -202,53 +202,53 @@ public sealed class RealProcessLauncher : IProcessLauncher
 }
 
 /// <summary>
-/// Real elevation check via the process's own security token — not the static
-/// <c>app.manifest</c> (which only controls whether Windows AUTO-elevates on launch; a user can
-/// still right-click "Run as administrator" by hand, which this DOES see). Hand-rolled P/Invoke
-/// against <c>advapi32.dll</c>, same posture as every other native call in this codebase (zero
-/// external dependency — see <c>RegistryReader</c> in Core for the precedent).
+/// Real elevated launch for <see cref="Actions.RegisterComComponentAction"/> (Rule 6, revised
+/// 19/08 — see that class's header). Only ever called AFTER a plain <see cref="RealProcessLauncher"/>
+/// attempt reported <c>ERROR_ELEVATION_REQUIRED</c> for that exact tool — never pre-emptively.
+/// <c>UseShellExecute = true</c> + <c>Verb = "runas"</c> is the standard Windows API for a one-off
+/// UAC consent prompt scoped to a single child process; it does not touch, and cannot touch, this
+/// app's own token (the app stays <c>asInvoker</c> for its entire lifetime — the elevated process is
+/// the third-party tool, not Pincab Toolbox). Same zero-arguments contract as
+/// <see cref="RealProcessLauncher"/> (rule 3) — <c>ShellExecute</c> forbids reading stdout/stderr of
+/// an elevated child by design, so, same as the plain launcher, this can only ever report whether
+/// the tool started and whether it exited within the timeout, never its own success/failure.
 /// </summary>
 [SupportedOSPlatform("windows")]
-public sealed class RealElevationProbe : IElevationProbe
+public sealed class RealElevatedProcessLauncher : IElevatedProcessLauncher
 {
-    private const uint TOKEN_QUERY = 0x0008;
-    private const int TokenElevation = 20;
-
-    [DllImport("advapi32.dll", SetLastError = true)]
-    private static extern bool OpenProcessToken(IntPtr processHandle, uint desiredAccess, out IntPtr tokenHandle);
-
-    [DllImport("advapi32.dll", SetLastError = true)]
-    private static extern bool GetTokenInformation(
-        IntPtr tokenHandle, int tokenInformationClass,
-        out int tokenInformation, int tokenInformationLength, out int returnLength);
-
-    [DllImport("kernel32.dll")]
-    private static extern IntPtr GetCurrentProcess();
-
-    [DllImport("kernel32.dll")]
-    private static extern bool CloseHandle(IntPtr handle);
-
-    public bool IsCurrentProcessElevated()
+    public ProcessLaunchResult LaunchElevated(string exePath, TimeSpan timeout)
     {
-        if (!OperatingSystem.IsWindows()) return false;
-
-        IntPtr token = IntPtr.Zero;
+        Process? process = null;
         try
         {
-            if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, out token)) return false;
-            if (!GetTokenInformation(token, TokenElevation, out var elevation, sizeof(int), out _)) return false;
-            return elevation != 0;
+            process = Process.Start(new ProcessStartInfo
+            {
+                FileName = exePath,
+                UseShellExecute = true,   // required for the "runas" verb to trigger a UAC prompt
+                Verb = "runas",
+                WorkingDirectory = Path.GetDirectoryName(exePath) ?? "",
+                // Deliberately no Arguments/ArgumentList set — rule 3: zero arguments, ever.
+            });
+            if (process is null) return ProcessLaunchResult.Failed("process failed to start");
+
+            var exited = process.WaitForExit((int)Math.Clamp(timeout.TotalMilliseconds, 0, int.MaxValue));
+            return exited ? ProcessLaunchResult.Ok(process.ExitCode) : ProcessLaunchResult.TimedOutResult();
         }
-        catch
+        catch (System.ComponentModel.Win32Exception win32)
         {
-            // Unknown must never be reported as elevated — the whole point of this check is to
-            // avoid a false "you have admin rights" that leads the caller to attempt a write that
-            // then fails confusingly deep inside a third-party tool.
-            return false;
+            // ERROR_CANCELLED (1223): the user clicked "No" on the UAC consent dialog — a normal,
+            // expected outcome, distinct from every other failure, that Execute() turns into a calm
+            // "nothing changed" message rather than a scary error.
+            return ProcessLaunchResult.Failed(
+                win32.NativeErrorCode == 1223 ? "elevation cancelled" : win32.Message);
+        }
+        catch (Exception e)
+        {
+            return ProcessLaunchResult.Failed(e.Message);
         }
         finally
         {
-            if (token != IntPtr.Zero) CloseHandle(token);
+            process?.Dispose();
         }
     }
 }

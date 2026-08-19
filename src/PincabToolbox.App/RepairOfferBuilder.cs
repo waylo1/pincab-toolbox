@@ -85,7 +85,11 @@ public static class RepairOfferBuilder
                 new UnblockFileAction(fs),
                 new RestoreRomArchiveAction(fs),
                 new QuarantineOrphanedMediaAction(fs),
-                new KillZombiePinUpDisplayAction(new RealProcessControl()));
+                new KillZombiePinUpDisplayAction(new RealProcessControl()),
+                new RegisterComComponentAction(new RealProcessLauncher(), new RealElevatedProcessLauncher()));
+            // Registered (19/08) but still inert in production: the pack has no repairRules entry
+            // for COM_NOT_REGISTERED/VPINMAME_NOT_REGISTERED/COM_BITNESS_GAP yet, so RepairEngine.Plan
+            // never actually offers it — see RegisterComComponentAction's own header for why.
             // SetDefaultAudioDeviceAction is intentionally excluded — not wired to any Finding yet
             // (see its own header comment); the pack has no rule referencing it either.
 

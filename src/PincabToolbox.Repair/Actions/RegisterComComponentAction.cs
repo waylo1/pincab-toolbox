@@ -16,31 +16,57 @@ namespace PincabToolbox.Repair.Actions;
 /// containment gate (ADR-005) since <see cref="Kind"/> is not exempted from it.
 /// <b>Rule 3</b> <see cref="IProcessLauncher"/> never accepts arguments — see its own header.
 /// <b>Rule 4</b> Plan()'s <see cref="PeInspector"/> gate. <b>Rule 5</b> the launcher's mandatory
-/// timeout. <b>Rule 6</b> Execute()'s elevation gate. <b>Rule 7</b> <see cref="IsReversibleByNature"/>.
+/// timeout. <b>Rule 6</b> Execute()'s elevation handling — revised 19/08, see below.
+/// <b>Rule 7</b> <see cref="IsReversibleByNature"/>.
 /// </para>
 ///
 /// <para>
-/// <b>Deliberately NOT wired into any live Rule yet.</b> This class is fully built and unit-tested
-/// for everything that does not require a real Windows machine, and is deliberately kept OUT of
-/// <c>knowledge/pack-2026.08.json</c>'s <c>repairRules</c> — so <see cref="Engine.RepairEngine.Plan"/>
-/// never produces a <see cref="PlannedChange"/> through it in production, regardless of whether it
-/// sits in a <see cref="RepairActionRegistry"/> — until its two remaining unknowns are validated
-/// for real, not assumed:
+/// <b>Rule 6, revised 19/08.</b> The original design pre-checked <c>IElevationProbe</c> and refused
+/// outright unless the WHOLE APP already ran elevated — which meant the only way to ever use this
+/// repair was to relaunch Pincab Toolbox itself as administrator. Maxime's explicit call (19/08):
+/// the app must never require admin rights to run (it never has — <c>app.manifest</c> is
+/// <c>asInvoker</c>, and the landing FAQ promises this), but this specific repair must still exist
+/// and be usable. Those two constraints are compatible, just not via a whole-app pre-check: Execute()
+/// now always attempts a normal, unelevated launch first (same as every other whitelisted tool would
+/// need); only if Windows itself refuses that specific launch with <c>ERROR_ELEVATION_REQUIRED</c>
+/// does it retry via <see cref="IElevatedProcessLauncher"/> — a single, standard Windows UAC consent
+/// prompt for that ONE external tool, never for the app itself. If the user declines the prompt,
+/// this fails calmly ("permission not granted, nothing changed"), never as a crash or scary error.
+/// See <see cref="IElevatedProcessLauncher"/>'s own header for why this is not a "surprise"
+/// elevation. Whichever of the three whitelisted tools does NOT actually need admin (unverified,
+/// tool-specific) now simply never triggers a prompt at all — Windows decides per-tool, in real
+/// time, instead of this class assuming all three do.
+/// </para>
+///
+/// <para>
+/// <b>Still deliberately NOT wired into <c>knowledge/pack-2026.08.json</c>'s <c>repairRules</c>.</b>
+/// Registered in both <c>RepairActionRegistry</c>s (App's free-preview builder and the real write
+/// path) so the code is exercised end-to-end and ready — but with no pack rule pointing a Finding
+/// code at <c>register_com_component</c>, <see cref="Engine.RepairEngine.Plan"/> never actually
+/// offers it. The admin-rights blocker above is resolved; two other, unrelated concerns are not:
 /// </para>
 /// <list type="number">
 /// <item>That the registration tool actually lives alongside the component's DLL, for all three
 /// whitelisted tools, on a real install. <see cref="Core.Models.Finding.FilePath"/> for these three
 /// codes is the component's DLL (see <c>ComHealthScanner</c>), not the tool — Plan() derives the
 /// tool's expected path from that DLL's directory, an assumption nobody has confirmed on a real
-/// cab.</item>
-/// <item>How each tool actually behaves when launched with zero arguments. VPinMAME's own
-/// <c>Setup.exe</c> in particular is known to be an interactive GUI installer, not a silent
-/// registrar — "repair applied" would be a misleading claim if the user still has to click
-/// something themselves inside a window this app just opened for them.</item>
+/// cab. Low risk: Plan() fails closed (<see cref="_fileExists"/>) if the assumption is wrong, so a
+/// wrong guess just means the repair silently doesn't offer itself, not a bad write.</item>
+/// <item><b>The real remaining blocker.</b> VPinMAME's own <c>Setup.exe</c> is a known interactive
+/// GUI installer, not a silent registrar. <c>Execute()</c> only ever claims "the tool was launched",
+/// never "the problem is fixed" — but <c>MainWindow.BtnRepairApply_Click</c> (App) counts an
+/// <see cref="ExecutionResult.Ok"/> straight into its "X réparés" total the moment <c>Apply()</c>
+/// returns, without ever calling <see cref="Engine.RepairEngine.Verify"/> first, for ANY action.
+/// Wiring this pack rule today would show "1 réparé" the instant VPinMAME's installer window opens
+/// — before the user has clicked anything inside it. That is a trust-damaging false claim for an
+/// unsigned, reputation-building app, and it is a UI-layer gap that affects every action, not just
+/// this one — proposed as its own small lot (App-side: call <c>Verify()</c> after <c>Apply()</c>, or
+/// give GUI-installer-style actions a distinct "opened, not yet confirmed" outcome) rather than
+/// rushed in here. See TRANSMISSION.md / FIELD-LOG.md, 19/08.</item>
 /// </list>
 /// <para>
 /// Same precedent as <see cref="SetDefaultAudioDeviceAction"/>: built and tested, held out of the
-/// closed registry's live wiring until proven on a real cab. See TRANSMISSION.md.
+/// pack's live wiring until proven safe. See TRANSMISSION.md.
 /// </para>
 /// </summary>
 public sealed class RegisterComComponentAction : IRepairAction
@@ -62,20 +88,20 @@ public sealed class RegisterComComponentAction : IRepairAction
     public static readonly TimeSpan LaunchTimeout = TimeSpan.FromSeconds(20);
 
     private readonly IProcessLauncher _launcher;
-    private readonly IElevationProbe _elevation;
+    private readonly IElevatedProcessLauncher _elevatedLauncher;
     private readonly Func<string, bool> _fileExists;
     private readonly Func<string, string> _fullPath;
     private readonly Func<string, ComRegistryView, (bool Succeeded, ComRegistration? Registration)> _probe;
 
     public RegisterComComponentAction(
         IProcessLauncher launcher,
-        IElevationProbe elevation,
+        IElevatedProcessLauncher elevatedLauncher,
         Func<string, bool>? fileExists = null,
         Func<string, string>? fullPath = null,
         Func<string, ComRegistryView, (bool, ComRegistration?)>? probe = null)
     {
         _launcher = launcher;
-        _elevation = elevation;
+        _elevatedLauncher = elevatedLauncher;
         _fileExists = fileExists ?? File.Exists;
         _fullPath = fullPath ?? Path.GetFullPath;
         _probe = probe ?? ComRegistrationProbe.TryProbe;
@@ -166,26 +192,32 @@ public sealed class RegisterComComponentAction : IRepairAction
     }
 
     /// <summary>
-    /// Rule 6 — elevation is checked HERE, at the moment of use, never assumed from
-    /// <c>app.manifest</c> alone. Refuses cleanly with a message the UI can show verbatim, rather
-    /// than attempting a launch that would fail deep inside the third-party tool with no clear
-    /// signal why.
+    /// Rule 6, revised 19/08 — see class header. Always tries a plain, unelevated launch first
+    /// (exactly what happens for every other whitelisted tool); only escalates via
+    /// <see cref="IElevatedProcessLauncher"/> when Windows itself reports THAT launch specifically
+    /// needed admin (<see cref="Engine.RealProcessLauncher"/>'s <c>"elevation required"</c> signal,
+    /// from <c>ERROR_ELEVATION_REQUIRED</c>) — never pre-emptively, never for the app itself. A
+    /// user who declines the resulting UAC prompt gets a calm, expected outcome, not an error.
     /// </summary>
     public ExecutionResult Execute(PlannedChange change)
     {
-        if (!_elevation.IsCurrentProcessElevated())
-            return ExecutionResult.Fail(
-                "this repair needs administrator rights — close Pincab Toolbox and reopen it via " +
-                "\"Run as administrator\", then try again");
-
         var result = _launcher.Launch(change.Target, LaunchTimeout);
+
+        if (!result.Started && result.Error == "elevation required")
+        {
+            result = _elevatedLauncher.LaunchElevated(change.Target, LaunchTimeout);
+            if (!result.Started && result.Error == "elevation cancelled")
+                return ExecutionResult.Fail(
+                    "Windows permission was not granted, so nothing was changed — you can try this repair again anytime");
+        }
+
         if (!result.Started)
             return ExecutionResult.Fail(result.Error ?? "could not start the registration tool");
 
         // "Launched successfully" is the only claim this makes. Several whitelisted tools are
-        // interactive GUI installers the user may still need to act inside (class header, unknown
-        // #2) — this action cannot know whether the registration itself is now fixed. The next
-        // scan's StillApplies() is the real verification, same as every other repair (Verify()).
+        // interactive GUI installers the user may still need to act inside (class header, remaining
+        // blocker #2) — this action cannot know whether the registration itself is now fixed. The
+        // next scan's StillApplies() is the real verification, same as every other repair (Verify()).
         return ExecutionResult.Ok;
     }
 

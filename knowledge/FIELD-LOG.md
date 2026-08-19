@@ -26,6 +26,13 @@ Bacs : **FP** faux positif · **FN** panne ratée · **WORDING** message pas cla
 
 ## 1. Retours (rapports, FP, FN, wording, résultats de fix)
 
+## 2026-08-19 · RegisterComComponentAction — Rule 6 rendue adaptative (fini le pré-check admin sur toute l'appli), toujours éteinte dans le pack pour une autre raison
+- code:        aucun code de finding — architecture d'une action Repair déjà écrite (LOT I, spec 10/08)
+- bac:         FEATURE
+- contexte:    demande explicite de Maxime (19/08) : « faut pas de droit d'admin mais il faut qu'elle existent et soit utilisable »
+- analyse:     l'ancienne Rule 6 refusait `Execute()` tant que le PROCESSUS ENTIER (Pincab Toolbox lui-même) ne tournait pas déjà élevé — ce qui aurait forcé à relancer toute l'appli en admin pour une seule réparation optionnelle, à l'opposé de la promesse « pas besoin de droits administrateur » de la FAQ landing et de `app.manifest` (`asInvoker`). Nouvelle conception : `Execute()` tente toujours un lancement normal d'abord (comme les 3 autres outils du whitelist) ; seulement si **Windows lui-même** refuse ce lancement précis avec `ERROR_ELEVATION_REQUIRED`, une seule invite UAC standard est demandée pour cet outil tiers précis (`IElevatedProcessLauncher`, `ShellExecute`+`runas`), jamais pour l'appli. Refus de l'utilisateur → échec calme, pas une erreur. `IElevationProbe`/`RealElevationProbe` (le pré-check bloquant) supprimés proprement (plus aucune référence dans le code), remplacés. Action enregistrée dans les deux `RepairActionRegistry` (App preview + write-path réel) — code prêt et testé de bout en bout.
+- disposition: ✅ codé et testé (163 tests Repair, 540 Core, tout vert) · **le petit lot honnêteté proposé est fait** (même jour, « ok pour le petit re scan ») : `BtnRepairApply_Click` appelle `Verify()` après `Apply()` et sépare « réparé » (confirmé disparu) de « lancé, pas encore confirmé » (`repair.apply.pending`, nouvelle ligne dédiée, jamais noyé dans le compte « réparé »), pour les 5 actions, pas seulement celle-ci. **Toujours pas activée dans `knowledge/pack-2026.08.json`** — l'inconnue restante est indépendante de l'admin et de l'honnêteté UI : l'outil de ré-enregistrement est-il vraiment toujours à côté de la DLL sur un vrai cab (fail-closed si faux, jamais vérifié en vrai). Activer la règle est maintenant une décision, pas un blocage technique.
+
 ## 2026-08-18 (session éco, fin de journée) · Blocage « Contrôle intelligent des applications » : NON déterministe — verdict cloud temporaire, pas une cause dans le code
 - code:        aucun code de finding — incident de build / distribution
 - bac:         FIX (résultat d'un diagnostic) + correction d'une conclusion antérieure trop assurée

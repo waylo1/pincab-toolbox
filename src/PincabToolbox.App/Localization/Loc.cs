@@ -182,6 +182,11 @@ public static class Loc
         ["repair.apply.button"] = "Apply selected fixes",
         ["repair.apply.running"] = "Applying…",
         ["repair.apply.status"] = "{0} applied, {1} failed.",
+        // 19/08 — for a fix that only opens an external tool (e.g. a component's own registration
+        // installer), "applied" would overclaim before the tool is actually confirmed to have
+        // fixed anything. This line shows separately when Verify() finds the problem still there
+        // right after a successful Execute() — never folded into the "applied" count above.
+        ["repair.apply.pending"] = "{0} started but not yet confirmed fixed — a window may still be open, follow its steps, then rescore to check.",
         ["repair.apply.recovery"] = "Something went wrong while undoing a partial change — a backup is kept here, restore it by hand if needed:",
         // Lot Rescore, 18/08: re-runs the same scan and shows old->new score honestly, even when it did not improve.
         ["repair.rescore.button"] = "Check my score again",
@@ -264,7 +269,7 @@ public static class Loc
         ["cat.hardcoded-path"] = "Hardcoded Path",
         ["cat.script-doctor"] = "Shared Script Doctor",
         ["about.tagline"] = "The mechanic for your pincab.",
-        ["about.body"] = "Pincab Toolbox scans your Visual Pinball X / PinUP Popper installation and tells you what is broken, missing or mismatched — before you hit Start on a table.\n\n• 100% local scanning — your cab, your files and your findings are never uploaded, no telemetry, no account.\n• Read-only — the free scanner never modifies a single file.\n• The Update Watcher uses the open-source Virtual Pinball Spreadsheet database and only ever links you to official pages. It never downloads tables, ROMs or media.\n• The one exception: the \"Check for updates\" button below is manual and opt-in — click it, and it contacts GitHub just to see if a newer version exists. Nothing about your cab, your tables or your scan results is ever sent. It never runs on its own.\n\nQuestions, bug reports or feedback: flipsync.contact@gmail.com",
+        ["about.body"] = "Pincab Toolbox scans your Visual Pinball X / PinUP Popper installation and tells you what is broken, missing or mismatched — before you hit Start on a table.\n\n• 100% local scanning — your cab, your files and your findings are never uploaded, no telemetry, no account.\n• Read-only — the free scanner never modifies a single file.\n• The Update Watcher uses the open-source Virtual Pinball Spreadsheet database and only ever links you to official pages. It never downloads tables, ROMs or media.\n• The one exception: the \"Check for updates\" button below is manual and opt-in — click it, and it contacts GitHub just to see if a newer version exists. Nothing about your cab, your tables or your scan results is ever sent. It never runs on its own.\n\nTerms of use, Repair's sale terms and our privacy policy: pincab-toolbox.vercel.app/cgu.html\n\nQuestions, bug reports or feedback: flipsync.contact@gmail.com",
         ["about.version"] = "Version",
         ["about.checkupdate"] = "Check for updates",
         ["about.update.checking"] = "Checking…",
@@ -473,6 +478,7 @@ public static class Loc
         ["repair.apply.button"] = "Appliquer les correctifs sélectionnés",
         ["repair.apply.running"] = "Application en cours…",
         ["repair.apply.status"] = "{0} appliqué(s), {1} échoué(s).",
+        ["repair.apply.pending"] = "{0} lancé(s) mais pas encore confirmé(s) réparé(s) — une fenêtre est peut-être encore ouverte, suivez ses étapes, puis revoyez votre score pour vérifier.",
         ["repair.apply.recovery"] = "Un problème est survenu en annulant une modification partielle, une sauvegarde est conservée ici, restaurez-la à la main si besoin :",
         // Lot Rescore, 18/08 : relance le même scan et affiche l'ancien -> nouveau score honnêtement, même sans progrès.
         ["repair.rescore.button"] = "Revoir mon score",
@@ -552,7 +558,7 @@ public static class Loc
         ["cat.hardcoded-path"] = "Chemin codé en dur",
         ["cat.script-doctor"] = "Docteur scripts partagés",
         ["about.tagline"] = "Le mécanicien de votre pincab.",
-        ["about.body"] = "Pincab Toolbox scanne votre installation Visual Pinball X / PinUP Popper et vous dit ce qui est cassé, manquant ou incompatible — avant que vous ne lanciez une table.\n\n• Scan 100 % local — votre cab, vos fichiers et vos résultats de scan ne sont jamais envoyés, zéro télémétrie, zéro compte.\n• Lecture seule — le scanner gratuit ne modifie jamais le moindre fichier.\n• L'Update Watcher s'appuie sur la base open source Virtual Pinball Spreadsheet et se contente de vous donner le lien officiel. Il ne télécharge jamais ni table, ni ROM, ni média.\n• Seule exception : le bouton « Vérifier les mises à jour » ci-dessous est manuel et volontaire — vous cliquez, et il contacte GitHub juste pour voir si une nouvelle version existe. Rien concernant votre cab, vos tables ou vos résultats de scan n'est jamais envoyé. Il ne se déclenche jamais tout seul.\n\nQuestions, bugs ou retours : flipsync.contact@gmail.com",
+        ["about.body"] = "Pincab Toolbox scanne votre installation Visual Pinball X / PinUP Popper et vous dit ce qui est cassé, manquant ou incompatible — avant que vous ne lanciez une table.\n\n• Scan 100 % local — votre cab, vos fichiers et vos résultats de scan ne sont jamais envoyés, zéro télémétrie, zéro compte.\n• Lecture seule — le scanner gratuit ne modifie jamais le moindre fichier.\n• L'Update Watcher s'appuie sur la base open source Virtual Pinball Spreadsheet et se contente de vous donner le lien officiel. Il ne télécharge jamais ni table, ni ROM, ni média.\n• Seule exception : le bouton « Vérifier les mises à jour » ci-dessous est manuel et volontaire — vous cliquez, et il contacte GitHub juste pour voir si une nouvelle version existe. Rien concernant votre cab, vos tables ou vos résultats de scan n'est jamais envoyé. Il ne se déclenche jamais tout seul.\n\nConditions d'utilisation, conditions de vente de Repair et politique de confidentialité : pincab-toolbox.vercel.app/cgu.html\n\nQuestions, bugs ou retours : flipsync.contact@gmail.com",
         ["about.version"] = "Version",
         ["about.checkupdate"] = "Vérifier les mises à jour",
         ["about.update.checking"] = "Vérification…",
@@ -744,6 +750,7 @@ public static class Loc
         ["repair.apply.button"] = "Aplicar correcciones seleccionadas",
         ["repair.apply.running"] = "Aplicando…",
         ["repair.apply.status"] = "{0} aplicado(s), {1} fallido(s).",
+        ["repair.apply.pending"] = "{0} iniciado(s) pero aún no confirmado(s) como reparado(s) — puede que quede una ventana abierta, siga sus pasos y luego vuelva a calcular su puntuación para comprobarlo.",
         ["repair.apply.recovery"] = "Algo salió mal al deshacer un cambio parcial — se conserva una copia de seguridad aquí, restáurela a mano si hace falta:",
         // Lot Rescore, 18/08: vuelve a ejecutar el mismo escaneo y muestra la puntuación anterior -> nueva con honestidad, aunque no mejore.
         ["repair.rescore.button"] = "Revisar mi puntuación",
@@ -822,7 +829,7 @@ public static class Loc
         ["cat.hardcoded-path"] = "Ruta codificada",
         ["cat.script-doctor"] = "Doctor de scripts compartidos",
         ["about.tagline"] = "El mecánico de su pincab.",
-        ["about.body"] = "Pincab Toolbox escanea su instalación de Visual Pinball X / PinUP Popper y le dice qué está roto, falta o no coincide — antes de que pulse Iniciar en una tabla.\n\n• Escaneo 100% local — su cab, sus archivos y sus resultados nunca se suben, sin telemetría, sin cuenta.\n• Solo lectura — el escáner gratuito nunca modifica un solo archivo.\n• El Update Watcher usa la base de datos de código abierto Virtual Pinball Spreadsheet y solo le enlaza a páginas oficiales. Nunca descarga tablas, ROMs ni medios.\n• La única excepción: el botón \"Buscar actualizaciones\" de abajo es manual y opcional — lo pulsa usted, y contacta con GitHub solo para ver si existe una versión más reciente. Nada sobre su cab, sus tablas o sus resultados de escaneo se envía nunca. Nunca se ejecuta por su cuenta.\n\nPreguntas, errores o comentarios: flipsync.contact@gmail.com",
+        ["about.body"] = "Pincab Toolbox escanea su instalación de Visual Pinball X / PinUP Popper y le dice qué está roto, falta o no coincide — antes de que pulse Iniciar en una tabla.\n\n• Escaneo 100% local — su cab, sus archivos y sus resultados nunca se suben, sin telemetría, sin cuenta.\n• Solo lectura — el escáner gratuito nunca modifica un solo archivo.\n• El Update Watcher usa la base de datos de código abierto Virtual Pinball Spreadsheet y solo le enlaza a páginas oficiales. Nunca descarga tablas, ROMs ni medios.\n• La única excepción: el botón \"Buscar actualizaciones\" de abajo es manual y opcional — lo pulsa usted, y contacta con GitHub solo para ver si existe una versión más reciente. Nada sobre su cab, sus tablas o sus resultados de escaneo se envía nunca. Nunca se ejecuta por su cuenta.\n\nCondiciones de uso, condiciones de venta de Repair y política de privacidad: pincab-toolbox.vercel.app/cgu.html\n\nPreguntas, errores o comentarios: flipsync.contact@gmail.com",
         ["about.version"] = "Versión",
         ["about.checkupdate"] = "Buscar actualizaciones",
         ["about.update.checking"] = "Comprobando…",
@@ -953,6 +960,10 @@ public static class Loc
         // Tier A (handoff Sonnet 5, 06/08) — E1. {0} = chaîne de la boucle (ex. "a -> b -> a").
         ["VPMALIAS_LOOP"] = "VPMAlias.txt contient une boucle d'alias : {0}. VPinMAME plante (stack overflow) dès qu'une table a besoin de ce nom de ROM.",
 
+        // Scan disque entier (18/08) : ces deux messages n'avaient aucune traduction, un scan de
+        // « C:\ » affichait donc de l'anglais dans une interface française.
+        ["DRIVE_SCAN_SUMMARY"] = "{0} installations pincab distinctes ont été trouvées et analysées sous {1} : {2}.",
+        ["DRIVE_SCAN_NONE_FOUND"] = "Aucune installation pincab (dossier Tables, dossier VPinMAME, ou base PinUP Popper) n'a été trouvée sous {0}.",
         ["ROM_MISSING"] = "« {0} » ne démarrera pas : la ROM « {1} » est absente du dossier roms.",
         ["ROM_OK"] = "« {0} » — ROM trouvée : {1}.",
         ["ROM_NOT_REQUIRED"] = "« {0} » ne nécessite pas de ROM (table originale/EM).",
@@ -1053,6 +1064,9 @@ public static class Loc
         ["POPPER_ORPHAN_PLAYLIST"] = "{0} juego(s) en la base de PinUP Popper están asignados a una playlist que ya no existe — esto es conocido por congelar el menú del frontend Popper al abrirlo.",
         ["NVRAM_EMPTY"] = "El archivo de guardado NVRAM de « {0} » está vacío (0 bytes) — VPinMAME no puede leer ningún estado guardado, la tabla puede arrancar en pantalla negra o quedarse colgada.",
         ["VPMALIAS_LOOP"] = "VPMAlias.txt contiene un bucle de alias: {0}. VPinMAME se cae (desbordamiento de pila) en cuanto una tabla necesita este nombre de ROM.",
+        // Escaneo de disco completo (18/08), mismo hueco que en francés.
+        ["DRIVE_SCAN_SUMMARY"] = "Se encontraron y analizaron {0} instalaciones de pincab distintas en {1}: {2}.",
+        ["DRIVE_SCAN_NONE_FOUND"] = "No se encontró ninguna instalación de pincab (carpeta Tables, carpeta VPinMAME o base de datos de PinUP Popper) en {0}.",
         ["ROM_MISSING"] = "« {0} » no arrancará: la ROM « {1} » no está en la carpeta roms.",
         ["ROM_OK"] = "« {0} » — ROM encontrada: {1}.",
         ["ROM_NOT_REQUIRED"] = "« {0} » no necesita ROM (tabla original/EM).",

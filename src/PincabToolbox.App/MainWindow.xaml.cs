@@ -2089,11 +2089,31 @@ public partial class MainWindow : Window
         {
             var result = await Task.Run(() => session.Apply(plan, selected));
 
-            var ok = result.ItemOutcomes.Count(kv => kv.Value);
+            // 19/08 — Execute() succeeding only ever means "the action ran"; for most of the 4
+            // built-in actions that IS the fix (they write synchronously). It is not a universal
+            // guarantee — an action that launches an external tool (e.g. a component's own
+            // registration installer) can report success the instant the tool's window opens,
+            // before the user has done anything inside it. Verify() re-probes the real, current
+            // state (RepairEngine.StillApplies) for every item Execute() reported OK, so "applied"
+            // never overclaims. Skipped for a forced dry-run: nothing was written, so there is
+            // nothing real to re-probe — every dry-run item stays counted as if applied, as before.
+            var verified = result.ForcedDryRun
+                ? new Dictionary<string, bool>()
+                : await Task.Run(() => session.Verify(plan));
+
+            var executedOk = result.ItemOutcomes.Where(kv => kv.Value).Select(kv => kv.Key).ToList();
             var failed = result.ItemOutcomes.Count(kv => !kv.Value);
+            // Missing from verified (e.g. forced dry-run, or an item Verify() could not re-probe)
+            // defaults to "confirmed" — the pre-19/08 behavior for every action that does not run
+            // into this gap, never a new way to under-report a real success.
+            var ok = executedOk.Count(id => !verified.TryGetValue(id, out var fixedNow) || fixedNow);
+            var pending = executedOk.Count(id => verified.TryGetValue(id, out var fixedNow) && !fixedNow);
+
             RepairApplyStatus.Text = string.Format(Loc.Get("repair.apply.status"), ok, failed);
             if (result.ForcedDryRun)
                 RepairApplyStatus.Text = Loc.Get("repair.forceddryrun.applied") + "\n" + RepairApplyStatus.Text;
+            if (pending > 0)
+                RepairApplyStatus.Text += "\n" + string.Format(Loc.Get("repair.apply.pending"), pending);
 
             // LOT Repair (18/08): the per-item failure reason existed inside the engine all along —
             // now that ApplyResult carries it (ItemFailureReasons), show it instead of leaving a
@@ -2119,14 +2139,15 @@ public partial class MainWindow : Window
                     + (string.IsNullOrEmpty(result.BackupPath) ? "" : " " + result.BackupPath);
             }
 
-            // LOT Rescore (18/08): only offered after a real, successful (or partially successful)
-            // Apply — at least one item actually fixed, and never for a forced dry-run, since that
-            // path performs zero disk I/O and rescanning it would just silently reproduce the same
-            // score. RescoreStatus is reset here too so a stale old→new line from a previous Apply
-            // never lingers under a fresh one.
+            // LOT Rescore (18/08, extended 19/08): offered after a real, successful (or partially
+            // successful) Apply — at least one item confirmed fixed OR still pending confirmation
+            // (a pending item is exactly the case where rescoring is the way to find out) — and
+            // never for a forced dry-run, since that path performs zero disk I/O and rescanning it
+            // would just silently reproduce the same score. RescoreStatus is reset here too so a
+            // stale old→new line from a previous Apply never lingers under a fresh one.
             RescoreStatus.Visibility = Visibility.Collapsed;
             RescoreStatus.Text = "";
-            BtnRescore.Visibility = (ok > 0 && !result.ForcedDryRun) ? Visibility.Visible : Visibility.Collapsed;
+            BtnRescore.Visibility = (ok + pending > 0 && !result.ForcedDryRun) ? Visibility.Visible : Visibility.Collapsed;
 
             // Re-plan from the same scan so the checklist reflects what actually got fixed (a change
             // just applied must not still be offered as if it were still broken).

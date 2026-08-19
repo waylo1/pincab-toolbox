@@ -1,4 +1,45 @@
-# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 18/08/2026
+# TRANSMISSION — reprise Pincab Toolbox / FlipSync (session éco)  ·  MAJ 19/08/2026
+
+## 📣 MAJ 19/08 — RegisterComComponentAction : le blocage admin est réglé, la réparation reste éteinte dans le pack pour une autre raison
+
+> **Demande de Maxime (19/08, verbatim) : « faut pas de droit d'admin mais il faut qu'elle existent et
+> soit utilisable ».** La Rule 6 d'origine (spec LOT I, §5) refusait tout court tant que l'appli ENTIÈRE
+> ne tournait pas déjà en admin — obligeant à relancer tout Pincab Toolbox via « Exécuter en tant
+> qu'administrateur » juste pour cette réparation. Ça contredisait la promesse publique (FAQ landing,
+> `app.manifest` en `asInvoker`) et n'était de toute façon jamais câblé.
+>
+> **Nouvelle Rule 6 (adaptative, jamais surprise) :** `Execute()` tente d'abord un lancement normal, sans
+> élévation — exactement comme n'importe lequel des 3 outils du whitelist. Seulement si **Windows
+> lui-même** refuse CE lancement précis avec `ERROR_ELEVATION_REQUIRED`, une seule invite UAC standard
+> est demandée pour CET outil tiers uniquement (`IElevatedProcessLauncher`, `ShellExecute` + `runas`) —
+> jamais pour l'appli elle-même, qui reste `asInvoker` en permanence. Si l'utilisateur refuse l'invite,
+> échec calme (« permission refusée, rien n'a changé »), jamais une erreur qui fait peur. Résultat :
+> plus aucun outil n'est présumé avoir besoin d'admin — Windows tranche au cas par cas, en direct.
+> `IElevationProbe`/`RealElevationProbe` (le pré-check bloquant tout l'appli) supprimés, remplacés par
+> `IElevatedProcessLauncher`/`RealElevatedProcessLauncher`. Action enregistrée dans les deux
+> `RepairActionRegistry` (App preview + write-path réel) — inerte tant qu'aucune règle du pack ne la
+> cible. 163 tests Repair (162→163), 540 tests Core inchangés, tout vert.
+>
+> **✅ 19/08, plus tard le même jour — le lot proposé ci-dessus est fait, validé par Maxime (« ok pour
+> le petit re scan »).** `BtnRepairApply_Click` appelle maintenant `session.Verify(plan)` juste après
+> `Apply()` (sauté en simulation forcée — rien n'a été écrit, rien à re-vérifier) et ne compte
+> « réparé » que pour un item qu'`Execute()` a réussi ET que `Verify()` confirme réellement disparu.
+> Un item réussi mais toujours présent (le cas VPinMAME `Setup.exe`) tombe dans un troisième
+> compteur, affiché sur sa propre ligne (`repair.apply.pending`, FR/EN/ES) plutôt que noyé dans
+> « réparé » ou faussement compté comme « échoué ». Le bouton Rescore s'affiche aussi pour ce cas
+> (c'est justement le moyen de vérifier). Général — s'applique aux 5 actions, pas seulement
+> `register_com_component`. **La règle du pack reste néanmoins éteinte** : ce correctif referme le
+> risque de confiance identifié plus haut, mais l'autre inconnue (l'outil de ré-enregistrement est-il
+> vraiment toujours à côté de la DLL sur un vrai cab — fail-closed si faux, mais jamais vérifié pour
+> de vrai) est indépendante et toujours ouverte. Activer la règle dans `pack-2026.08.json` reste une
+> décision à prendre explicitement, pas un blocage technique.
+>
+> **Ce que ça réglait — pourquoi la réparation restait éteinte dans `pack-2026.08.json`.** Le
+> `Setup.exe` de VPinMAME est un installeur GUI interactif, pas un outil silencieux. Or
+> `MainWindow.BtnRepairApply_Click` comptait un `ExecutionResult.Ok` comme « réparé » dès le retour
+> d'`Apply()`, sans jamais appeler `RepairEngine.Verify()` — pour AUCUNE action, pas seulement
+> celle-ci. Activer la règle aurait affiché « 1 réparé » à l'instant même où la fenêtre de VPinMAME
+> s'ouvre, avant que l'utilisateur ait cliqué quoi que ce soit dedans.
 
 ## ⚠️ À LIRE AVANT DE RE-DIAGNOSTIQUER UN BLOCAGE « Contrôle intelligent des applications »
 

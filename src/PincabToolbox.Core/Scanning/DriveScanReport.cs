@@ -89,6 +89,10 @@ public sealed class DriveScanReport
             merged.Findings.Add(new Finding
             {
                 Code = "DRIVE_SCAN_NONE_FOUND", Severity = Severity.Info, Category = "drive",
+                // Args ajouté 18/08 : sans lui, Loc.FindingText ne peut pas produire de version
+                // FR/ES (string.Format a besoin du chemin en argument, pas interpolé dans le texte
+                // anglais). Un scan disque entier affichait donc une phrase anglaise en UI française.
+                Args = new[] { DriveRoot },
                 EnglishText = $"No pincab install (Tables folder, VPinMAME folder, or PinUP Popper database) was found under {DriveRoot}.",
             });
         }

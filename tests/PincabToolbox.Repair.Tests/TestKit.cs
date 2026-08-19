@@ -155,11 +155,17 @@ public sealed class FakeProcessLauncher : IProcessLauncher
     }
 }
 
-/// <summary>LOT I — a settable elevation state, so the gate can be tested both ways without a real admin token.</summary>
-public sealed class FakeElevationProbe : IElevationProbe
+/// <summary>LOT I, revised 19/08 — records every elevated-launch attempt; never actually prompts UAC.</summary>
+public sealed class FakeElevatedProcessLauncher : IElevatedProcessLauncher
 {
-    public bool Elevated { get; set; }
-    public bool IsCurrentProcessElevated() => Elevated;
+    public List<(string Path, TimeSpan Timeout)> Calls { get; } = new();
+    public ProcessLaunchResult Result { get; set; } = ProcessLaunchResult.Ok(0);
+
+    public ProcessLaunchResult LaunchElevated(string exePath, TimeSpan timeout)
+    {
+        Calls.Add((exePath, timeout));
+        return Result;
+    }
 }
 
 public sealed class FakeAudioDeviceControl : IAudioDeviceControl

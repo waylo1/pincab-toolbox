@@ -166,15 +166,25 @@ public interface IProcessLauncher
 }
 
 /// <summary>
-/// Whether THIS process currently holds an elevated (administrator) token — checked at the moment
-/// of use, never assumed from the static <c>app.manifest</c> (which requests <c>asInvoker</c>: the
-/// app never auto-elevates, but a user can still right-click "Run as administrator" by hand, which
-/// this interface must be able to see). LOT I rule 6: a repair that needs admin rights must say so
-/// plainly and never attempt a surprise elevation.
+/// LOT I rule 6 (revised 19/08 — see <see cref="Actions.RegisterComComponentAction"/>'s header for
+/// the full history). The app itself NEVER elevates — <c>app.manifest</c> stays <c>asInvoker</c>,
+/// unconditionally, and this interface does not change that. What it adds is a single, disclosed,
+/// user-initiated escalation for ONE external tool <see cref="IProcessLauncher"/> already tried and
+/// failed to start with <c>ERROR_ELEVATION_REQUIRED</c> — i.e. Windows itself, not this app, decided
+/// that specific tool needs admin. The original design (a blanket pre-check that refused outright
+/// unless the whole app already ran elevated) is gone: it forced the user to relaunch the ENTIRE
+/// app as administrator just to run one optional repair, which is exactly the kind of standing
+/// admin requirement the app's own "no administrator rights required" promise (landing FAQ,
+/// app.manifest) was written to rule out. Asking Windows to elevate one already-installed,
+/// already-trusted third-party tool (VPinMAME, B2S, FlexDMD's own registration executable) for the
+/// duration of one click is not "the app requires admin" — it is the same one-off consent a user
+/// already grants when they install any of those tools in the first place. Still never a SURPRISE:
+/// the caller only ever invokes this after a normal launch attempt reported elevation as required,
+/// and the offer text shown before the click must say a Windows permission prompt may appear.
 /// </summary>
-public interface IElevationProbe
+public interface IElevatedProcessLauncher
 {
-    bool IsCurrentProcessElevated();
+    ProcessLaunchResult LaunchElevated(string exePath, TimeSpan timeout);
 }
 
 /// <summary>

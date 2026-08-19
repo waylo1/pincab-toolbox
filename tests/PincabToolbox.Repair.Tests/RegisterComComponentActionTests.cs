@@ -5,12 +5,13 @@ using PincabToolbox.Repair.Actions;
 namespace PincabToolbox.Repair.Tests;
 
 /// <summary>
-/// LOT I (spec 10/08) — covers everything about <see cref="RegisterComComponentAction"/> that does
-/// NOT require a real Windows machine: the whitelist, the fail-closed Plan() gates (rules 1/2/4),
-/// the zero-argument launch contract (rule 3, via <see cref="FakeProcessLauncher"/>), the elevation
-/// gate (rule 6, via <see cref="FakeElevationProbe"/>) and the never-reversible contract (rule 7).
-/// Real launch/elevation behaviour on a real cab is explicitly OUT of scope here — see the class's
-/// own header comment for why this action is not wired into a live Rule yet.
+/// LOT I (spec 10/08), Rule 6 revised 19/08 — covers everything about
+/// <see cref="RegisterComComponentAction"/> that does NOT require a real Windows machine: the
+/// whitelist, the fail-closed Plan() gates (rules 1/2/4), the zero-argument launch contract (rule 3,
+/// via <see cref="FakeProcessLauncher"/>), the adaptive elevation escalation (rule 6, via
+/// <see cref="FakeElevatedProcessLauncher"/>) and the never-reversible contract (rule 7).
+/// Real launch/UAC behaviour on a real cab is explicitly OUT of scope here — see the class's own
+/// header comment for why this action is not wired into a live pack rule yet.
 /// </summary>
 public static class RegisterComComponentActionTests
 {
@@ -40,9 +41,9 @@ public static class RegisterComComponentActionTests
     };
 
     private static RegisterComComponentAction Action(
-        FakeProcessLauncher? launcher = null, FakeElevationProbe? elevation = null,
+        FakeProcessLauncher? launcher = null, FakeElevatedProcessLauncher? elevatedLauncher = null,
         Func<string, ComRegistryView, (bool, ComRegistration?)>? probe = null)
-        => new(launcher ?? new FakeProcessLauncher(), elevation ?? new FakeElevationProbe { Elevated = true }, probe: probe);
+        => new(launcher ?? new FakeProcessLauncher(), elevatedLauncher ?? new FakeElevatedProcessLauncher(), probe: probe);
 
     // ───────────────────────── whitelist (rule 1) ─────────────────────────
 
@@ -186,7 +187,7 @@ public static class RegisterComComponentActionTests
         A.False(action.StillApplies(ctx), "the user (or another tool) may have already fixed it since the scan");
     }
 
-    // ───────────────────────── Execute() — elevation gate (rule 6), launch contract (rules 3/5) ─────────────────────────
+    // ───────────────────────── Execute() — adaptive elevation (rule 6, revised 19/08), launch contract (rules 3/5) ─────────────────────────
 
     private static PlannedChange Change(string target) => new()
     {
@@ -194,41 +195,58 @@ public static class RegisterComComponentActionTests
         Target = target, Before = "b", After = "a", Reversible = false,
     };
 
-    public static void Test_Execute_NotElevated_FailsWithoutEverLaunching()
-    {
-        var launcher = new FakeProcessLauncher();
-        var elevation = new FakeElevationProbe { Elevated = false };
-        var action = Action(launcher, elevation);
-
-        var result = action.Execute(Change("/install/VPinMAME/Setup.exe"));
-
-        A.False(result.Success, "rule 6 — must refuse, not attempt, when not elevated");
-        A.Equal(0, launcher.Calls.Count, "the tool must never even be launched when the elevation gate refuses");
-    }
-
-    public static void Test_Execute_Elevated_LaunchesTheExactTargetWithMandatoryTimeout()
+    public static void Test_Execute_PlainLaunchSucceeds_NeverAttemptsElevation()
     {
         var launcher = new FakeProcessLauncher { Result = ProcessLaunchResult.Ok(0) };
-        var elevation = new FakeElevationProbe { Elevated = true };
-        var action = Action(launcher, elevation);
+        var elevatedLauncher = new FakeElevatedProcessLauncher();
+        var action = Action(launcher, elevatedLauncher);
 
         var result = action.Execute(Change("/install/VPinMAME/Setup.exe"));
 
         A.True(result.Success, "a started, exited-cleanly launch is a success");
-        A.Equal(1, launcher.Calls.Count, "exactly one launch attempt");
+        A.Equal(1, launcher.Calls.Count, "exactly one plain launch attempt");
         A.Equal("/install/VPinMAME/Setup.exe", launcher.Calls[0].Path, "the launched path must be exactly the planned target — no substitution");
         A.True(launcher.Calls[0].Timeout > TimeSpan.Zero, "rule 5 — a timeout must always be passed");
+        A.Equal(0, elevatedLauncher.Calls.Count, "rule 6 — no UAC prompt when the plain launch already worked");
     }
 
-    public static void Test_Execute_LaunchDoesNotStart_ReturnsFailureWithReason()
+    public static void Test_Execute_ElevationRequired_EscalatesAndSucceeds()
     {
         var launcher = new FakeProcessLauncher { Result = ProcessLaunchResult.Failed("elevation required") };
-        var action = Action(launcher, new FakeElevationProbe { Elevated = true });
+        var elevatedLauncher = new FakeElevatedProcessLauncher { Result = ProcessLaunchResult.Ok(0) };
+        var action = Action(launcher, elevatedLauncher);
 
         var result = action.Execute(Change("/install/VPinMAME/Setup.exe"));
 
-        A.False(result.Success, "a launch that never started must surface as a failure");
-        A.Equal("elevation required", result.Error, "the launcher's own reason must reach the caller");
+        A.True(result.Success, "escalating to the elevated launcher and succeeding is still a success");
+        A.Equal(1, elevatedLauncher.Calls.Count, "exactly one elevated retry, only after the plain launch reported elevation required");
+        A.Equal("/install/VPinMAME/Setup.exe", elevatedLauncher.Calls[0].Path, "the elevated retry targets the exact same tool — no substitution");
+    }
+
+    public static void Test_Execute_ElevationRequired_UserDeclinesPrompt_FailsCalmly()
+    {
+        var launcher = new FakeProcessLauncher { Result = ProcessLaunchResult.Failed("elevation required") };
+        var elevatedLauncher = new FakeElevatedProcessLauncher { Result = ProcessLaunchResult.Failed("elevation cancelled") };
+        var action = Action(launcher, elevatedLauncher);
+
+        var result = action.Execute(Change("/install/VPinMAME/Setup.exe"));
+
+        A.False(result.Success, "a declined UAC prompt must not be reported as a success");
+        A.True(result.Error!.Contains("nothing was changed", StringComparison.OrdinalIgnoreCase),
+            "declining the prompt must read as calm and expected, never as a scary error");
+    }
+
+    public static void Test_Execute_LaunchFailsForOtherReason_NeverEscalates()
+    {
+        var launcher = new FakeProcessLauncher { Result = ProcessLaunchResult.Failed("file not found") };
+        var elevatedLauncher = new FakeElevatedProcessLauncher();
+        var action = Action(launcher, elevatedLauncher);
+
+        var result = action.Execute(Change("/install/VPinMAME/Setup.exe"));
+
+        A.False(result.Success, "a non-elevation failure must surface as a failure");
+        A.Equal("file not found", result.Error, "the launcher's own reason must reach the caller unchanged");
+        A.Equal(0, elevatedLauncher.Calls.Count, "only \"elevation required\" ever triggers the UAC escalation — no other failure does");
     }
 
     public static void Test_Execute_TimedOut_IsStillReportedAsStartedSuccessfully()
@@ -236,7 +254,7 @@ public static class RegisterComComponentActionTests
         // A timeout means only "this app stopped waiting" (rule 5), not "the tool failed" — several
         // whitelisted tools are interactive GUI installers the user may still be using.
         var launcher = new FakeProcessLauncher { Result = ProcessLaunchResult.TimedOutResult() };
-        var action = Action(launcher, new FakeElevationProbe { Elevated = true });
+        var action = Action(launcher);
 
         var result = action.Execute(Change("/install/VPinMAME/Setup.exe"));
 

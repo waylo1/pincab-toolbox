@@ -83,7 +83,10 @@ public sealed class RepairSession
             new UnblockFileAction(fs),
             new RestoreRomArchiveAction(fs),
             new QuarantineOrphanedMediaAction(fs),
-            new KillZombiePinUpDisplayAction(new RealProcessControl()));
+            new KillZombiePinUpDisplayAction(new RealProcessControl()),
+            new RegisterComComponentAction(new RealProcessLauncher(), new RealElevatedProcessLauncher()));
+        // Registered (19/08) but still inert: no pack repairRules entry targets it yet — see
+        // RegisterComComponentAction's own header for the remaining, unrelated-to-admin-rights blocker.
 
         var backupRoot = Path.Combine(root, "repair-backups");
         _journal = new FileRepairJournal(Path.Combine(root, "repair-journal"));
