@@ -264,6 +264,10 @@
                      Chacun choisit sa langue directement via Loc.SetLang, la langue active est
                      mise en évidence dans UpdateLangButtons (voir ApplyTexts). -->
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                    <!-- 20/08 : bascule Débutant/Expert du panneau de détail d'un finding (voir
+                         ListFindings_SelectionChanged). Même pattern que les boutons de langue :
+                         Content dynamique mis à jour dans ApplyTexts via UpdateExpertModeButton. -->
+                    <Button x:Name="BtnExpertMode" Padding="10,5" Margin="0,0,10,0" Click="BtnExpertMode_Click"/>
                     <Button x:Name="BtnLangEn" Content="EN" Padding="10,5" Margin="0,0,4,0" Click="BtnLangEn_Click" ToolTip="English"/>
                     <Button x:Name="BtnLangFr" Content="FR" Padding="10,5" Margin="0,0,4,0" Click="BtnLangFr_Click" ToolTip="Français"/>
                     <Button x:Name="BtnLangEs" Content="ES" Padding="10,5" Click="BtnLangEs_Click" ToolTip="Español"/>

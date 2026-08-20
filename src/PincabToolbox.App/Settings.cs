@@ -20,6 +20,16 @@ public sealed class Settings
     public bool OnboardingSeen { get; set; }
 
     /// <summary>
+    /// 20/08 — mode Débutant/Expert du panneau de détail d'un finding (voir
+    /// <c>MainWindow.ListFindings_SelectionChanged</c>). Défaut à `true` (Expert), délibérément :
+    /// avant ce champ, TOUT LE MONDE voyait déjà le détail complet — un défaut à `false` aurait
+    /// silencieusement changé ce que voient les testeurs déjà en cours de test sans qu'ils l'aient
+    /// demandé. Un nouvel utilisateur peut passer en Débutant lui-même ; ça ne bascule jamais tout
+    /// seul.
+    /// </summary>
+    public bool ExpertMode { get; set; } = true;
+
+    /// <summary>
     /// LOT H.4 (spec 10/08) — the Repair license key, pasted once by the user and re-verified
     /// (never trusted) on every Apply via <see cref="Repair.Licensing.LicenseVerifier"/>. Stored as
     /// plain text like the rest of this file: the key itself is a public, non-secret credential

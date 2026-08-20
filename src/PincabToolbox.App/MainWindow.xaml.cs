@@ -198,6 +198,11 @@ public partial class MainWindow : Window
     // — never trusted just because it was true on a previous click (H.4: never assumed).
     private bool _licensed;
 
+    /// <summary>20/08 — mode Débutant/Expert du panneau de détail (voir
+    /// <see cref="ListFindings_SelectionChanged"/> et <see cref="Settings.ExpertMode"/>). Initialisé
+    /// depuis les settings dans le constructeur, avant le premier <see cref="ApplyTexts"/>.</summary>
+    private bool _expertMode;
+
     // Keep in sync with AssemblyInfo/csproj version — same literal ApplyTexts already displayed
     // in the About tab before this change, just named now so BtnCheckUpdate_Click can compare
     // against it too.
@@ -304,6 +309,10 @@ public partial class MainWindow : Window
         // restore saved language before the first text pass so the UI opens in the right language
         if (!string.IsNullOrEmpty(_settings.Lang)) Loc.SetLang(_settings.Lang!);
 
+        // 20/08 — même logique : restaurer AVANT le premier ApplyTexts pour que le bouton
+        // s'affiche déjà dans le bon état à l'ouverture.
+        _expertMode = _settings.ExpertMode;
+
         Loc.LanguageChanged += ApplyTexts;
         ApplyTexts();
 
@@ -366,6 +375,7 @@ public partial class MainWindow : Window
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         _settings.Lang = Loc.Lang;
+        _settings.ExpertMode = _expertMode;
         _settings.LastRoot = TxtRoot.Text.Trim();
         var b = WindowState == WindowState.Normal
             ? new Rect(Left, Top, Width, Height)
@@ -441,6 +451,7 @@ public partial class MainWindow : Window
         // already know had no way to find the other languages. Now 3 buttons, always visible,
         // side by side; UpdateLangButtons highlights whichever one is active.
         UpdateLangButtons();
+        UpdateExpertModeButton();
         Title = Loc.Get("app.title");
         HeaderTagline.Text = Loc.Get("about.tagline");
         TabScannerHeader.Text = Loc.Get("tab.scanner");
@@ -544,6 +555,28 @@ public partial class MainWindow : Window
     private void BtnLangEn_Click(object sender, RoutedEventArgs e) => Loc.SetLang("en");
     private void BtnLangFr_Click(object sender, RoutedEventArgs e) => Loc.SetLang("fr");
     private void BtnLangEs_Click(object sender, RoutedEventArgs e) => Loc.SetLang("es");
+
+    /// <summary>20/08 — bascule le mode Débutant/Expert du panneau de détail. Persisté tout de suite
+    /// (comme la langue) plutôt qu'attendu jusqu'à Window_Closing, pour ne rien perdre si l'app
+    /// plante ou est fermée depuis le gestionnaire de tâches.</summary>
+    private void BtnExpertMode_Click(object sender, RoutedEventArgs e)
+    {
+        _expertMode = !_expertMode;
+        _settings.ExpertMode = _expertMode;
+        _settings.Save();
+        UpdateExpertModeButton();
+        // rafraîchit le panneau de détail actuellement affiché (si un finding est sélectionné) sans
+        // dupliquer la logique d'affichage : `e` n'est jamais lu dans ListFindings_SelectionChanged.
+        ListFindings_SelectionChanged(this, null!);
+    }
+
+    /// <summary>Same visual pattern as <see cref="UpdateLangButtons"/>: the button's own content is
+    /// always the label of the CURRENTLY ACTIVE mode (not the mode you'd switch to).</summary>
+    private void UpdateExpertModeButton()
+    {
+        BtnExpertMode.Content = Loc.Get(_expertMode ? "mode.expert" : "mode.beginner");
+        BtnExpertMode.ToolTip = Loc.Get(_expertMode ? "mode.expert.tooltip" : "mode.beginner.tooltip");
+    }
 
     /// <summary>Highlights whichever of the 3 language buttons is active (AccentButton style,
     /// same visual language used elsewhere for a selected/primary action) and leaves the other
@@ -1713,20 +1746,25 @@ public partial class MainWindow : Window
         DetailSymptomLabel.Text = Loc.Get("detail.symptom");
         SetSection(DetailSymptomLabel, DetailSymptom, PackKnowledge.Player(row.Code));
 
+        // 20/08 — mode Débutant/Expert (revue GPT + CTO du 20/08). Symptôme et Correctif restent
+        // toujours affichés (déjà en langage simple, utiles dans les deux modes) ; Impact/Cause/
+        // Explication/Vérification (le détail technique) ne s'affichent qu'en mode Expert — passer
+        // `null` à SetSection masque proprement la section, même logique que "cette section n'a pas
+        // de texte pour ce code", aucune duplication de la logique d'affichage.
         DetailImpactLabel.Text = Loc.Get("detail.impact");
-        SetSection(DetailImpactLabel, DetailImpact, Knowledge.Impact(row.Code));
+        SetSection(DetailImpactLabel, DetailImpact, _expertMode ? Knowledge.Impact(row.Code) : null);
 
         DetailCauseLabel.Text = Loc.Get("detail.cause");
-        SetSection(DetailCauseLabel, DetailCause, Knowledge.Cause(row.Code));
+        SetSection(DetailCauseLabel, DetailCause, _expertMode ? Knowledge.Cause(row.Code) : null);
 
         DetailExplanationLabel.Text = Loc.Get("detail.explanation");
-        SetSection(DetailExplanationLabel, DetailExplanation, PackKnowledge.Explanation(row.Code));
+        SetSection(DetailExplanationLabel, DetailExplanation, _expertMode ? PackKnowledge.Explanation(row.Code) : null);
 
         DetailFixLabel.Text = Loc.Get("detail.fix");
         SetSection(DetailFixLabel, DetailFix, row.FixHint);
 
         DetailVerifyLabel.Text = Loc.Get("detail.verify");
-        SetSection(DetailVerifyLabel, DetailVerify, PackKnowledge.Verification(row.Code));
+        SetSection(DetailVerifyLabel, DetailVerify, _expertMode ? PackKnowledge.Verification(row.Code) : null);
 
         // Écran 1 — real per-code facts from the computed plan, not the static Knowledge.cs
         // approximation: only a code the engine actually resolved to Locked+fixable shows the tag.
