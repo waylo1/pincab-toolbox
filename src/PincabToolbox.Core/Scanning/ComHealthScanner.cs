@@ -109,7 +109,8 @@ public sealed class ComHealthScanner : IScanner
             foreach (var f in EvaluateComponent(
                 comp.ProgId, reg32, succ32, reg64, succ64,
                 binaryPresent, root, comp.RequiredByATable,
-                installedVpxBitnesses, Id, comp.SeverityCap, _fileExists))
+                installedVpxBitnesses, Id, comp.SeverityCap, _fileExists,
+                binaryPath: binaryPath))
             {
                 yield return f;
             }
@@ -167,7 +168,16 @@ public sealed class ComHealthScanner : IScanner
         bool requiredByATable,
         IReadOnlyList<Bitness> installedVpxBitnesses,
         string category, Severity severityCap,
-        Func<string, bool>? fileExists = null)
+        Func<string, bool>? fileExists = null,
+        // 20/08 — the caller (Scan()) already resolves this component's binary path via
+        // FindBinaryPath() to compute binaryPresentUnderRoot above, but used to discard the path
+        // itself, keeping only the bool. RegisterComComponentAction (Repair) needs a real
+        // Finding.FilePath to derive the registration tool's directory — without it, COM_NOT_REGISTERED
+        // and COM_BITNESS_GAP could never be repaired even once wired into the Knowledge Pack (Plan()
+        // fails closed on a null FilePath). COM_STALE_PATH and COM_OK already set their own FilePath
+        // from the registry's own (possibly stale) ServerPath — deliberately NOT overridden by this
+        // parameter, that path means something different there (see FIELD-LOG 2026-08-20).
+        string? binaryPath = null)
     {
         fileExists ??= File.Exists;
         var findings = new List<Finding>();
@@ -180,7 +190,7 @@ public sealed class ComHealthScanner : IScanner
                 findings.Add(Cap(new Finding
                 {
                     Code = "COM_NOT_REGISTERED", Severity = Severity.Warning, Category = category,
-                    Subject = progId,
+                    Subject = progId, FilePath = binaryPath,
                     Args = new[] { progId },
                     EnglishText = $"'{progId}' is not registered in either the 32-bit or 64-bit COM registry, " +
                                   "but the matching component is present under this install and at least one " +
@@ -260,7 +270,7 @@ public sealed class ComHealthScanner : IScanner
                 findings.Add(Cap(new Finding
                 {
                     Code = "COM_BITNESS_GAP", Severity = Severity.Warning, Category = category,
-                    Subject = progId,
+                    Subject = progId, FilePath = binaryPath,
                     Args = new[] { progId, label },
                     EnglishText = $"A {label} Visual Pinball is installed but '{progId}' is only registered in " +
                                   $"the OTHER bitness — the {label} process cannot use it. This is the classic " +

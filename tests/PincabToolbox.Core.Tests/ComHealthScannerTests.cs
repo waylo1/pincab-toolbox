@@ -86,9 +86,14 @@ public static class ComHealthScannerTests
             ProgId, null, true, null, true,
             binaryPresentUnderRoot: true, rootPath: "/install",
             requiredByATable: true, installedVpxBitnesses: NoBitness,
-            category: "com", severityCap: Severity.Warning);
+            category: "com", severityCap: Severity.Warning,
+            binaryPath: "/install/VPinMAME/VPinMAME.dll");
         Assert.Equal(1, findings.Count(f => f.Code == "COM_NOT_REGISTERED"));
         Assert.Equal(Severity.Warning, findings.Single(f => f.Code == "COM_NOT_REGISTERED").Severity);
+        // 20/08 — Repair (RegisterComComponentAction) needs this to derive the registration tool's
+        // directory; without it the fix could never wire up even once the pack rule exists.
+        Assert.Equal("/install/VPinMAME/VPinMAME.dll", findings.Single(f => f.Code == "COM_NOT_REGISTERED").FilePath,
+            "FilePath must carry the component's own binary path through to Repair");
     }
 
     public static void Test_Component_NotRegistered_ButNotRequired_Silent()
@@ -174,9 +179,12 @@ public static class ComHealthScannerTests
             binaryPresentUnderRoot: false, rootPath: "/install",
             requiredByATable: false, installedVpxBitnesses: X64Only,
             category: "com", severityCap: Severity.Warning,
-            fileExists: _ => true);
+            fileExists: _ => true,
+            binaryPath: "/install/VPinMAME/VPinMAME64.dll");
         Assert.Equal(1, findings.Count(f => f.Code == "COM_BITNESS_GAP"));
         Assert.Equal(Severity.Warning, findings.Single(f => f.Code == "COM_BITNESS_GAP").Severity);
+        Assert.Equal("/install/VPinMAME/VPinMAME64.dll", findings.Single(f => f.Code == "COM_BITNESS_GAP").FilePath,
+            "same reason as COM_NOT_REGISTERED — Repair needs a real FilePath to derive the tool's directory");
     }
 
     public static void Test_Component_UnknownBitnessVpx_NeverBitnessGap()
