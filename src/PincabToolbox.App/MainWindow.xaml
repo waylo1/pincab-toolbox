@@ -1151,10 +1151,24 @@
                         </Border>
 
                         <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Accent}" BorderThickness="1"
-                                CornerRadius="8" Padding="16,14" Margin="0,0,0,4">
+                                CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
                             <StackPanel>
                                 <TextBlock x:Name="Tutorial5Title" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Accent}"/>
                                 <TextBlock x:Name="Tutorial5Body" TextWrapping="Wrap" FontSize="13.5" LineHeight="20"
+                                           Foreground="{StaticResource Text}" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 20/08 — étape 6, mode Débutant/Expert (voir MainWindow.ListFindings_SelectionChanged
+                             et Settings.ExpertMode). Précise bien que ce bouton n'agit QUE sur le panneau de
+                             détail de l'onglet Scanner (clic sur une ligne de résultat), pas sur l'onglet Repair —
+                             confusion réelle de Maxime le 20/08 (« je vois pas de difference »), qui testait
+                             probablement sans avoir de ligne sélectionnée dans le Scanner. -->
+                        <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Accent}" BorderThickness="1"
+                                CornerRadius="8" Padding="16,14" Margin="0,0,0,4">
+                            <StackPanel>
+                                <TextBlock x:Name="Tutorial6Title" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Accent}"/>
+                                <TextBlock x:Name="Tutorial6Body" TextWrapping="Wrap" FontSize="13.5" LineHeight="20"
                                            Foreground="{StaticResource Text}" Margin="0,6,0,0"/>
                             </StackPanel>
                         </Border>

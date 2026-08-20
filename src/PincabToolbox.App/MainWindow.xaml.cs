@@ -503,6 +503,8 @@ public partial class MainWindow : Window
         Tutorial4Body.Text = Loc.Get("tutorial.step4.body");
         Tutorial5Title.Text = Loc.Get("tutorial.step5.title");
         Tutorial5Body.Text = Loc.Get("tutorial.step5.body");
+        Tutorial6Title.Text = Loc.Get("tutorial.step6.title");
+        Tutorial6Body.Text = Loc.Get("tutorial.step6.body");
 
         // Écran Scanner porté sur la maquette 11/08 — libellés statiques ; les compteurs et
         // contenus dépendants du scan sont repris par RefreshList() en fin de méthode.
@@ -576,6 +578,12 @@ public partial class MainWindow : Window
     {
         BtnExpertMode.Content = Loc.Get(_expertMode ? "mode.expert" : "mode.beginner");
         BtnExpertMode.ToolTip = Loc.Get(_expertMode ? "mode.expert.tooltip" : "mode.beginner.tooltip");
+        // 20/08 — retour Maxime : le changement de texte seul ("Expert" ↔ "Débutant") passait
+        // inaperçu à côté des 3 boutons de langue, tous de la même couleur. Contrairement à
+        // UpdateLangButtons (qui accentue UN SEUL des 3 boutons, celui actif), ce bouton est
+        // toujours en surbrillance : il n'y a que 2 états et l'un des deux est TOUJOURS actif,
+        // donc "en vert" en permanence est le signal le plus honnête (pas de 3e état "off").
+        BtnExpertMode.Style = (Style)FindResource("AccentButton");
     }
 
     /// <summary>Highlights whichever of the 3 language buttons is active (AccentButton style,
