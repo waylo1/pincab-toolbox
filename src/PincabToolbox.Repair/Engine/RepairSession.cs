@@ -230,6 +230,17 @@ public sealed class RepairSession
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        // 20/08 — Maxime, testeur réel : la liste "Réparé" ne montrait que les noms de fichiers
+        // touchés ("PopRunSQL.exe, x360ce.exe…"), jamais CE QUI avait été fait dessus. La donnée
+        // existait déjà dans le journal (chaque ChangeApplied porte ActionId + Before/After, voir
+        // PlannedChange) — seule Summarize() la jetait. Un item annulé garde son entrée ici (même
+        // logique que `targets` juste au-dessus) : "Annulé" a sa propre ligne dans BuildPlanSummaryText,
+        // ce n'est pas à ChangeDetails de trancher ce qui tient encore.
+        var changeDetails = entries
+            .Where(e => e.Event == JournalEvent.ChangeApplied && e.Change is not null)
+            .Select(e => new RepairChangeDetail(e.Change!.ActionId, LastSegment(e.Change.Target), e.Change.Before, e.Change.After))
+            .ToList();
+
         var stillApplied = completedItemIds.Except(revertedItemIds).Count();
 
         var outcome = forcedDryRun ? PlanOutcome.ForcedDryRun
@@ -238,7 +249,7 @@ public sealed class RepairSession
             : stillApplied == 0 ? PlanOutcome.FullyUndone
             : PlanOutcome.PartiallyUndone;
 
-        return new PlanSummary(planId, createdAt, completedItemIds.Count, revertedItemIds.Count, targets, forcedDryRun, outcome);
+        return new PlanSummary(planId, createdAt, completedItemIds.Count, revertedItemIds.Count, targets, forcedDryRun, outcome, changeDetails);
     }
 
     /// <summary>Every known plan, summarized, most recent first — what the App's Réparé/Annulé lists render from.</summary>
@@ -265,7 +276,20 @@ public sealed record PlanSummary(
     int ItemsUndone,
     IReadOnlyList<string> Targets,
     bool ForcedDryRun,
-    PlanOutcome Outcome);
+    PlanOutcome Outcome,
+    IReadOnlyList<RepairChangeDetail> ChangeDetails);
+
+/// <summary>
+/// One applied change, in facts derived purely from the journal (same posture as
+/// <see cref="PlanSummary"/> itself) — what <c>BuildPlanSummaryText</c> (App) renders per target
+/// instead of a bare filename. <see cref="Before"/>/<see cref="After"/> are the same English text
+/// each <c>IRepairAction</c> already writes into <see cref="PlannedChange"/> for the journal export
+/// — not yet localized (ADR-0xx candidate if this needs FR/ES phrasing later); the App layer maps
+/// <see cref="ActionId"/> to a localized short label where it can, and falls back to this raw text
+/// otherwise, so an action added later without App-side wiring still shows something instead of
+/// nothing.
+/// </summary>
+public sealed record RepairChangeDetail(string ActionId, string Target, string Before, string After);
 
 /// <summary>
 /// Which of the three lists (Réparé / À faire / Annulé, per Maxime's 13/08 request) a plan belongs

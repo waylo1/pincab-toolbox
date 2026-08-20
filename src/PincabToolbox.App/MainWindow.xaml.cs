@@ -2027,17 +2027,47 @@ public partial class MainWindow : Window
         RepairUndoStatus.Text = _repairSession.LastJournalWriteFailed ? Loc.Get("repair.undo.journalwarning") : "";
     }
 
+    /// <summary>
+    /// 20/08 — Maxime, testeur réel : "dans réparé j'ai pas le detail de la réparation d'avant",
+    /// la liste ne montrait qu'un nom de fichier ("PopRunSQL.exe, x360ce.exe…"), jamais ce qui lui
+    /// avait été fait. La donnée existait déjà dans le journal (voir <see cref="RepairSession.Summarize"/>
+    /// et <see cref="RepairChangeDetail"/>) — un item par ligne, au lieu d'une seule ligne "targets"
+    /// séparée par virgules.
+    /// </summary>
     private static string BuildPlanSummaryText(PlanSummary s)
     {
         var when = s.CreatedAtUtc?.ToLocalTime().ToString("dd/MM HH:mm") ?? "?";
-        var targets = s.Targets.Count > 0 ? " — " + string.Join(", ", s.Targets) : "";
-        var head = string.Format(Loc.Get("repair.done.count"), when, s.ItemsCompleted) + targets;
+        var head = string.Format(Loc.Get("repair.done.count"), when, s.ItemsCompleted);
+
+        // Fallback on the flat Targets list only for a summary with no per-change detail at all
+        // (should not happen going forward — kept so a malformed/edge-case journal entry still
+        // shows something instead of a blank line, same "never throw, degrade" posture as the rest
+        // of this class).
+        var lines = s.ChangeDetails.Count > 0
+            ? s.ChangeDetails.Select(d => $"  • {d.Target} : {ActionLabel(d)}")
+            : s.Targets.Select(t => $"  • {t}");
+        var detail = string.Join("\n", lines);
+        if (!string.IsNullOrEmpty(detail)) head += "\n" + detail;
 
         if (s.Outcome == PlanOutcome.PartiallyUndone)
             return head + "\n" + string.Format(Loc.Get("repair.done.partiallyundone"), s.ItemsUndone);
         if (s.Outcome == PlanOutcome.FullyUndone)
             return head + "\n" + Loc.Get("repair.done.fullyundone");
         return head;
+    }
+
+    /// <summary>
+    /// Localized short label for one applied change, keyed by <c>IRepairAction.Id</c>
+    /// ("repair.action.&lt;id&gt;"). Falls back to the action's own raw Before/After text (English
+    /// only, same text already used in the journal's anonymized export) when no translation exists
+    /// yet — e.g. a new <c>IRepairAction</c> shipped without an App-side label — so a repair never
+    /// shows a blank or a raw resource key to the user.
+    /// </summary>
+    private static string ActionLabel(RepairChangeDetail d)
+    {
+        var key = $"repair.action.{d.ActionId}";
+        var label = Loc.Get(key);
+        return label == key ? $"{d.Before} → {d.After}" : label;
     }
 
     /// <summary>

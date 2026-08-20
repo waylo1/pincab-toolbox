@@ -389,6 +389,15 @@ public static class RepairSessionTests
             A.Equal(0, s.ItemsUndone, "nothing undone yet");
             A.True(s.Targets.Contains(Path.GetFileName(zipTarget)), "the archived file name must be listed");
             A.False(s.ForcedDryRun, "a real Apply, not a simulation");
+
+            // 20/08 — Maxime, testeur réel : "j'ai pas le detail de la réparation d'avant". La donnée
+            // existait déjà dans le journal (Before/After par change) — Summarize() doit la restituer.
+            A.Equal(1, s.ChangeDetails.Count, "one change detail per applied change");
+            var detail = s.ChangeDetails[0];
+            A.Equal("restore_rom_archive", detail.ActionId, "same action id the journal recorded");
+            A.Equal(Path.GetFileName(zipTarget), detail.Target, "same target, same LastSegment convention as Targets");
+            A.Equal("extracted folder (1 file)", detail.Before, "before text carried through, not discarded");
+            A.Equal("archive restored, folder kept aside", detail.After, "after text carried through, not discarded");
         }
         finally { TryDelete(root); }
     }
