@@ -252,6 +252,34 @@ public static class RepairTests
         A.Equal(0, p.Items[0].Missing.Count, "no hint to show, not a crash");
     }
 
+    /// <summary>
+    /// 20/08, testeur réel : un Scanner report de 728 findings (dont 230 Ok et 371 Info) produisait
+    /// 728 "étapes manuelles" dans Repair, noyant les 8 vrais critiques sous des ROM_OK/ROM_NOT_REQUIRED.
+    /// Ok et Info ("tout va bien" / "à titre indicatif") ne doivent plus générer d'item — Note et
+    /// au-dessus restent surfacés (ADR-006 : ne rien cacher de ce que le Scanner a remonté).
+    /// </summary>
+    public static void Test_Plan_OkAndInfoFindings_ProduceNoItems_NoteAndAboveStillDo()
+    {
+        var fs = new FakeFs();
+        var pack = new KnowledgePack("2026.08", Array.Empty<RepairRule>());
+        var eng = Engine(fs, pack, new RepairActionRegistry(), out _, out _);
+
+        var findings = new[]
+        {
+            new Finding { Code = "ROM_OK", Severity = Severity.Ok, Category = "rom", EnglishText = "rom ok" },
+            new Finding { Code = "ROM_NOT_REQUIRED", Severity = Severity.Ok, Category = "rom", EnglishText = "not required" },
+            new Finding { Code = "UPDATES_INFO", Severity = Severity.Info, Category = "updates", EnglishText = "info" },
+            new Finding { Code = "LOCALE_SEPARATOR", Severity = Severity.Note, Category = "globalconfig", EnglishText = "note" },
+            new Finding { Code = "SOME_WARNING", Severity = Severity.Warning, Category = "misc", EnglishText = "warning" },
+            new Finding { Code = "ROM_MISSING", Severity = Severity.Critical, Category = "rom", EnglishText = "critical" },
+        };
+
+        var p = eng.Plan("scan-1", findings, licensed: true);
+        A.Equal(3, p.Items.Count, "only Note, Warning and Critical become items — Ok and Info are dropped");
+        A.True(p.Items.All(i => i.SourceFinding!.Severity is Severity.Note or Severity.Warning or Severity.Critical),
+            "no Ok/Info source finding leaked through");
+    }
+
     // ═══════════════ 3. Preflight — five checks ═══════════════
 
     public static void Test_Preflight_RefusesWhileVpxIsRunning()

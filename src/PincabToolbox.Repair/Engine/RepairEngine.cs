@@ -71,10 +71,19 @@ public sealed class RepairEngine : IRepairEngine
         }
 
         // 2. One item per remaining finding.
+        //
+        // Ok and Info findings are deliberately excluded here (Maxime, 20/08, en réponse à un
+        // testeur réel dont le Repair affichait 728 "étapes manuelles" pour un rapport Scanner de
+        // 728 findings au total, tous confondus). Ok ("tout va bien", ex. ROM_OK) et Info
+        // ("rien de cassé, à titre indicatif", ex. Update Watcher, media-orphan) ne sont jamais des
+        // choses à réparer — Note et au-dessus (Warning, Critical) restent inclus car ce sont des
+        // faits ou des problèmes que Repair doit continuer à surfacer (ADR-006 : ne rien cacher de
+        // ce que le Scanner a remonté), y compris quand ils ne sont pas automatisables (ManualOnly).
         var index = 0;
         foreach (var f in findings)
         {
             if (consumed.Contains(f)) continue;
+            if (f.Severity is Severity.Ok or Severity.Info) continue;
             index++;
             items.Add(BuildFindingItem($"{planId}-i{index:D3}", f, licensed));
         }
