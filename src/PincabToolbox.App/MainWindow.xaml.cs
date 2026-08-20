@@ -577,13 +577,17 @@ public partial class MainWindow : Window
     private void UpdateExpertModeButton()
     {
         BtnExpertMode.Content = Loc.Get(_expertMode ? "mode.expert" : "mode.beginner");
-        BtnExpertMode.ToolTip = Loc.Get(_expertMode ? "mode.expert.tooltip" : "mode.beginner.tooltip");
         // 20/08 — retour Maxime : le changement de texte seul ("Expert" ↔ "Débutant") passait
         // inaperçu à côté des 3 boutons de langue, tous de la même couleur. Contrairement à
         // UpdateLangButtons (qui accentue UN SEUL des 3 boutons, celui actif), ce bouton est
         // toujours en surbrillance : il n'y a que 2 états et l'un des deux est TOUJOURS actif,
         // donc "en vert" en permanence est le signal le plus honnête (pas de 3e état "off").
         BtnExpertMode.Style = (Style)FindResource("AccentButton");
+        // 20/08 (suite, même jour) — un ToolTip a été essayé ici puis retiré, retour Maxime : aucun
+        // style ToolTip n'est défini dans App.xaml, donc WPF retombe sur le rendu système par défaut
+        // (fond blanc, texte noir) qui jure avec le thème sombre — s'affichait comme un gros bandeau
+        // blanc cassé au survol. Le texte du bouton (Expert/Débutant) suffit à communiquer l'état ;
+        // pas de ToolTip ici tant qu'un style ToolTip sombre n'existe pas ailleurs dans l'app.
     }
 
     /// <summary>Highlights whichever of the 3 language buttons is active (AccentButton style,
