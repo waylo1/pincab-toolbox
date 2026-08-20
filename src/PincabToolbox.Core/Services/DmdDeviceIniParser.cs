@@ -197,4 +197,54 @@ public static class DmdDeviceIniParser
 
         return any;
     }
+
+    /// <summary>
+    /// 20/08 — Repair's writer for DMD_POSITION_OFFSCREEN (<c>RepositionDmdAction</c>). Rewrites
+    /// ONLY the <c>left</c>/<c>top</c> lines already present inside an existing
+    /// <c>[virtualdmd]</c> section, byte-for-byte preserving every other line (other keys, other
+    /// sections, comments, blank lines, `\r\n` vs `\n`). Never invents a section or a key that was
+    /// not already there — same "no guessed identifiers" posture as
+    /// <see cref="TryParseVirtualDmdConfig"/>: returns null if the section is missing, or if
+    /// either key isn't already a line in that section, rather than silently appending one.
+    /// </summary>
+    public static string? RewriteVirtualDmdPosition(string iniText, int newLeft, int newTop)
+    {
+        var lines = iniText.Split('\n');
+        string? currentSection = null;
+        var sawVirtualDmdSection = false;
+        var changedLeft = false;
+        var changedTop = false;
+
+        for (var i = 0; i < lines.Length; i++)
+        {
+            var raw = lines[i];
+            var hadCr = raw.EndsWith("\r");
+            var line = (hadCr ? raw[..^1] : raw).Trim();
+            if (line.Length == 0 || line.StartsWith(';') || line.StartsWith('#')) continue;
+
+            if (line.StartsWith('[') && line.EndsWith(']'))
+            {
+                currentSection = line.Substring(1, line.Length - 2).Trim().ToLowerInvariant();
+                if (currentSection == "virtualdmd") sawVirtualDmdSection = true;
+                continue;
+            }
+
+            if (currentSection != "virtualdmd") continue;
+            var eq = line.IndexOf('=');
+            if (eq <= 0) continue;
+            var key = line.Substring(0, eq).Trim().ToLowerInvariant();
+            if (key != "left" && key != "top") continue;
+
+            // Preserve everything up to and including '=' from the ORIGINAL (untrimmed) line —
+            // keeps the user's own indentation and key casing exactly as they had it.
+            var eqInRaw = raw.IndexOf('=');
+            var prefix = raw[..(eqInRaw + 1)];
+            var newValue = key == "left" ? newLeft : newTop;
+            lines[i] = prefix + " " + newValue + (hadCr ? "\r" : "");
+            if (key == "left") changedLeft = true; else changedTop = true;
+        }
+
+        if (!sawVirtualDmdSection || !changedLeft || !changedTop) return null;
+        return string.Join('\n', lines);
+    }
 }

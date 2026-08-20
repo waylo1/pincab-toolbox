@@ -51,6 +51,62 @@ public static class DmdConfigScannerTests
         Assert.Equal(null, cfg.Left); // 'left = 999' belongs to [pin2dmd], not [virtualdmd]
     }
 
+    // ───────────────────────── DmdDeviceIniParser.RewriteVirtualDmdPosition (20/08, Repair) ─────────────────────────
+
+    public static void Test_Rewrite_ChangesOnlyLeftAndTop_PreservesEverythingElse()
+    {
+        var ini = "[pin2dmd]\nenabled = true\n\n; comment kept\n[virtualdmd]\nenabled = true\nleft = 9000\ntop = 9000\nwidth = 1024\nheight = 256\n";
+        var result = DmdDeviceIniParser.RewriteVirtualDmdPosition(ini, 0, 0);
+        Assert.NotNull(result);
+        Assert.True(result!.Contains("left = 0"), "left rewritten");
+        Assert.True(result.Contains("top = 0"), "top rewritten");
+        Assert.True(result.Contains("width = 1024"), "width untouched");
+        Assert.True(result.Contains("height = 256"), "height untouched");
+        Assert.True(result.Contains("[pin2dmd]"), "other section untouched");
+        Assert.True(result.Contains("; comment kept"), "comment untouched");
+        Assert.True(result.Contains("enabled = true"), "unrelated key untouched");
+
+        // The rewrite must still parse back cleanly to the new values.
+        var reparsed = DmdDeviceIniParser.TryParseVirtualDmdConfig(result);
+        Assert.Equal(0, reparsed!.Left);
+        Assert.Equal(0, reparsed.Top);
+    }
+
+    public static void Test_Rewrite_NoVirtualDmdSection_ReturnsNull_NeverInventsOne()
+    {
+        var result = DmdDeviceIniParser.RewriteVirtualDmdPosition("[pin2dmd]\nenabled = true\n", 0, 0);
+        Assert.Equal(null, result);
+    }
+
+    public static void Test_Rewrite_LeftKeyAbsentFromSection_ReturnsNull_NeverAppendsALine()
+    {
+        // top present, left missing entirely — must fail closed rather than invent "left = 0".
+        var ini = "[virtualdmd]\ntop = 9000\n";
+        var result = DmdDeviceIniParser.RewriteVirtualDmdPosition(ini, 0, 0);
+        Assert.Equal(null, result);
+    }
+
+    public static void Test_Rewrite_PreservesCrLfLineEndings()
+    {
+        var ini = "[virtualdmd]\r\nleft = 9000\r\ntop = 9000\r\n";
+        var result = DmdDeviceIniParser.RewriteVirtualDmdPosition(ini, 0, 0);
+        Assert.NotNull(result);
+        Assert.True(result!.Contains("left = 0\r"), "CRLF preserved on the rewritten line");
+    }
+
+    public static void Test_Rewrite_RoundTripsWithATypicalRealFile()
+    {
+        // Same shape as the sample fixture used by DmdConfigScannerTests's own end-to-end test.
+        var ini = "[virtualdmd]\nenabled = true\nleft = -1920\ntop = 0\nwidth = 1024\nheight = 256\n";
+        var result = DmdDeviceIniParser.RewriteVirtualDmdPosition(ini, 0, 0);
+        var cfg = DmdDeviceIniParser.TryParseVirtualDmdConfig(result!);
+        Assert.Equal(true, cfg!.Enabled);
+        Assert.Equal(0, cfg.Left);
+        Assert.Equal(0, cfg.Top);
+        Assert.Equal(1024, cfg.Width);
+        Assert.Equal(256, cfg.Height);
+    }
+
     // ───────────────────────── DmdDeviceIniParser.AnyHardwareDeviceEnabled ─────────────────────────
 
     public static void Test_Parser_HardwareEnabled_Pin2Dmd_DetectsIt()
