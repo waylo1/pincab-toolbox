@@ -86,12 +86,15 @@ public static class RepairOfferBuilder
                 new RestoreRomArchiveAction(fs),
                 new QuarantineOrphanedMediaAction(fs),
                 new KillZombiePinUpDisplayAction(new RealProcessControl()),
-                new RegisterComComponentAction(new RealProcessLauncher(), new RealElevatedProcessLauncher()));
-            // Registered (19/08) but still inert in production: the pack has no repairRules entry
-            // for COM_NOT_REGISTERED/VPINMAME_NOT_REGISTERED/COM_BITNESS_GAP yet, so RepairEngine.Plan
-            // never actually offers it — see RegisterComComponentAction's own header for why.
-            // SetDefaultAudioDeviceAction is intentionally excluded — not wired to any Finding yet
-            // (see its own header comment); the pack has no rule referencing it either.
+                new RegisterComComponentAction(new RealProcessLauncher(), new RealElevatedProcessLauncher()),
+                new RepositionDmdAction(fs));
+            // register_com_component: activée le 20/08 pour VPINMAME_NOT_REGISTERED,
+            // COM_NOT_REGISTERED, COM_BITNESS_GAP (feu vert Maxime — voir FIELD-LOG.md) — plus
+            // "inerte", RepairEngine.Plan l'offre réellement maintenant pour ces 3 codes.
+            // reposition_dmd (20/08) : DMD_POSITION_OFFSCREEN, remet [virtualdmd] left/top à 0,0
+            // (coin haut-gauche de l'écran principal, toujours à l'intérieur d'un moniteur réel).
+            // SetDefaultAudioDeviceAction est toujours intentionnellement exclue — pas câblée à un
+            // Finding (voir son propre en-tête) ; le pack n'a aucune règle qui la référence.
 
             var backupRoot = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

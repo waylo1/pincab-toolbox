@@ -84,9 +84,11 @@ public sealed class RepairSession
             new RestoreRomArchiveAction(fs),
             new QuarantineOrphanedMediaAction(fs),
             new KillZombiePinUpDisplayAction(new RealProcessControl()),
-            new RegisterComComponentAction(new RealProcessLauncher(), new RealElevatedProcessLauncher()));
-        // Registered (19/08) but still inert: no pack repairRules entry targets it yet — see
-        // RegisterComComponentAction's own header for the remaining, unrelated-to-admin-rights blocker.
+            new RegisterComComponentAction(new RealProcessLauncher(), new RealElevatedProcessLauncher()),
+            new RepositionDmdAction(fs));
+        // register_com_component: activée le 20/08 (VPINMAME_NOT_REGISTERED, COM_NOT_REGISTERED,
+        // COM_BITNESS_GAP — feu vert Maxime, voir FIELD-LOG.md). reposition_dmd (20/08) :
+        // DMD_POSITION_OFFSCREEN, remet [virtualdmd] left/top à 0,0.
 
         var backupRoot = Path.Combine(root, "repair-backups");
         _journal = new FileRepairJournal(Path.Combine(root, "repair-journal"));

@@ -29,7 +29,7 @@ public static class EndToEndTests
         if (warnings.Count > 0) throw new Exception("shipped pack has warnings: " + string.Join("; ", warnings));
 
         var fs = new FakeFs();
-        var registry = new RepairActionRegistry(new UnblockFileAction(fs), new RestoreRomArchiveAction(fs));
+        var registry = new RepairActionRegistry(new UnblockFileAction(fs), new RestoreRomArchiveAction(fs), new RepositionDmdAction(fs));
         var journal = new InMemoryRepairJournal();
         var eng = new RepairEngine(registry, pack, journal, new FakeBackup(), new FakeProbe(),
                                    new FakeClock(), Build.Roots);
@@ -182,6 +182,29 @@ public static class EndToEndTests
             A.Equal(RepairMode.Locked, planUnlicensed.Items[0].Mode, "ADR-006 — a real fix exists, licence required to see/apply it");
         }
         finally { Directory.Delete(dir, true); }
+    }
+
+    /// <summary>20/08 — reposition_dmd on the real shipped pack. Also exercises Apply()+Undo() end to end, unlike the register_com_component test above (that one truly cannot be undone).</summary>
+    public static void Test_EndToEnd_DmdOffscreen_PlannedAppliedAndUndone()
+    {
+        var (fs, eng, _) = Real();
+        fs.AddFile(@"C:\vpx\VPinMAME\dmddevice.ini",
+            "[virtualdmd]\nenabled = true\nleft = 5000\ntop = 5000\nwidth = 1024\nheight = 256\n");
+
+        var plan = eng.Plan("scan-1",
+            new[] { Build.Finding("DMD_POSITION_OFFSCREEN", @"C:\vpx\VPinMAME\dmddevice.ini", "dmd-config") }, licensed: true);
+
+        A.Equal(RepairMode.ConfirmationRequired, plan.Items[0].Mode, "confidence 85, below the 95 automatic threshold");
+
+        eng.Apply(Build.Select(plan));
+        var afterApply = System.Text.Encoding.UTF8.GetString(fs.ReadAllBytes(@"C:\vpx\VPinMAME\dmddevice.ini"));
+        A.True(afterApply.Contains("left = 0"), "left rewritten on the real shipped pack + real engine");
+        A.True(afterApply.Contains("top = 0"), "top rewritten too");
+
+        eng.Undo(plan.PlanId);
+        var afterUndo = System.Text.Encoding.UTF8.GetString(fs.ReadAllBytes(@"C:\vpx\VPinMAME\dmddevice.ini"));
+        A.True(afterUndo.Contains("left = 5000"), "genuinely reversible — left back to the original offscreen value");
+        A.True(afterUndo.Contains("top = 5000"), "top too");
     }
 
     public static void Test_EndToEnd_UnzippedRomNeedsConfirmationNotAutomatic()

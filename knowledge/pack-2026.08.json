@@ -650,7 +650,18 @@
       "explanationEs": "dmddevice.ini conserva la posición guardada la última vez y nunca la vuelve a validar, una posición obsoleta de una disposición de pantallas anterior, un cambio de GPU, o una pantalla desconectada se queda exactamente donde estaba.",
       "verificationFr": "Le rectangle déclaré du DMD virtuel dans dmddevice.ini ne chevauche aucun écran actuellement connecté.",
       "verificationEn": "The virtual DMD's declared rectangle in dmddevice.ini doesn't overlap any currently connected monitor.",
-      "verificationEs": "El rectángulo declarado del DMD virtual en dmddevice.ini no se superpone con ninguna pantalla actualmente conectada."
+      "verificationEs": "El rectángulo declarado del DMD virtual en dmddevice.ini no se superpone con ninguna pantalla actualmente conectada.",
+      "repairRules": [
+        {
+          "id": "reposition-dmd",
+          "actionId": "reposition_dmd",
+          "repairConfidence": 85,
+          "reversible": true,
+          "backupRequired": true,
+          "manualProcedureFr": "Dans dmddevice.ini, section [virtualdmd], remettre left et top à 0 (ou supprimer ces deux lignes pour revenir aux valeurs par défaut), avec tous les écrans branchés dans leur disposition normale du cab.",
+          "manualProcedureEn": "In dmddevice.ini's [virtualdmd] section, reset left and top to 0 (or delete both lines to fall back to the defaults), with all monitors connected in their normal cab layout."
+        }
+      ]
     },
     {
       "code": "NVRAM_FOLDER_NOT_WRITABLE",
