@@ -130,6 +130,60 @@ public static class EndToEndTests
         A.True(fs.HasZoneIdentifier(@"C:\vpx\VPinMAME\VPinMAME.dll"), "fully reversible");
     }
 
+    /// <summary>Builds the same minimal MZ/PE header shape as RegisterComComponentActionTests / make_fixtures.py.</summary>
+    private static void WriteMinimalPe(string path, ushort machine)
+    {
+        var header = new byte[64];
+        header[0] = (byte)'M'; header[1] = (byte)'Z';
+        BitConverter.GetBytes(0x40).CopyTo(header, 0x3C);
+        var tail = new byte[4 + 2 + 58];
+        tail[0] = (byte)'P'; tail[1] = (byte)'E';
+        BitConverter.GetBytes(machine).CopyTo(tail, 4);
+        File.WriteAllBytes(path, header.Concat(tail).ToArray());
+    }
+
+    /// <summary>
+    /// 20/08 — wires <c>register_com_component</c> for the first time (VPINMAME_NOT_REGISTERED,
+    /// COM_NOT_REGISTERED, COM_BITNESS_GAP — see FIELD-LOG.md 2026-08-20 and the pack entries
+    /// themselves for why COM_STALE_PATH stays out). Proves the whole chain works end to end on
+    /// the REAL shipped pack, not just that the JSON parses: a real Finding shaped exactly like
+    /// <c>ComHealthScanner.EvaluateVpinmameNotRegistered</c> produces it, through a real temp-disk
+    /// VPinMAME.dll + Setup.exe (RegisterComComponentAction reads real disk, not FakeFs — same
+    /// reason RegisterComComponentActionTests does this instead of using Real()'s FakeFs registry).
+    /// </summary>
+    public static void Test_EndToEnd_VpinmameNotRegistered_RealPack_PlansConfirmationRequired()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "pincab-e2e-com-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var dll = Path.Combine(dir, "VPinMAME.dll");
+            File.WriteAllText(dll, "x");
+            WriteMinimalPe(Path.Combine(dir, "Setup.exe"), 0x8664);
+
+            var pack = KnowledgePack.Load(File.ReadAllText(PackPath()));
+            var registry = new RepairActionRegistry(
+                new RegisterComComponentAction(new FakeProcessLauncher(), new FakeElevatedProcessLauncher()));
+            var eng = new RepairEngine(registry, pack, new InMemoryRepairJournal(), new FakeBackup(),
+                new FakeProbe(), new FakeClock(), new[] { dir });
+
+            var finding = new Finding
+            {
+                Code = "VPINMAME_NOT_REGISTERED", Severity = Severity.Critical, Category = "com",
+                Subject = "VPinMAME.Controller", FilePath = dll, EnglishText = "x",
+            };
+
+            var planLicensed = eng.Plan("scan-1", new[] { finding }, licensed: true);
+            A.Equal(1, planLicensed.Items[0].Changes.Count, "the pack rule + real tool on disk must plan a real change");
+            A.Equal(RepairMode.ConfirmationRequired, planLicensed.Items[0].Mode,
+                "confidence 80, never-reversible by nature (rule 7) → confirmation, never silently automatic");
+
+            var planUnlicensed = eng.Plan("scan-1", new[] { finding }, licensed: false);
+            A.Equal(RepairMode.Locked, planUnlicensed.Items[0].Mode, "ADR-006 — a real fix exists, licence required to see/apply it");
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
     public static void Test_EndToEnd_UnzippedRomNeedsConfirmationNotAutomatic()
     {
         var (fs, eng, _) = Real();

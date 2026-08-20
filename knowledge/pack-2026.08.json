@@ -557,7 +557,18 @@
       "explanationEs": "El registro COM de Windows vive por máquina, no por carpeta, copiar una instalación (zip, memoria USB, carpeta de red) en lugar de usar su instalador oficial nunca traslada ese registro.",
       "verificationFr": "Le binaire du composant est présent dans l'installation et une table en a besoin, mais aucune des deux vues du registre COM (32-bit ou 64-bit) ne le liste.",
       "verificationEn": "The component's binary is present under the install and a table needs it, but neither COM registry view (32-bit or 64-bit) lists it.",
-      "verificationEs": "El binario del componente está presente en la instalación y una tabla lo necesita, pero ninguna de las dos vistas del registro COM (32 o 64 bits) lo lista."
+      "verificationEs": "El binario del componente está presente en la instalación y una tabla lo necesita, pero ninguna de las dos vistas del registro COM (32 o 64 bits) lo lista.",
+      "repairRules": [
+        {
+          "id": "register-com-not-registered",
+          "actionId": "register_com_component",
+          "repairConfidence": 75,
+          "reversible": false,
+          "backupRequired": false,
+          "manualProcedureFr": "Lancer l'outil d'enregistrement propre au composant (Setup.exe pour VPinMAME, B2SBackglassServerRegisterApp.exe pour B2S, FlexDMDUI.exe pour FlexDMD) en tant qu'administrateur.",
+          "manualProcedureEn": "Run the component's own registration tool (Setup.exe for VPinMAME, B2SBackglassServerRegisterApp.exe for B2S, FlexDMDUI.exe for FlexDMD) as Administrator."
+        }
+      ]
     },
     {
       "code": "COM_STALE_PATH",
@@ -581,7 +592,18 @@
       "explanationEs": "Los registros COM de 32 y 64 bits viven en dos partes totalmente separadas del registro de Windows, un componente registrado en una es invisible para un proceso que corre en el otro bit.",
       "verificationFr": "La vue COM correspondant au bitness du VPX installé n'a aucun enregistrement, alors que celle du bitness opposé en a un.",
       "verificationEn": "The COM view matching this installed VPX's bitness has no registration, while the opposite bitness's view does.",
-      "verificationEs": "La vista COM que corresponde al bit del VPX instalado no tiene ningún registro, mientras que la del bit opuesto sí."
+      "verificationEs": "La vista COM que corresponde al bit del VPX instalado no tiene ningún registro, mientras que la del bit opuesto sí.",
+      "repairRules": [
+        {
+          "id": "register-com-bitness-gap",
+          "actionId": "register_com_component",
+          "repairConfidence": 70,
+          "reversible": false,
+          "backupRequired": false,
+          "manualProcedureFr": "Enregistrer la version du composant qui correspond au bitness manquant, ou lancer la version de VPX qui correspond au bitness déjà enregistré. Confiance volontairement basse (20/08) : le dossier utilisé pour retrouver l'outil d'enregistrement peut être celui de l'AUTRE bitness sur une installation hybride 32+64-bit dans des dossiers séparés — sans danger (l'outil officiel du composant est rejoué, jamais un fichier inconnu), mais peut ne rien corriger dans ce cas précis.",
+          "manualProcedureEn": "Register the build of the component matching the missing bitness, or launch the VPX build matching the bitness that IS registered. Deliberately low confidence (20/08): the folder used to locate the registration tool may belong to the OTHER bitness on a hybrid 32+64-bit install with separate folders — safe either way (the component's own official tool is what runs, never an unknown file), but may fix nothing in that specific case."
+        }
+      ]
     },
     {
       "code": "VPINMAME_NOT_REGISTERED",
@@ -593,7 +615,18 @@
       "explanationEs": "VPinMAME.dll se copió en su sitio (un zip, una transferencia USB, un clonado de disco), pero su propio Setup.exe, lo único que realmente escribe su registro COM, nunca se ejecutó en esta máquina.",
       "verificationFr": "Le binaire de VPinMAME est présent et une table en a besoin, mais VPinMAME.Controller est absent des deux vues du registre COM (32-bit et 64-bit).",
       "verificationEn": "VPinMAME's binary is present and a table needs it, but VPinMAME.Controller is absent from both the 32-bit and 64-bit COM registry views.",
-      "verificationEs": "El binario de VPinMAME está presente y una tabla lo necesita, pero VPinMAME.Controller está ausente tanto de la vista de registro COM de 32 como de 64 bits."
+      "verificationEs": "El binario de VPinMAME está presente y una tabla lo necesita, pero VPinMAME.Controller está ausente tanto de la vista de registro COM de 32 como de 64 bits.",
+      "repairRules": [
+        {
+          "id": "register-vpinmame-not-registered",
+          "actionId": "register_com_component",
+          "repairConfidence": 80,
+          "reversible": false,
+          "backupRequired": false,
+          "manualProcedureFr": "Lancer VPinMAME\\Setup.exe en tant qu'administrateur — c'est le correctif le plus fréquent pour « aucune table à ROM ne démarre ».",
+          "manualProcedureEn": "Run VPinMAME's own Setup.exe (in the VPinMAME folder) as Administrator — the single most common fix for \"no ROM table starts\"."
+        }
+      ]
     },
     {
       "code": "CHAIN_BITNESS_GAP",
