@@ -156,6 +156,55 @@ public static class ComHealthScannerTests
         Assert.Equal(0, findings.Count);
     }
 
+    // ───────────────────────── EvaluateComponent — bare .NET COM host (mscoree.dll) ─────────────────────────
+    // 2026-08 field report (crrispy): B2S.Server and FlexDMD.FlexDMD are registered the standard
+    // .NET way, InprocServer32's default is the bare filename "mscoree.dll" with no directory —
+    // the generic CLR activation host, not a per-component binary. Before this fix, fileExists()
+    // was asked about that bare name as-is, which only ever resolves relative to the app's own
+    // working directory, so it always came back false and every healthy install got a false
+    // COM_STALE_PATH ("no longer exists ... will fail"). These three tests protect the fix.
+
+    public static void Test_Component_BareMscoreeHost_ResolvesAndExists_SilentNotStaleOrOutside()
+    {
+        var findings = ComHealthScanner.EvaluateComponent(
+            "B2S.Server", Reg(ComRegistryView.Registry64, "mscoree.dll"), true, null, true,
+            binaryPresentUnderRoot: true, rootPath: "/install",
+            requiredByATable: false, installedVpxBitnesses: NoBitness,
+            category: "com", severityCap: Severity.Warning,
+            // Whatever directory it got resolved against (System32/SysWOW64, or left bare if
+            // %windir% is unavailable in this environment), the filename itself is unmistakable.
+            fileExists: p => p.EndsWith("mscoree.dll", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(0, findings.Count(f => f.Code == "COM_STALE_PATH"));
+        Assert.Equal(0, findings.Count(f => f.Code == "COM_PATH_OUTSIDE_INSTALL"));
+        Assert.Equal(0, findings.Count(f => f.Code == "COM_OK"));
+    }
+
+    public static void Test_Component_BareMscoreeHost_TrulyMissing_StillStalePath()
+    {
+        // A machine genuinely missing mscoree.dll (broken .NET Framework) must still be reported —
+        // the fix only silences the false negative, it must never hide a real one.
+        var findings = ComHealthScanner.EvaluateComponent(
+            "B2S.Server", Reg(ComRegistryView.Registry64, "mscoree.dll"), true, null, true,
+            binaryPresentUnderRoot: true, rootPath: "/install",
+            requiredByATable: false, installedVpxBitnesses: NoBitness,
+            category: "com", severityCap: Severity.Warning,
+            fileExists: _ => false);
+        Assert.Equal(1, findings.Count(f => f.Code == "COM_STALE_PATH"));
+    }
+
+    public static void Test_Component_FullPathMscoreeDll_NotSpecialCased()
+    {
+        // A ServerPath that already carries a directory (even one literally ending in
+        // "mscoree.dll") is a different, already-correct case — untouched by this fix.
+        var findings = ComHealthScanner.EvaluateComponent(
+            "B2S.Server", Reg(ComRegistryView.Registry64, @"C:\Windows\System32\mscoree.dll"), true, null, true,
+            binaryPresentUnderRoot: true, rootPath: "/install",
+            requiredByATable: false, installedVpxBitnesses: NoBitness,
+            category: "com", severityCap: Severity.Warning,
+            fileExists: _ => true);
+        Assert.Equal(1, findings.Count(f => f.Code == "COM_PATH_OUTSIDE_INSTALL"));
+    }
+
     // ───────────────────────── EvaluateComponent — COM_OK ─────────────────────────
 
     public static void Test_Component_RegisteredInsideRoot_ExistingPath_Ok()

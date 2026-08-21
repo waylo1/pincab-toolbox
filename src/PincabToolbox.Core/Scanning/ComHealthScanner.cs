@@ -211,10 +211,35 @@ public sealed class ComHealthScanner : IScanner
                 (installedVpxBitnesses.Contains(Bitness.X86) && view32 is not null) ? view32 :
                 view64 ?? view32;
 
-            bool exists;
-            try { exists = fileExists(preferred!.ServerPath); } catch { exists = false; }
+            // A registered .NET COM class (regasm's default, no /codebase) does not point
+            // InprocServer32 at its own assembly — it points at the generic CLR host, registered
+            // as the bare filename "mscoree.dll" with no directory, resolved by Windows itself at
+            // activation time via the system DLL search order (System32 / SysWOW64), never via
+            // the calling process's working directory. B2S.Server and FlexDMD.FlexDMD are both
+            // built this way, so this is not an edge case for them — it is their NORMAL
+            // registration shape. fileExists() on a bare filename only ever checks the app's own
+            // working directory, so without this it always resolves false and every healthy
+            // B2S/FlexDMD install gets falsely flagged "leftover registration ... will fail"
+            // (confirmed field report, crrispy, 2026-08 — see FIELD-LOG). Resolve it to where
+            // Windows actually looks before asking whether it exists.
+            var isBareKnownHost = IsBareDotNetComHost(preferred!.ServerPath);
+            var resolvedPath = isBareKnownHost
+                ? ResolveKnownDllPath(preferred.ServerPath, preferred.View)
+                : preferred.ServerPath;
 
-            if (!exists)
+            bool exists;
+            try { exists = fileExists(resolvedPath); } catch { exists = false; }
+
+            if (isBareKnownHost && exists)
+            {
+                // The registration is the generic .NET host, present and healthy on this machine.
+                // ServerPath alone cannot say which assembly it activates (that lives in separate
+                // Assembly/CodeBase registry values this probe does not read) — so "points inside
+                // this install" and "points outside this install" are both claims we cannot back
+                // up here. Per this scanner's own rule (never guess, stay silent instead), no
+                // finding is the honest answer for this branch.
+            }
+            else if (!exists)
             {
                 findings.Add(Cap(new Finding
                 {
@@ -329,6 +354,35 @@ public sealed class ComHealthScanner : IScanner
             FixHint = "Run VPinMAME's own Setup.exe (in the VPinMAME folder) as Administrator — it registers " +
                       "the COM component. This is the single most common fix for \"no ROM table starts\".",
         };
+    }
+
+    /// <summary>
+    /// True for a bare (no directory) filename matching the .NET Framework's generic COM
+    /// activation host — the value <c>InprocServer32</c>'s default holds for any class registered
+    /// the standard regasm way (no <c>/codebase</c>). Deliberately narrow: only the one host name
+    /// every current .NET Framework ships (mscoree.dll); a path that already carries a directory
+    /// is never touched by this — it is handled exactly as before.
+    /// </summary>
+    private static bool IsBareDotNetComHost(string serverPath)
+        => string.IsNullOrEmpty(Path.GetDirectoryName(serverPath))
+           && string.Equals(Path.GetFileName(serverPath), "mscoree.dll", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Resolves a bare system DLL name to where Windows actually loads it from for the given COM
+    /// registry view — <c>SysWOW64</c> for the 32-bit view, <c>System32</c> for the 64-bit view,
+    /// both under <c>%windir%</c>. Not a guess: this IS how Windows resolves a directory-less
+    /// InprocServer32 entry at COM activation time. Returns the original bare name unresolved if
+    /// <c>%windir%</c>/<c>%SystemRoot%</c> is unavailable (non-Windows, or the rare broken
+    /// environment) — <see cref="EvaluateComponent"/>'s <c>fileExists</c> call then simply reports
+    /// "not found" for that name, same as before this fix, never worse.
+    /// </summary>
+    private static string ResolveKnownDllPath(string fileName, ComRegistryView view)
+    {
+        var windir = Environment.GetEnvironmentVariable("windir")
+                     ?? Environment.GetEnvironmentVariable("SystemRoot");
+        if (string.IsNullOrEmpty(windir)) return fileName;
+        var sysDir = view == ComRegistryView.Registry32 ? "SysWOW64" : "System32";
+        return Path.Combine(windir, sysDir, fileName);
     }
 
     private static Finding Cap(Finding f, Severity cap) => f.Severity > cap ? f with { Severity = cap } : f;
